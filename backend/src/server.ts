@@ -22,6 +22,7 @@ const httpServer = createServer(app);
 const allowedOrigins = [
   "https://www.apnasabjiwala.com",
   "https://apnasabjiwala.com",
+  "https://apna-sabji-wala.vercel.app/",
   // Add more origins from environment variable if needed
   ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",").map(url => url.trim()) : [])
 ];
