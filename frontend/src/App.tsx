@@ -187,7 +187,7 @@ function App() {
                           <Route
                             path="/seller/login"
                             element={
-                              <PublicRoute>
+                              <PublicRoute userType="Seller">
                                 <Suspense fallback={<IconLoader forceShow />}>
                                   <SellerLogin />
                                 </Suspense>
@@ -197,7 +197,7 @@ function App() {
                           <Route
                             path="/seller/signup"
                             element={
-                              <PublicRoute>
+                              <PublicRoute userType="Seller">
                                 <Suspense fallback={<IconLoader forceShow />}>
                                   <SellerSignUp />
                                 </Suspense>
@@ -207,7 +207,7 @@ function App() {
                           <Route
                             path="/delivery/login"
                             element={
-                              <PublicRoute>
+                              <PublicRoute userType="Delivery">
                                 <Suspense fallback={<IconLoader forceShow />}>
                                   <DeliveryLogin />
                                 </Suspense>
@@ -217,7 +217,7 @@ function App() {
                           <Route
                             path="/delivery/signup"
                             element={
-                              <PublicRoute>
+                              <PublicRoute userType="Delivery">
                                 <Suspense fallback={<IconLoader forceShow />}>
                                   <DeliverySignUp />
                                 </Suspense>
@@ -227,7 +227,7 @@ function App() {
                           <Route
                             path="/admin/login"
                             element={
-                              <PublicRoute>
+                              <PublicRoute userType="Admin">
                                 <Suspense fallback={<IconLoader forceShow />}>
                                   <AdminLogin />
                                 </Suspense>
