@@ -12,7 +12,7 @@ dotenv.config();
 async function migrateShopStatus() {
   try {
     // Connect to MongoDB
-    const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/dhakadsnazzy';
+    const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/ApnaSabjiWala';
     await mongoose.connect(mongoUri);
     console.log('✓ Connected to MongoDB');
 

@@ -51,8 +51,8 @@ export default function AdminLogin() {
     }
   };
 
-  const handleDhakadSnazzyLogin = () => {
-    // Handle Dhakad Snazzy login logic here
+  const handleapnasabjiwalaLogin = () => {
+    // Handle Apna Sabji Wala login logic here
     navigate("/admin");
   };
 
@@ -94,8 +94,8 @@ export default function AdminLogin() {
           }}>
           <div className="mb-0 -mt-4">
             <img
-              src="/assets/dhakadsnazzy1.png"
-              alt="Dhakad Snazzy"
+              src="/assets/apnasabjiwala.png"
+              alt="Apna Sabji Wala"
               className="h-44 w-full max-w-xs mx-auto object-fill object-bottom"
             />
           </div>
@@ -200,7 +200,7 @@ export default function AdminLogin() {
 
       {/* Footer Text */}
       <p className="mt-6 text-xs text-neutral-500 text-center max-w-md">
-        By continuing, you agree to Dhakad Snazzy's Terms of Service and Privacy Policy
+        By continuing, you agree to Apna Sabji Wala's Terms of Service and Privacy Policy
       </p>
     </div>
   );

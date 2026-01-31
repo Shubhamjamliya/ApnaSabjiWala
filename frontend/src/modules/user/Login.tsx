@@ -83,7 +83,7 @@ export default function Login() {
       {/* Video Section */}
       <div
         className="overflow-hidden relative flex-1"
-        style={{ minHeight: 0, border: 'none', borderBottom: 'none', padding: 0, margin: 0, marginLeft: '2px', backgroundColor: '#ffffff', zIndex: 0, width: 'calc(100% - 2px)', boxSizing: 'border-box', position: 'relative' }}
+        style={{ minHeight: 0, padding: 0, margin: 0, backgroundColor: '#ffffff', zIndex: 0, width: '100%', position: 'relative' }}
       >
         <video
           ref={videoRef}
@@ -103,21 +103,12 @@ export default function Login() {
             display: 'block',
             width: '100%',
             height: '100%',
-            margin: 0,
-            padding: 0,
-            border: 'none',
-            outline: 'none',
-            boxShadow: 'none',
-            verticalAlign: 'top',
             objectFit: 'cover',
-            objectPosition: 'center top',
-            background: 'transparent',
-            position: 'relative',
-            zIndex: 0,
-            borderBottomLeftRadius: 0,
-            borderBottomRightRadius: 0,
-            transform: 'translateY(-60px)',
-            marginTop: '-60px'
+            objectPosition: 'center',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            zIndex: 0
           }}
         />
       </div>
@@ -127,23 +118,25 @@ export default function Login() {
       {/* Login Section */}
       <div
         className="bg-white flex flex-col items-center flex-shrink-0 relative"
-        style={{ border: 'none', borderTop: 'none', margin: 0, marginTop: '-100px', marginLeft: '-2px', boxShadow: 'none', outline: 'none', backgroundColor: '#ffffff', zIndex: 1, padding: '4px 0px 12px', paddingTop: '6px', width: 'calc(100% + 4px)', boxSizing: 'border-box', position: 'relative' }}
+        style={{ marginTop: '-100px', backgroundColor: '#ffffff', zIndex: 1, padding: '4px 0px 12px', paddingTop: '6px', width: '100%', borderTopLeftRadius: '20px', borderTopRightRadius: '20px' }}
       >
         {!showOTP ? (
           <>
             {/* Mobile Number Input */}
-            <div className="w-full mb-1.5 sm:mb-2.5 px-4 relative z-10" style={{ maxWidth: '100%' }}>
-              <div className="flex items-center bg-white border border-neutral-300 rounded-lg overflow-hidden focus-within:border-neutral-400 transition-colors">
-                <div className="px-3 py-2 sm:py-2.5 text-sm font-medium text-neutral-400 border-r border-neutral-300 bg-white">
-                  +91
+            <div className="w-full mb-4 px-5 relative z-10">
+              <label className="block text-xs font-semibold text-neutral-500 mb-1.5 ml-1">
+                Enter Mobile Number
+              </label>
+              <div className="flex items-center bg-white border border-neutral-200 rounded-xl overflow-hidden focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/10 transition-all shadow-sm h-12">
+                <div className="pl-3.5 pr-3 h-full flex items-center justify-center bg-neutral-50 border-r border-neutral-100">
+                  <span className="text-sm font-bold text-neutral-700">+91</span>
                 </div>
                 <input
                   type="tel"
                   value={mobileNumber}
                   onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  placeholder="Enter mobile number"
-                  className="flex-1 px-3 py-2 sm:py-2.5 text-sm placeholder:text-neutral-400 focus:outline-none bg-white"
-                  style={{ color: '#9ca3af', backgroundColor: '#ffffff' }}
+                  placeholder="98765 43210"
+                  className="flex-1 px-4 h-full text-base font-medium text-neutral-900 placeholder:text-neutral-400 focus:outline-none bg-transparent"
                   maxLength={10}
                   disabled={loading}
                 />
@@ -215,7 +208,7 @@ export default function Login() {
 
         {/* Privacy Text */}
         <p className="text-[9px] sm:text-[10px] text-neutral-500 text-center max-w-sm leading-tight px-4 relative z-10 pb-1">
-          Access your saved addresses from Dhakad Snazzy automatically!
+          Access your saved addresses from Apna Sabji Wala automatically!
         </p>
       </div>
     </div>

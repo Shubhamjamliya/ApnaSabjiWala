@@ -8,11 +8,11 @@ const firebaseConfig = {
     "AIzaSyDdzURk5KJykQwmtUdOg-Lbdj4HjUT9G8g",
   authDomain:
     import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
-    "dhakadsnazzy2.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "dhakadsnazzy2",
+    "apnasabjiwala2.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "apnasabjiwala2",
   storageBucket:
     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
-    "dhakadsnazzy2.firebasestorage.app",
+    "apnasabjiwala2.firebasestorage.app",
   messagingSenderId:
     import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "88524532800",
   appId:

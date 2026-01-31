@@ -141,7 +141,7 @@ export default function DeliveryAbout() {
 
         {/* Copyright */}
         <div className="mt-6 text-center">
-          <p className="text-neutral-400 text-xs">© 2025 Dhakad Snazzy - 10 Minute App. All rights reserved.</p>
+          <p className="text-neutral-400 text-xs">© 2025 Apna Sabji Wala - 10 Minute App. All rights reserved.</p>
         </div>
       </div>
       <DeliveryBottomNav />

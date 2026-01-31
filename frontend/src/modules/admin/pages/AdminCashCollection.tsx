@@ -641,7 +641,7 @@ export default function AdminCashCollection() {
       <div className="bg-neutral-800 text-white text-center text-sm py-4">
         Copyright Â© 2025. Developed By{" "}
         <a href="#" className="text-blue-400 hover:text-blue-300">
-          Dhakad Snazzy - 10 Minute App
+          Apna Sabji Wala - 10 Minute App
         </a>
       </div>
     </div>

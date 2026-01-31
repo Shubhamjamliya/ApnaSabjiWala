@@ -421,7 +421,7 @@ export default function SellerAddProduct() {
       if (mainImageFile) {
         const mainImageResult = await uploadImage(
           mainImageFile,
-          "dhakadsnazzy/products"
+          "apnasabjiwala/products"
         );
         mainImageUrl = mainImageResult.secureUrl;
         setFormData((prev) => ({
@@ -434,7 +434,7 @@ export default function SellerAddProduct() {
       if (galleryImageFiles.length > 0) {
         const galleryResults = await uploadImages(
           galleryImageFiles,
-          "dhakadsnazzy/products/gallery"
+          "apnasabjiwala/products/gallery"
         );
         galleryImageUrls = galleryResults.map((result) => result.secureUrl);
         setFormData((prev) => ({ ...prev, galleryImageUrls }));
@@ -614,8 +614,8 @@ export default function SellerAddProduct() {
                     onChange={handleChange}
                     disabled={!formData.headerCategory}
                     className={`w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${!formData.headerCategory
-                        ? "bg-neutral-100 cursor-not-allowed text-neutral-500"
-                        : "bg-white"
+                      ? "bg-neutral-100 cursor-not-allowed text-neutral-500"
+                      : "bg-white"
                       }`}>
                     <option value="">
                       {formData.headerCategory
@@ -658,8 +658,8 @@ export default function SellerAddProduct() {
                     onChange={handleChange}
                     disabled={!formData.category}
                     className={`w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${!formData.category
-                        ? "bg-neutral-100 cursor-not-allowed text-neutral-500"
-                        : "bg-white"
+                      ? "bg-neutral-100 cursor-not-allowed text-neutral-500"
+                      : "bg-white"
                       }`}>
                     <option value="">
                       {formData.category
@@ -688,8 +688,8 @@ export default function SellerAddProduct() {
                     onChange={handleChange}
                     disabled={!formData.subcategory}
                     className={`w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${!formData.subcategory
-                        ? "bg-neutral-100 cursor-not-allowed text-neutral-500"
-                        : "bg-white"
+                      ? "bg-neutral-100 cursor-not-allowed text-neutral-500"
+                      : "bg-white"
                       }`}>
                     <option value="">Select Sub-SubCategory</option>
                     {subSubCategories.map((subSub) => (
@@ -1314,8 +1314,8 @@ export default function SellerAddProduct() {
               type="submit"
               disabled={uploading}
               className={`px-8 py-3 rounded-lg font-medium text-lg transition-colors shadow-sm ${uploading
-                  ? "bg-neutral-400 cursor-not-allowed text-white"
-                  : "bg-teal-600 hover:bg-teal-700 text-white"
+                ? "bg-neutral-400 cursor-not-allowed text-white"
+                : "bg-teal-600 hover:bg-teal-700 text-white"
                 }`}>
               {uploading ? "Uploading Images..." : "Add Product"}
             </button>

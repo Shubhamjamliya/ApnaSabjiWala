@@ -17,7 +17,7 @@ function log(msg: any) {
 }
 
 // --- Configuration ---
-const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/dhakadsnazzy";
+const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/ApnaSabjiWala";
 const FRONTEND_ASSETS_PATH = path.join(__dirname, "../../../frontend/assets");
 const SUB_CATEGORY_IMAGES_PATH = path.join(
   FRONTEND_ASSETS_PATH,

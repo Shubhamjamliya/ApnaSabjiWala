@@ -5,9 +5,9 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-comp
 // Firebase configuration (Production credentials)
 const firebaseConfig = {
     apiKey: 'AIzaSyDdzURk5KJykQwmtUdOg-Lbdj4HjUT9G8g',
-    authDomain: 'dhakadsnazzy2.firebaseapp.com',
-    projectId: 'dhakadsnazzy2',
-    storageBucket: 'dhakadsnazzy2.firebasestorage.app',
+    authDomain: 'apnasabjiwala2.firebaseapp.com',
+    projectId: 'apnasabjiwala2',
+    storageBucket: 'apnasabjiwala2.firebasestorage.app',
     messagingSenderId: '88524532800',
     appId: '1:88524532800:web:347183dc062e619a48c3a5',
     measurementId: 'G-GCPBFW3F1B'

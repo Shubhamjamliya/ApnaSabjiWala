@@ -20,7 +20,7 @@ function log(msg: any) {
 }
 
 // --- Configuration ---
-const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/dhakadsnazzy";
+const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/ApnaSabjiWala";
 const FRONTEND_ASSETS_PATH = path.join(__dirname, "../../../frontend/assets");
 const SELLER_MOBILE = "6268423925";
 
@@ -156,7 +156,7 @@ async function uploadToCloudinary(
 
   try {
     const result = await cloudinary.uploader.upload(localPath, {
-      folder: `dhakadsnazzy/${folder}`,
+      folder: `apnasabjiwala/${folder}`,
       resource_type: "image",
       use_filename: true,
       unique_filename: false,

@@ -54,8 +54,8 @@ export const initializeSocket = (httpServer: HttpServer) => {
 
                     // Default production origins if FRONTEND_URL not set
                     const defaultOrigins = [
-                        "https://www.dhakadsnazzy.com",
-                        "https://dhakadsnazzy.com",
+                        "https://www.apnasabjiwala.com",
+                        "https://apnasabjiwala.com",
                     ];
 
                     const allAllowedOrigins = allowedOrigins.length > 0
@@ -322,12 +322,12 @@ export const initializeSocket = (httpServer: HttpServer) => {
                             tracking.eta = eta;
                             // Only update status if it's a spatial status (nearby/in_transit), don't override Delivered/Picked Up
                             if (tracking.status !== 'delivered' && tracking.status !== 'picked_up' && tracking.status !== 'idle') {
-                                 tracking.status = status as any;
+                                tracking.status = status as any;
                             }
                         }
                         await tracking.save();
                     } catch (dbError) {
-                         console.error('Error syncing location to DB:', dbError);
+                        console.error('Error syncing location to DB:', dbError);
                     }
                 }
             } catch (err) {

@@ -16,7 +16,7 @@ function log(msg: any) {
 }
 
 // --- Configuration ---
-const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/dhakadsnazzy";
+const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/ApnaSabjiWala";
 
 log("Starting Remove All Categories Script");
 log(`MONGO_URI: ${MONGO_URI}`);

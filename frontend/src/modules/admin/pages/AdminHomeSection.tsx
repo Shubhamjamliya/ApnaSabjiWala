@@ -445,9 +445,8 @@ export default function AdminHomeSection() {
                                         <span className="text-red-500 ml-1">*</span>
                                     )}
                                 </label>
-                                <div className={`border border-neutral-300 rounded max-h-40 overflow-y-auto p-2 ${
-                                    displayType === "categories" && !selectedHeaderCategory ? 'bg-gray-100' : 'bg-white'
-                                }`}>
+                                <div className={`border border-neutral-300 rounded max-h-40 overflow-y-auto p-2 ${displayType === "categories" && !selectedHeaderCategory ? 'bg-gray-100' : 'bg-white'
+                                    }`}>
                                     {displayType === "categories" && !selectedHeaderCategory ? (
                                         <p className="text-sm text-neutral-400 p-2">Please select a header category first</p>
                                     ) : filteredCategories.length === 0 ? (
@@ -809,7 +808,7 @@ export default function AdminHomeSection() {
             <footer className="text-center py-4 text-sm text-neutral-600 border-t border-neutral-200 bg-white">
                 Copyright Â© 2025. Developed By{" "}
                 <a href="#" className="text-blue-600 hover:underline">
-                    Dhakad Snazzy - 10 Minute App
+                    Apna Sabji Wala - 10 Minute App
                 </a>
             </footer>
         </div >

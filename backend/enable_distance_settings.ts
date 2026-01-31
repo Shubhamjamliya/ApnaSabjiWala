@@ -7,7 +7,7 @@ dotenv.config();
 
 const updateSettings = async () => {
     try {
-        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/dhakad-snazzy');
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ApnaSabjiWala');
 
         const update = {
             deliveryCharges: 0, // Set base hardcoded to 0 to prove distance logic works

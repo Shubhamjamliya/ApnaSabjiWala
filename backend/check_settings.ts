@@ -7,7 +7,7 @@ dotenv.config();
 
 const run = async () => {
     try {
-        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/dhakad-snazzy');
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ApnaSabjiWala');
         const settings = await AppSettings.findOne({});
         console.log("APP SETTINGS:", JSON.stringify(settings, null, 2));
     } catch (error) {

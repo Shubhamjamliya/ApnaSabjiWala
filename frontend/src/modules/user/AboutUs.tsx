@@ -32,7 +32,7 @@ export default function AboutUs() {
                             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="currentColor" />
                         </svg>
                     </div>
-                    <h2 className="text-3xl font-bold text-neutral-900 mb-2">Dhakad Snazzy</h2>
+                    <h2 className="text-3xl font-bold text-neutral-900 mb-2">Apna Sabji Wala</h2>
                     <p className="text-sm text-neutral-600">Your Trusted Delivery Partner</p>
                 </div>
 
@@ -46,7 +46,7 @@ export default function AboutUs() {
                         Our Mission
                     </h3>
                     <p className="text-sm text-neutral-700 leading-relaxed">
-                        At Dhakad Snazzy, we're committed to revolutionizing the way you shop and receive your products.
+                        At Apna Sabji Wala, we're committed to revolutionizing the way you shop and receive your products.
                         Our mission is to provide lightning-fast delivery services while maintaining the highest
                         standards of quality and customer satisfaction.
                     </p>
@@ -63,7 +63,7 @@ export default function AboutUs() {
                         What We Do
                     </h3>
                     <p className="text-sm text-neutral-700 leading-relaxed mb-4">
-                        Dhakad Snazzy is a comprehensive e-commerce platform that connects customers with a wide range
+                        Apna Sabji Wala is a comprehensive e-commerce platform that connects customers with a wide range
                         of products across multiple categories including groceries, fashion, electronics, pharmacy,
                         and much more.
                     </p>
@@ -153,7 +153,7 @@ export default function AboutUs() {
                                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 <polyline points="22,6 12,13 2,6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
-                            <span className="text-neutral-700">support@dhakadsnazzy.com</span>
+                            <span className="text-neutral-700">support@apnasabjiwala.com</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-teal-600 flex-shrink-0">
@@ -174,7 +174,7 @@ export default function AboutUs() {
                 {/* Version Info */}
                 <div className="mt-8 text-center">
                     <p className="text-xs text-neutral-500">Version 1.0.0</p>
-                    <p className="text-xs text-neutral-500 mt-1">© 2024 Dhakad Snazzy. All rights reserved.</p>
+                    <p className="text-xs text-neutral-500 mt-1">© 2024 Apna Sabji Wala. All rights reserved.</p>
                 </div>
             </div>
         </div>

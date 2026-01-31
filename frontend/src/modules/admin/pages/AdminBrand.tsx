@@ -118,7 +118,7 @@ export default function AdminBrand() {
 
       // Upload brand image if a new file is selected
       if (brandImageFile) {
-        const imageResult = await uploadImage(brandImageFile, "dhakadsnazzy/brands");
+        const imageResult = await uploadImage(brandImageFile, "apnasabjiwala/brands");
         imageUrl = imageResult.secureUrl;
       }
 
@@ -684,7 +684,7 @@ export default function AdminBrand() {
       <div className="text-center text-sm text-neutral-500 py-4">
         Copyright Â© 2025. Developed By{" "}
         <a href="#" className="text-teal-600 hover:text-teal-700">
-          Dhakad Snazzy - 10 Minute App
+          Apna Sabji Wala - 10 Minute App
         </a>
       </div>
     </div>

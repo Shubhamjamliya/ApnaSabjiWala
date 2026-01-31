@@ -230,8 +230,8 @@ export default function SellerSignUp() {
         <div className="px-6 py-4 text-center border-b border-green-700" style={{ backgroundColor: 'rgb(21 178 74 / var(--tw-bg-opacity, 1))' }}>
           <div className="mb-0 -mt-4">
             <img
-              src="/assets/dhakadsnazzy1.png"
-              alt="Dhakad Snazzy"
+              src="/assets/apnasabjiwala.png"
+              alt="Apna Sabji Wala"
               className="h-44 w-full max-w-xs mx-auto object-fill object-bottom"
             />
           </div>
@@ -419,7 +419,7 @@ export default function SellerSignUp() {
 
                   {formData.latitude && formData.longitude ? (
                     <div className="mt-4 animate-fadeIn">
-                       <p className="text-sm font-medium text-neutral-700 mb-2">
+                      <p className="text-sm font-medium text-neutral-700 mb-2">
                         Exact Location <span className="text-teal-600 text-xs font-normal">(Move the map to place the pin on your store's entrance)</span>
                       </p>
                       <LocationPickerMap
@@ -640,7 +640,7 @@ export default function SellerSignUp() {
 
       {/* Footer Text */}
       <p className="mt-6 text-xs text-neutral-500 text-center max-w-md">
-        By continuing, you agree to Dhakad Snazzy's Terms of Service and Privacy Policy
+        By continuing, you agree to Apna Sabji Wala's Terms of Service and Privacy Policy
       </p>
     </div>
   );

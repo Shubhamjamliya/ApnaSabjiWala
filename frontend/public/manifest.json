@@ -1,6 +1,6 @@
 {
-  "short_name": "Dhakad Snazzy",
-  "name": "Dhakad Snazzy - Fast Grocery Delivery",
+  "short_name": "Apna Sabji Wala",
+  "name": "Apna Sabji Wala - Fast Grocery Delivery",
   "icons": [
     {
       "src": "favicon.ico",
@@ -24,4 +24,3 @@
   "background_color": "#ffffff",
   "orientation": "portrait"
 }
-

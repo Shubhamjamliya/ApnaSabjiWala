@@ -56,7 +56,7 @@ const faqData: FAQItem[] = [
   {
     id: '10',
     question: 'What if I receive a damaged or wrong item?',
-    answer: 'If you receive a damaged or incorrect item, please contact our customer support immediately. We offer 48-hour replacement guarantee. You can report the issue through the order details page or contact us at help@dhakadsnazzy.com.',
+    answer: 'If you receive a damaged or incorrect item, please contact our customer support immediately. We offer 48-hour replacement guarantee. You can report the issue through the order details page or contact us at help@apnasabjiwala.com.',
   },
   {
     id: '11',
@@ -155,9 +155,8 @@ export default function FAQ() {
                       height="20"
                       viewBox="0 0 24 24"
                       fill="none"
-                      className={`flex-shrink-0 text-neutral-500 transition-transform ${
-                        isOpen ? 'rotate-180' : ''
-                      }`}
+                      className={`flex-shrink-0 text-neutral-500 transition-transform ${isOpen ? 'rotate-180' : ''
+                        }`}
                     >
                       <path
                         d="M6 9l6 6 6-6"
@@ -212,7 +211,7 @@ export default function FAQ() {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <a
-                  href="mailto:help@dhakadsnazzy.com"
+                  href="mailto:help@apnasabjiwala.com"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm"
                 >
                   <svg

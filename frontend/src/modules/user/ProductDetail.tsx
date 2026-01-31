@@ -180,26 +180,26 @@ export default function ProductDetail() {
   // Get quantity in cart - check by product ID and variant if available
   const cartItem = product
     ? cart.items.find(
-        (item) => {
-          if (!item?.product) return false;
-          const itemProductId = item.product.id || item.product._id;
-          const productId = product.id || product._id;
+      (item) => {
+        if (!item?.product) return false;
+        const itemProductId = item.product.id || item.product._id;
+        const productId = product.id || product._id;
 
-          if (itemProductId !== productId) return false;
+        if (itemProductId !== productId) return false;
 
-          // If variant exists, match by variant
-          if (selectedVariant) {
-            const itemVariantId = (item.product as any).variantId || (item.product as any).selectedVariant?._id;
-            const itemVariantTitle = (item.product as any).variantTitle || (item.product as any).pack;
-            return itemVariantId === selectedVariant._id || itemVariantTitle === variantTitle;
-          }
-
-          // If no variant, check that item also has no variant
+        // If variant exists, match by variant
+        if (selectedVariant) {
           const itemVariantId = (item.product as any).variantId || (item.product as any).selectedVariant?._id;
-          const itemVariantTitle = (item.product as any).variantTitle;
-          return !itemVariantId && !itemVariantTitle;
+          const itemVariantTitle = (item.product as any).variantTitle || (item.product as any).pack;
+          return itemVariantId === selectedVariant._id || itemVariantTitle === variantTitle;
         }
-      )
+
+        // If no variant, check that item also has no variant
+        const itemVariantId = (item.product as any).variantId || (item.product as any).selectedVariant?._id;
+        const itemVariantTitle = (item.product as any).variantTitle;
+        return !itemVariantId && !itemVariantTitle;
+      }
+    )
     : null;
   const inCartQty = cartItem?.quantity || 0;
 
@@ -390,20 +390,20 @@ export default function ProductDetail() {
 
             {/* Desktop: Single image display */}
             <div className="hidden md:flex w-full h-full items-center justify-center">
-            {currentImage ? (
-              <img
-                src={currentImage}
-                alt={product.name}
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-neutral-400 text-6xl">
-                {(product.name || product.productName || "?")
-                  .charAt(0)
-                  .toUpperCase()}
-              </div>
-            )}
+              {currentImage ? (
+                <img
+                  src={currentImage}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-neutral-400 text-6xl">
+                  {(product.name || product.productName || "?")
+                    .charAt(0)
+                    .toUpperCase()}
+                </div>
+              )}
             </div>
 
             {/* Image Gallery Navigation - Only show if multiple images */}
@@ -473,11 +473,10 @@ export default function ProductDetail() {
                         setSelectedImageIndex(index);
                         setTimeout(() => setIsTransitioning(false), 300);
                       }}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        index === selectedImageIndex
+                      className={`w-2 h-2 rounded-full transition-all ${index === selectedImageIndex
                           ? "bg-white w-6"
                           : "bg-white/50 hover:bg-white/75"
-                      }`}
+                        }`}
                       aria-label={`Go to image ${index + 1}`}
                     />
                   ))}
@@ -492,7 +491,7 @@ export default function ProductDetail() {
               {/* Mobile swipe hint */}
               <div className="md:hidden flex items-center justify-center gap-1 mb-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-neutral-500">
-                  <path d="M7 12l5-5M17 12l-5-5M12 7l-5 5M12 17l5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M7 12l5-5M17 12l-5-5M12 7l-5 5M12 17l5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <span className="text-xs text-neutral-500">Swipe to view more</span>
               </div>
@@ -505,11 +504,10 @@ export default function ProductDetail() {
                       setSelectedImageIndex(index);
                       setTimeout(() => setIsTransitioning(false), 300);
                     }}
-                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                      index === selectedImageIndex
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${index === selectedImageIndex
                         ? "border-green-600 ring-2 ring-green-200"
                         : "border-neutral-200 hover:border-neutral-300"
-                    }`}>
+                      }`}>
                     <img
                       src={image}
                       alt={`${product.name} - Image ${index + 1}`}
@@ -574,13 +572,12 @@ export default function ProductDetail() {
                       key={index}
                       onClick={() => setSelectedVariantIndex(index)}
                       disabled={isOutOfStock}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border-2 ${
-                        isSelected
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border-2 ${isSelected
                           ? "border-green-600 bg-green-50 text-green-700"
                           : isOutOfStock
-                          ? "border-neutral-200 bg-neutral-100 text-neutral-400 cursor-not-allowed"
-                          : "border-neutral-300 bg-white text-neutral-700 hover:border-green-500 hover:bg-green-50"
-                      }`}>
+                            ? "border-neutral-200 bg-neutral-100 text-neutral-400 cursor-not-allowed"
+                            : "border-neutral-300 bg-white text-neutral-700 hover:border-green-500 hover:bg-green-50"
+                        }`}>
                       {variantTitle}
                       {isOutOfStock && (
                         <span className="ml-1 text-xs">(Out of Stock)</span>
@@ -639,9 +636,8 @@ export default function ProductDetail() {
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              className={`transition-transform ${
-                isProductDetailsExpanded ? "rotate-180" : ""
-              }`}>
+              className={`transition-transform ${isProductDetailsExpanded ? "rotate-180" : ""
+                }`}>
               <path
                 d="M6 9l6 6 6-6"
                 stroke="currentColor"
@@ -752,9 +748,8 @@ export default function ProductDetail() {
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
-                  className={`transition-transform ${
-                    isHighlightsExpanded ? "rotate-180" : ""
-                  }`}>
+                  className={`transition-transform ${isHighlightsExpanded ? "rotate-180" : ""
+                    }`}>
                   <path
                     d="M6 9l6 6 6-6"
                     stroke="currentColor"
@@ -828,9 +823,8 @@ export default function ProductDetail() {
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
-                  className={`transition-transform ${
-                    isInfoExpanded ? "rotate-180" : ""
-                  }`}>
+                  className={`transition-transform ${isInfoExpanded ? "rotate-180" : ""
+                    }`}>
                   <path
                     d="M6 9l6 6 6-6"
                     stroke="currentColor"
@@ -896,7 +890,7 @@ export default function ProductDetail() {
                         Customer Care Details:
                       </span>
                       <span className="text-xs text-neutral-600">
-                        Email: help@dhakadsnazzy.com
+                        Email: help@apnasabjiwala.com
                       </span>
                     </div>
                     <div className="flex items-start">
@@ -925,9 +919,8 @@ export default function ProductDetail() {
                       </span>
                       <span className="text-xs text-neutral-600 leading-relaxed flex-1">
                         {product.isReturnable
-                          ? `This product is returnable within ${
-                              product.maxReturnDays || 2
-                            } days.`
+                          ? `This product is returnable within ${product.maxReturnDays || 2
+                          } days.`
                           : "This product is non-returnable."}
                       </span>
                     </div>
@@ -937,7 +930,7 @@ export default function ProductDetail() {
                           Seller:
                         </span>
                         <span className="text-xs text-neutral-600 leading-relaxed flex-1">
-                          Dhakad Snazzy Partner (
+                          Apna Sabji Wala Partner (
                           {product.sellerId.slice(-6).toUpperCase()})
                         </span>
                       </div>
@@ -1054,8 +1047,7 @@ export default function ProductDetail() {
                       <div
                         onClick={() =>
                           navigate(
-                            `/product/${
-                              similarProduct.id || similarProduct._id
+                            `/product/${similarProduct.id || similarProduct._id
                             }`,
                             { state: { fromStore: true } }
                           )
@@ -1273,23 +1265,22 @@ export default function ProductDetail() {
                     size="default"
                     onClick={handleAddToCart}
                     disabled={!isAvailableAtLocation || (!isVariantAvailable && variantStock !== 0)}
-                    className={`px-6 py-2 text-sm font-semibold h-[36px] ${
-                      !isAvailableAtLocation || (!isVariantAvailable && variantStock !== 0)
+                    className={`px-6 py-2 text-sm font-semibold h-[36px] ${!isAvailableAtLocation || (!isVariantAvailable && variantStock !== 0)
                         ? "opacity-50 cursor-not-allowed"
                         : ""
-                    }`}
+                      }`}
                     title={
                       !isAvailableAtLocation
                         ? "Not available at your location"
                         : !isVariantAvailable && variantStock !== 0
-                        ? "This variant is out of stock"
-                        : ""
+                          ? "This variant is out of stock"
+                          : ""
                     }>
                     {!isAvailableAtLocation
                       ? "Unavailable"
                       : !isVariantAvailable && variantStock !== 0
-                      ? "Out of Stock"
-                      : "Add to cart"}
+                        ? "Out of Stock"
+                        : "Add to cart"}
                   </Button>
                 </motion.div>
               ) : (

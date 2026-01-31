@@ -133,7 +133,7 @@ export default function AdminCoupon() {
 
       // Upload coupon image if provided
       if (couponImageFile) {
-        const imageResult = await uploadImage(couponImageFile, "dhakadsnazzy/coupons");
+        const imageResult = await uploadImage(couponImageFile, "apnasabjiwala/coupons");
         imageUrl = imageResult.secureUrl;
       }
 
@@ -765,7 +765,7 @@ export default function AdminCoupon() {
       <footer className="text-center py-4 text-sm text-neutral-600 border-t border-neutral-200 bg-white">
         Copyright Â© 2025. Developed By{" "}
         <a href="#" className="text-blue-600 hover:underline">
-          Dhakad Snazzy - 10 Minute App
+          Apna Sabji Wala - 10 Minute App
         </a>
       </footer>
     </div>
