@@ -27,7 +27,7 @@ export interface HomeSection {
 export interface HomeSectionFormData {
     title: string;
     slug: string;
-    headerCategory?: string;
+    headerCategory?: string | null;
     categories?: string[];
     subCategories?: string[];
     displayType: "subcategories" | "products" | "categories";

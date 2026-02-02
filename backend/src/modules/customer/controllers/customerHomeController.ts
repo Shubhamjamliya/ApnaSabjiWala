@@ -474,8 +474,31 @@ export const getHomeContent = async (req: Request, res: Response) => {
           },
         ];
 
-    // 9. Dynamic Home Sections - Fetch from database
-    const homeSections = await HomeSection.find({ isActive: true })
+    // 9. Dynamic Home Sections - Fetch from database based on Header Category
+    const homeSectionQuery: any = { isActive: true };
+
+    if (headerCategorySlug && headerCategorySlug !== "all") {
+      // Find the header category first
+      const headerCategory = await HeaderCategory.findOne({
+        slug: headerCategorySlug,
+        status: "Published",
+      }).select("_id");
+
+      if (headerCategory) {
+        // Show sections specific to this header category
+        homeSectionQuery.headerCategory = headerCategory._id;
+      } else {
+        // If header category not found, return empty
+        // Use a dummy ID that won't match anything
+        homeSectionQuery.headerCategory = new mongoose.Types.ObjectId();
+      }
+    } else {
+      // If "all" (Home Page), show ALL active sections
+      // We removed the filter { headerCategory: { $in: [null, undefined] } }
+      // This means sections assigned to a specific header category will ALSO appear on the home page
+    }
+
+    const homeSections = await HomeSection.find(homeSectionQuery)
       .populate("categories", "name slug image")
       .populate("subCategories", "name")
       .sort({ order: 1 })

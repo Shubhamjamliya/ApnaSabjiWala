@@ -195,7 +195,8 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
         const formData: HomeSectionFormData = {
             title: title.trim(),
             slug: slug.trim(),
-            headerCategory: sectionHeaderCategory || undefined,
+            // Send null if empty string to allow clearing the field
+            headerCategory: sectionHeaderCategory || null,
             categories: selectedCategories,
             // Only include subcategories if displayType is not "categories"
             subCategories: displayType !== "categories" ? selectedSubCategories : undefined,
@@ -709,7 +710,9 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
                                                 <td className="p-4">{section.order}</td>
                                                 <td className="p-4 font-medium">{section.title}</td>
                                                 <td className="p-4 text-xs text-neutral-500">
-                                                    {typeof section.headerCategory === 'object' ? section.headerCategory?.name : "Global"}
+                                                    {section.headerCategory && typeof section.headerCategory === 'object' && 'name' in section.headerCategory
+                                                        ? (section.headerCategory as any).name
+                                                        : "Global"}
                                                 </td>
                                                 <td className="p-4 capitalize">{section.displayType}</td>
                                                 <td className="p-4">
