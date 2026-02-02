@@ -10,13 +10,14 @@ export interface Theme {
 
 export const themes: Record<string, Theme> = {
   all: {
-    primary: ['rgb(34, 197, 94)', 'rgb(74, 222, 128)', 'rgb(134, 239, 172)', 'rgb(187, 247, 208)'],
-    secondary: ['rgb(187, 247, 208)', 'rgb(134, 239, 172)', 'rgb(74, 222, 128)'],
-    textColor: '#1a1a1a',
-    accentColor: '#000',
-    bannerText: 'HOUSEFULL',
+    // True Mint Green (Emerald) Theme
+    primary: ['rgb(16, 185, 129)', 'rgb(52, 211, 153)', 'rgb(110, 231, 183)', 'rgb(167, 243, 208)'],
+    secondary: ['rgb(236, 253, 245)', 'rgb(209, 250, 229)', 'rgb(167, 243, 208)'],
+    textColor: '#064e3b',
+    accentColor: '#059669',
+    bannerText: 'FRESH',
     saleText: 'SALE',
-    headerTextColor: '#ffffff',
+    headerTextColor: '#065f46',
   },
   wedding: {
     primary: ['rgb(252, 165, 165)', 'rgb(253, 182, 182)', 'rgb(254, 202, 202)', 'rgb(255, 228, 228)'],
@@ -134,6 +135,33 @@ export const themes: Record<string, Theme> = {
     bannerText: 'GOLD',
     saleText: 'SALE',
     headerTextColor: '#713f12',
+  },
+  vegetable_green: {
+    primary: ['rgb(22, 163, 74)', 'rgb(34, 197, 94)', 'rgb(74, 222, 128)', 'rgb(134, 239, 172)'],
+    secondary: ['rgb(220, 252, 231)', 'rgb(187, 247, 208)', 'rgb(134, 239, 172)'],
+    textColor: '#14532d',
+    accentColor: '#166534',
+    bannerText: 'VEGGIES',
+    saleText: 'FRESH',
+    headerTextColor: '#14532d',
+  },
+  fruit_orange: {
+    primary: ['rgb(234, 88, 12)', 'rgb(249, 115, 22)', 'rgb(251, 146, 60)', 'rgb(253, 186, 116)'],
+    secondary: ['rgb(255, 237, 213)', 'rgb(254, 215, 170)', 'rgb(253, 186, 116)'],
+    textColor: '#7c2d12',
+    accentColor: '#9a3412',
+    bannerText: 'FRUITS',
+    saleText: 'JUICY',
+    headerTextColor: '#7c2d12',
+  },
+  light_brown: {
+    primary: ['rgb(210, 180, 140)', 'rgb(222, 184, 135)', 'rgb(245, 222, 179)', 'rgb(250, 235, 215)'],
+    secondary: ['rgb(250, 235, 215)', 'rgb(245, 222, 179)', 'rgb(222, 184, 135)'],
+    textColor: '#8B4513',
+    accentColor: '#A0522D',
+    bannerText: 'EARTHY',
+    saleText: 'SALE',
+    headerTextColor: '#8B4513',
   },
 };
 

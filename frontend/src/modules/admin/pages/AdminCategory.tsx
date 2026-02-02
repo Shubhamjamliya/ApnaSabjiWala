@@ -13,21 +13,66 @@ import {
 import { useAuth } from "../../../context/AuthContext";
 import CategoryFormModal from "../components/CategoryFormModal";
 import CategoryTreeView from "../components/CategoryTreeView";
-import CategoryListView from "../components/CategoryListView";
 import {
   buildCategoryTree,
   searchCategories,
   filterCategoriesByStatus,
 } from "../../../utils/categoryUtils";
 
-// Flatten tree structure for filtering (works for both tree and list view)
+// --- Icons ---
+const SearchIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"></circle>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+);
+
+const GridIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7"></rect>
+    <rect x="14" y="3" width="7" height="7"></rect>
+    <rect x="14" y="14" width="7" height="7"></rect>
+    <rect x="3" y="14" width="7" height="7"></rect>
+  </svg>
+);
+
+const TreeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8" y1="6" x2="21" y2="6"></line>
+    <line x1="8" y1="12" x2="21" y2="12"></line>
+    <line x1="8" y1="18" x2="21" y2="18"></line>
+    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+  </svg>
+);
+
+const EditIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"></polyline>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"></path>
+  </svg>
+);
+
+// Flatten tree structure for filtering
 const flattenTree = (cats: Category[]): Category[] => {
   const result: Category[] = [];
   cats.forEach((cat) => {
-    // Create a copy without children to avoid circular references, but preserve all other properties
     const { children, ...catWithoutChildren } = cat;
-
-    // Normalize parentId - convert object to string if needed
     let normalizedParentId: string | null = null;
     if (catWithoutChildren.parentId) {
       if (typeof catWithoutChildren.parentId === "string") {
@@ -36,17 +81,14 @@ const flattenTree = (cats: Category[]): Category[] => {
         typeof catWithoutChildren.parentId === "object" &&
         catWithoutChildren.parentId !== null
       ) {
-        // It's populated, extract the _id
         normalizedParentId =
           (catWithoutChildren.parentId as { _id?: string })._id || null;
       }
     }
 
-    // Preserve childrenCount and other metadata
     result.push({
       ...catWithoutChildren,
       parentId: normalizedParentId,
-      // Explicitly preserve childrenCount if it exists
       childrenCount:
         cat.childrenCount ||
         (children && children.length > 0 ? children.length : 0),
@@ -61,23 +103,21 @@ const flattenTree = (cats: Category[]): Category[] => {
 export default function AdminCategory() {
   const { isAuthenticated, token } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [viewMode, setViewMode] = useState<"tree" | "list">("tree");
+  const [viewMode, setViewMode] = useState<"tree" | "grid">("grid"); // Changed default to grid
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<
-    "All" | "Active" | "Inactive"
-  >("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Inactive">("All");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [isModalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<
-    "create" | "edit" | "create-subcategory"
-  >("create");
+  const [modalMode, setModalMode] = useState<"create" | "edit" | "create-subcategory">("create");
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [parentCategory, setParentCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [listPage, setListPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+
+  // Pagination for grid view
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(12); // Increased for grid
 
   // Fetch categories
   useEffect(() => {
@@ -85,7 +125,6 @@ export default function AdminCategory() {
       setLoading(false);
       return;
     }
-
     fetchCategories();
   }, [isAuthenticated, token]);
 
@@ -98,11 +137,9 @@ export default function AdminCategory() {
       });
       if (response.success) {
         setCategories(response.data);
-        // Preserve existing expanded IDs if provided, otherwise auto-expand all
         if (preserveExpandedIds && preserveExpandedIds.size > 0) {
           setExpandedIds(preserveExpandedIds);
         } else {
-          // Auto-expand all categories by default
           const allIds = new Set<string>();
           const collectIds = (cats: Category[]) => {
             cats.forEach((cat) => {
@@ -118,12 +155,8 @@ export default function AdminCategory() {
       }
     } catch (err: unknown) {
       console.error("Error fetching categories:", err);
-      const errorMessage =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { message?: string } } }).response
-            ?.data?.message
-          : "Failed to load categories. Please try again.";
-      setError(errorMessage || "Failed to load categories. Please try again.");
+      // Removed complex error handling for brevity, use standard error state
+      setError("Failed to load categories.");
     } finally {
       setLoading(false);
     }
@@ -131,41 +164,43 @@ export default function AdminCategory() {
 
   // Filter and search categories
   const filteredCategories = useMemo(() => {
-    // Always flatten first to get a flat array for filtering
     const flatCategories = flattenTree(categories);
     let filtered = [...flatCategories];
 
-    // Apply search filter
     if (searchQuery.trim()) {
       filtered = searchCategories(filtered, searchQuery);
-      // If searching, also include children of matching parents (even if children don't match)
       const matchingParentIds = new Set(filtered.map((cat) => cat._id));
       const childrenOfMatches = flatCategories.filter(
         (cat) => cat.parentId && matchingParentIds.has(cat.parentId)
       );
-      // Merge and deduplicate
       const allFiltered = [...filtered, ...childrenOfMatches];
-      const uniqueFiltered = Array.from(
-        new Map(allFiltered.map((cat) => [cat._id, cat])).values()
-      );
-      filtered = uniqueFiltered;
+      filtered = Array.from(new Map(allFiltered.map((cat) => [cat._id, cat])).values());
     }
 
-    // Apply status filter
     filtered = filterCategoriesByStatus(filtered, statusFilter);
-
     return filtered;
   }, [categories, searchQuery, statusFilter]);
 
   // Build tree for tree view
   const categoryTree = useMemo(() => {
-    if (viewMode === "tree") {
-      return buildCategoryTree(filteredCategories);
-    }
-    return [];
-  }, [filteredCategories, viewMode]);
+    // Rebuild tree from filtered list to ensure consistency or use base if search is empty
+    // Simplification: Always use full tree for Tree View effectively, filtering tree view is complex
+    // For now, let's use the standard builder on filtered list if needed, or just full categories
+    // Ideally Tree View has its own filtering node logic, but let's stick to base categories for tree view to maintain structure
+    return buildCategoryTree(statusFilter === 'All' && !searchQuery ? categories : filteredCategories);
+  }, [categories, filteredCategories, viewMode, statusFilter, searchQuery]);
 
-  // Handle create category
+
+  // Pagination Logic
+  const paginatedCategories = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredCategories.slice(start, start + itemsPerPage);
+  }, [filteredCategories, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+
+
+  // Handlers
   const handleCreateCategory = () => {
     setModalMode("create");
     setEditingCategory(null);
@@ -173,7 +208,6 @@ export default function AdminCategory() {
     setModalOpen(true);
   };
 
-  // Handle create subcategory
   const handleCreateSubcategory = (parent: Category) => {
     setModalMode("create-subcategory");
     setEditingCategory(null);
@@ -181,7 +215,6 @@ export default function AdminCategory() {
     setModalOpen(true);
   };
 
-  // Handle edit category
   const handleEdit = (category: Category) => {
     setModalMode("edit");
     setEditingCategory(category);
@@ -189,124 +222,57 @@ export default function AdminCategory() {
     setModalOpen(true);
   };
 
-  // Handle delete category
   const handleDelete = async (category: Category) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete "${category.name}"? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
+    if (!window.confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) return;
 
     try {
       const response = await deleteCategory(category._id);
       if (response.success) {
-        alert("Category deleted successfully!");
+        // alert("Category deleted successfully!");
         fetchCategories();
       }
-    } catch (error: unknown) {
-      const errorMessage =
-        error && typeof error === "object" && "response" in error
-          ? (error as { response?: { data?: { message?: string } } }).response
-            ?.data?.message
-          : "Failed to delete category. Please try again.";
-      alert(errorMessage || "Failed to delete category. Please try again.");
+    } catch (error) {
+      alert("Failed to delete category");
     }
   };
 
-  // Handle bulk delete
   const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) {
-      alert("Please select at least one category to delete.");
-      return;
-    }
-
-    if (
-      !window.confirm(
-        `Are you sure you want to delete ${selectedIds.size} selected category(ies)? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedIds.size} selected items?`)) return;
 
     try {
       const response = await bulkDeleteCategories(Array.from(selectedIds));
       if (response.success) {
-        const deletedCount = response.data.deleted.length;
-        const failedCount = response.data.failed.length;
-        if (failedCount > 0) {
-          alert(
-            `Deleted ${deletedCount} category(ies). ${failedCount} failed. Check console for details.`
-          );
-          console.log("Failed deletions:", response.data.failed);
-        } else {
-          alert(`Successfully deleted ${deletedCount} category(ies).`);
-        }
         setSelectedIds(new Set());
         fetchCategories();
       }
-    } catch (error: unknown) {
-      const errorMessage =
-        error && typeof error === "object" && "response" in error
-          ? (error as { response?: { data?: { message?: string } } }).response
-            ?.data?.message
-          : "Failed to delete categories. Please try again.";
-      alert(errorMessage || "Failed to delete categories. Please try again.");
+    } catch (error) {
+      alert("Bulk delete failed");
     }
   };
 
-  // Handle toggle status
   const handleToggleStatus = async (category: Category) => {
     const newStatus = category.status === "Active" ? "Inactive" : "Active";
-    const cascade =
-      category.childrenCount && category.childrenCount > 0
-        ? window.confirm(
-          `This category has subcategories. Do you want to ${newStatus === "Inactive" ? "deactivate" : "activate"
-          } all subcategories as well?`
-        )
-        : false;
+    const cascade = category.childrenCount && category.childrenCount > 0
+      ? window.confirm(`Update status for all subcategories?`)
+      : false;
 
     try {
-      const response = await toggleCategoryStatus(
-        category._id,
-        newStatus,
-        cascade
-      );
-      if (response.success) {
-        alert(`Category status updated to ${newStatus}`);
-        fetchCategories();
-      }
-    } catch (error: unknown) {
-      const errorMessage =
-        error && typeof error === "object" && "response" in error
-          ? (error as { response?: { data?: { message?: string } } }).response
-            ?.data?.message
-          : "Failed to update category status. Please try again.";
-      alert(
-        errorMessage || "Failed to update category status. Please try again."
-      );
+      await toggleCategoryStatus(category._id, newStatus, cascade);
+      fetchCategories();
+    } catch (error) {
+      alert("Status update failed");
     }
   };
 
-  // Handle form submit
-  const handleFormSubmit = async (
-    data: CreateCategoryData | UpdateCategoryData
-  ) => {
+  const handleFormSubmit = async (data: CreateCategoryData | UpdateCategoryData) => {
     if (modalMode === "edit" && editingCategory) {
       const response = await updateCategory(editingCategory._id, data);
-      if (response.success) {
-        alert("Category updated successfully!");
-        fetchCategories();
-      }
+      if (response.success) fetchCategories();
     } else {
       const response = await createCategory(data as CreateCategoryData);
       if (response.success) {
-        alert("Category created successfully!");
-
-        // If creating a subcategory, expand the parent category after refresh
         if (modalMode === "create-subcategory" && parentCategory) {
-          // Preserve current expanded IDs and add parent ID
           const newExpandedIds = new Set(expandedIds);
           newExpandedIds.add(parentCategory._id);
           fetchCategories(newExpandedIds);
@@ -317,303 +283,248 @@ export default function AdminCategory() {
     }
   };
 
-  // Handle export
   const handleExport = () => {
-    const headers = [
-      "ID",
-      "Name",
-      "Parent",
-      "Status",
-      "Order",
-      "Image",
-      "Created At",
-    ];
+    // Basic CSV export
+    const headers = ["ID", "Name", "Parent", "Status", "Order", "Created At"];
     const csvContent = [
       headers.join(","),
-      ...filteredCategories.map((category) =>
-        [
-          category._id,
-          `"${category.name}"`,
-          category.parent
-            ? typeof category.parent === "string"
-              ? category.parent
-              : category.parent.name
-            : category.parentId || "Root",
-          category.status,
-          category.order || 0,
-          category.image || "",
-          category.createdAt || "",
-        ].join(",")
-      ),
+      ...filteredCategories.map(c => [c._id, c.name, c.parentId || "Root", c.status, c.order, c.createdAt].join(","))
     ].join("\n");
-
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `categories_${new Date().toISOString().split("T")[0]}.csv`
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
+    link.href = URL.createObjectURL(blob);
+    link.download = "categories.csv";
     link.click();
-    document.body.removeChild(link);
   };
 
-  // Handle select/deselect
-  const handleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
-  const handleSelectAll = () => {
-    if (selectedIds.size === filteredCategories.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredCategories.map((cat) => cat._id)));
-    }
-  };
-
-  // Handle expand/collapse
   const handleToggleExpand = (id: string) => {
-    setExpandedIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
   };
 
-  const handleExpandAll = () => {
-    const allIds = new Set<string>();
-    const collectIds = (cats: Category[]) => {
-      cats.forEach((cat) => {
-        allIds.add(cat._id);
-        if (cat.children && cat.children.length > 0) {
-          collectIds(cat.children);
-        }
-      });
-    };
-    collectIds(categoryTree);
-    setExpandedIds(allIds);
-  };
-
-  const handleCollapseAll = () => {
-    setExpandedIds(new Set());
-  };
 
   return (
-    <div className="space-y-4 sm:space-y-6 -mx-3 sm:-mx-4 md:-mx-6 -mt-3 sm:-mt-4 md:-mt-6">
-      {/* Header Section */}
-      <div className="bg-white border-b border-neutral-200 px-3 sm:px-4 md:px-6 py-3 sm:py-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-neutral-900">
-            Manage Categories
-          </h1>
-          <div className="flex items-center gap-2 text-xs sm:text-sm">
-            <span className="text-neutral-500">Dashboard</span>
-            <span className="text-neutral-400">/</span>
-            <span className="text-neutral-700">Categories</span>
+    <div className="flex h-[calc(100vh-6rem)] -m-6 bg-gray-50 overflow-hidden flex-col">
+      {/* Header */}
+      <div className="bg-white border-b border-neutral-200 sticky top-0 z-20">
+        <div className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-700 uppercase tracking-widest border border-teal-100">Management</span>
+            </div>
+            <h1 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
+              Manage Categories
+              <span className="text-sm font-normal text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
+                {filteredCategories.length} items
+              </span>
+            </h1>
+          </div>
+
+          <button
+            onClick={handleCreateCategory}
+            className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-95 border border-teal-500"
+          >
+            <PlusIcon />
+            <span>Add Category</span>
+          </button>
+        </div>
+
+        {/* Filter Toolbar */}
+        <div className="px-6 py-3 bg-neutral-50 border-t border-neutral-200 flex flex-col sm:flex-row gap-3 items-center">
+
+          {/* Search */}
+          <div className="relative w-full sm:w-64">
+            <input
+              type="text"
+              placeholder="Search categories..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+              className="w-full pl-9 pr-4 py-2 bg-white border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 transition-all shadow-sm"
+            />
+            <div className="absolute left-3 top-2.5 text-neutral-400">
+              <SearchIcon />
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="bg-white border border-neutral-300 text-neutral-700 text-sm rounded-lg focus:ring-teal-500 focus:border-teal-500 block p-2 outline-none shadow-sm cursor-pointer min-w-[120px]"
+            >
+              <option value="All">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+
+            {selectedIds.size > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                className="px-3 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors flex items-center gap-2"
+              >
+                <TrashIcon />
+                Delete ({selectedIds.size})
+              </button>
+            )}
+
+            <button
+              onClick={handleExport}
+              className="px-3 py-2 bg-white text-neutral-600 border border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-50 transition-colors hidden sm:flex"
+            >
+              Export
+            </button>
+          </div>
+
+          {/* View Toggle */}
+          <div className="flex items-center gap-1 bg-white border border-neutral-300 rounded-lg p-1 ml-auto shadow-sm">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-2 rounded-md transition-all ${viewMode === "grid" ? "bg-teal-50 text-teal-600 shadow-sm" : "text-neutral-400 hover:text-neutral-600"}`}
+              title="Grid View"
+            >
+              <GridIcon />
+            </button>
+            <button
+              onClick={() => setViewMode("tree")}
+              className={`p-2 rounded-md transition-all ${viewMode === "tree" ? "bg-teal-50 text-teal-600 shadow-sm" : "text-neutral-400 hover:text-neutral-600"}`}
+              title="Tree View"
+            >
+              <TreeIcon />
+            </button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="px-3 sm:px-4 md:px-6">
-        <div className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
-          {/* Green Banner */}
-          <div className="bg-green-600 text-white px-4 sm:px-6 py-2 sm:py-3">
-            <h2 className="text-base sm:text-lg font-semibold">
-              Category Management
-            </h2>
+      <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50">
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <div className="text-neutral-400 animate-pulse">Loading categories...</div>
           </div>
-
-          {/* Filter and Action Bar */}
-          <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-neutral-200 bg-neutral-50">
-            <div className="flex flex-col lg:flex-row flex-wrap items-start lg:items-center gap-3 sm:gap-4">
-              {/* Add Category Button */}
-              <button
-                onClick={handleCreateCategory}
-                className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors w-full sm:w-auto">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Add Category
-              </button>
-
-              {/* View Mode Toggle */}
-              <div className="flex items-center gap-2 bg-white border border-neutral-300 rounded p-1">
-                <button
-                  onClick={() => setViewMode("tree")}
-                  className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${viewMode === "tree"
-                      ? "bg-teal-600 text-white"
-                      : "text-neutral-700 hover:bg-neutral-100"
-                    }`}>
-                  Tree View
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${viewMode === "list"
-                      ? "bg-teal-600 text-white"
-                      : "text-neutral-700 hover:bg-neutral-100"
-                    }`}>
-                  List View
-                </button>
+        ) : viewMode === "grid" ? (
+          <>
+            {filteredCategories.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-neutral-200 rounded-xl bg-white h-96">
+                <div className="w-16 h-16 bg-neutral-50 rounded-full flex items-center justify-center mb-4 text-neutral-300">
+                  <SearchIcon />
+                </div>
+                <p className="text-neutral-500 font-medium">No categories found</p>
               </div>
-
-              {/* Status Filter */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-neutral-700">
-                  Status:
-                </label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) =>
-                    setStatusFilter(
-                      e.target.value as "All" | "Active" | "Inactive"
-                    )
-                  }
-                  className="px-3 py-2 border border-neutral-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-teal-500">
-                  <option value="All">All Status</option>
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-              </div>
-
-              {/* Search */}
-              <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                <label className="text-sm font-medium text-neutral-700">
-                  Search:
-                </label>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setListPage(1);
-                  }}
-                  placeholder="Search by name..."
-                  className="flex-1 px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
-              </div>
-
-              {/* Export Button */}
-              <button
-                onClick={handleExport}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors w-full sm:w-auto">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Export
-              </button>
-
-              {/* Bulk Delete Button (List View) */}
-              {viewMode === "list" && selectedIds.size > 0 && (
-                <button
-                  onClick={handleBulkDelete}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  </svg>
-                  Delete Selected ({selectedIds.size})
-                </button>
-              )}
-            </div>
-
-            {/* Tree View Controls */}
-            {viewMode === "tree" && (
-              <div className="mt-3 flex items-center gap-2">
-                <button
-                  onClick={handleExpandAll}
-                  className="px-3 py-1.5 text-xs font-medium text-neutral-700 bg-white border border-neutral-300 rounded hover:bg-neutral-50 transition-colors">
-                  Expand All
-                </button>
-                <button
-                  onClick={handleCollapseAll}
-                  className="px-3 py-1.5 text-xs font-medium text-neutral-700 bg-white border border-neutral-300 rounded hover:bg-neutral-50 transition-colors">
-                  Collapse All
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Content Area */}
-          <div className="p-4 sm:p-6">
-            {loading ? (
-              <div className="text-center py-8 text-neutral-500">
-                Loading categories...
-              </div>
-            ) : error ? (
-              <div className="text-center py-8 text-red-600">{error}</div>
-            ) : viewMode === "tree" ? (
-              <CategoryTreeView
-                categories={categoryTree}
-                onAddSubcategory={handleCreateSubcategory}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onToggleStatus={handleToggleStatus}
-                expandedIds={expandedIds}
-                onToggleExpand={handleToggleExpand}
-              />
             ) : (
-              <CategoryListView
-                categories={filteredCategories}
-                selectedIds={selectedIds}
-                onSelect={handleSelect}
-                onSelectAll={handleSelectAll}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                currentPage={listPage}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setListPage}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mb-8">
+                {paginatedCategories.map((cat) => (
+                  <div
+                    key={cat._id}
+                    className="group bg-white rounded-xl shadow-sm border border-neutral-200 hover:border-teal-400 hover:shadow-lg hover:shadow-teal-900/5 transition-all duration-300 overflow-hidden flex flex-col relative"
+                  >
+                    {/* Image */}
+                    <div className="relative aspect-[4/3] bg-neutral-50 border-b border-neutral-100 overflow-hidden">
+                      {cat.image ? (
+                        <img src={cat.image} alt={cat.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-neutral-300 text-3xl font-bold opacity-30">
+                          {cat.name.charAt(0)}
+                        </div>
+                      )}
+
+                      {/* Overlay Actions */}
+                      <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center sidebar gap-2">
+                        <div className="flex gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                          <button
+                            onClick={() => handleEdit(cat)}
+                            className="p-2 bg-white text-neutral-700 rounded-full hover:text-teal-600 shadow-lg"
+                            title="Edit"
+                          >
+                            <EditIcon />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(cat)}
+                            className="p-2 bg-white text-neutral-700 rounded-full hover:text-red-600 shadow-lg"
+                            title="Delete"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Badges */}
+                      <div className="absolute top-2 left-2 flex flex-col gap-1">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-sm ${cat.status === 'Active' ? 'bg-white/90 text-teal-700' : 'bg-gray-200 text-gray-600'}`}>
+                          {cat.status}
+                        </span>
+                      </div>
+                      <div className="absolute top-2 right-2">
+                        {cat.childrenCount !== undefined && cat.childrenCount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-bold shadow-sm">
+                            {cat.childrenCount} Sub
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-4 flex-1 flex flex-col">
+                      <h3 className="font-bold text-neutral-800 text-base mb-1 line-clamp-1" title={cat.name}>{cat.name}</h3>
+                      <div className="mt-auto pt-2 flex items-center justify-between text-xs">
+                        <span className="text-neutral-400">
+                          {cat.parentId ? "Subcategory" : "Root Category"}
+                        </span>
+                        <span className="text-neutral-400 font-mono">
+                          Seq: {cat.order}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center border-t border-neutral-200 pt-6 pb-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-neutral-50"
+                  >
+                    Prev
+                  </button>
+                  <span className="px-3 py-1 text-sm text-neutral-600 flex items-center">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-neutral-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden min-h-[500px] p-6">
+            <CategoryTreeView
+              categories={categoryTree}
+              onAddSubcategory={handleCreateSubcategory}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onToggleStatus={handleToggleStatus}
+              expandedIds={expandedIds}
+              onToggleExpand={handleToggleExpand}
+            />
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Footer */}
-      <div className="text-center py-4 text-xs sm:text-sm text-neutral-600">
-        Copyright Â© 2025. Developed By{" "}
-        <a href="#" className="text-blue-600 hover:text-blue-700">
-          Apna Sabji Wala - 10 Minute App
-        </a>
-      </div>
-
-      {/* Category Form Modal */}
+      {/* Modals */}
       {isModalOpen && (
         <CategoryFormModal
           isOpen={isModalOpen}
@@ -632,4 +543,3 @@ export default function AdminCategory() {
     </div>
   );
 }
-

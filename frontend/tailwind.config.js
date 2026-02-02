@@ -26,8 +26,8 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#FFC94A',
-          dark: '#FFB020',
+          DEFAULT: '#34d399', // Emerald-400 (True Mint)
+          dark: '#10b981',    // Emerald-500
         },
         cream: '#FFF7E0',
       },

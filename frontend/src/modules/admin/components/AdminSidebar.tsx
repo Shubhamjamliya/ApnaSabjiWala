@@ -29,62 +29,11 @@ interface AdminSidebarProps {
 
 const menuSections: MenuSection[] = [
   {
-    title: "Product Section",
+    title: "Service Catalog",
     items: [
       {
-        label: "Category",
-        path: "/admin/category",
-        hasSubmenu: true,
-        submenuItems: [
-          {
-            label: "Category",
-            path: "/admin/category",
-            icon: (
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round">
-                <rect
-                  x="3"
-                  y="3"
-                  width="18"
-                  height="18"
-                  rx="2"
-                  strokeDasharray="4 2"></rect>
-                <path d="M8 6H21M8 12H21M8 18H21M3 6H3.01M3 12H3.01M3 18H3.01"></path>
-              </svg>
-            ),
-          },
-          {
-            label: "Header Category",
-            path: "/admin/category/header",
-            icon: (
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round">
-                <rect
-                  x="3"
-                  y="3"
-                  width="18"
-                  height="18"
-                  rx="2"
-                  strokeDasharray="4 2"></rect>
-                <path d="M8 6H21M8 12H21M8 18H21M3 6H3.01M3 12H3.01M3 18H3.01"></path>
-              </svg>
-            ),
-          },
-        ],
+        label: "Catalog Manager",
+        path: "/admin/catalog-manager",
         icon: (
           <svg
             width="18"
@@ -95,14 +44,102 @@ const menuSections: MenuSection[] = [
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round">
-            <rect
-              x="3"
-              y="3"
-              width="18"
-              height="18"
-              rx="2"
-              strokeDasharray="4 2"></rect>
-            <path d="M8 6H21M8 12H21M8 18H21M3 6H3.01M3 12H3.01M3 18H3.01"></path>
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        ),
+      },
+      {
+        label: "Sections",
+        path: "/admin/catalog/sections",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+        ),
+      },
+      {
+        label: "Categories",
+        path: "/admin/category",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        ),
+      },
+      {
+        label: "Subcategories",
+        path: "/admin/subcategory",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            <line x1="12" y1="11" x2="12" y2="17"></line>
+            <line x1="9" y1="14" x2="15" y2="14"></line>
+          </svg>
+        ),
+      },
+      {
+        label: "Products",
+        path: "/admin/product/list",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+        ),
+      },
+      {
+        label: "Taxes",
+        path: "/admin/product/taxes",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
           </svg>
         ),
       },
@@ -119,14 +156,19 @@ const menuSections: MenuSection[] = [
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round">
-            <path d="M8 6H21M8 12H21M8 18H21M3 6H3.01M3 12H3.01M3 18H3.01"></path>
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"></path>
           </svg>
         ),
       },
+    ],
+  },
+  {
+    title: "Home Catalog",
+    items: [
       {
-        label: "Product",
-        path: "/admin/product",
-        hasSubmenu: true,
+        label: "Header Category",
+        path: "/admin/category/header",
         icon: (
           <svg
             width="18"
@@ -137,55 +179,127 @@ const menuSections: MenuSection[] = [
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round">
-            <path d="M20 7H4C2.89543 7 2 7.89543 2 9V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V9C22 7.89543 21.1046 7 20 7Z"></path>
-            <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21"></path>
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
           </svg>
         ),
-        submenuItems: [
-          {
-            label: "Product List",
-            path: "/admin/product/list",
-            icon: (
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round">
-                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"></path>
-                <path d="M14 2V8H20"></path>
-                <path d="M9 12L11 14L15 10"></path>
-                <path d="M9 16L11 18L15 14"></path>
-              </svg>
-            ),
-          },
-          {
-            label: "Taxes",
-            path: "/admin/product/taxes",
-            icon: (
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round">
-                <ellipse cx="12" cy="18" rx="4" ry="2"></ellipse>
-                <ellipse cx="12" cy="14" rx="3.5" ry="1.8"></ellipse>
-                <ellipse cx="12" cy="10" rx="3" ry="1.5"></ellipse>
-                <circle cx="9" cy="9" r="1" fill="currentColor"></circle>
-                <line x1="7" y1="7" x2="11" y2="11" strokeWidth="2"></line>
-                <circle cx="15" cy="11" r="1" fill="currentColor"></circle>
-              </svg>
-            ),
-          },
-        ],
       },
+      {
+        label: "Promo Strip",
+        path: "/admin/promo-strip",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <path d="M3 9H21M9 3V21"></path>
+          </svg>
+        ),
+      },
+      {
+        label: "Lowest Prices",
+        path: "/admin/lowest-prices",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z"></path>
+            <path d="M2 17L12 22L22 17"></path>
+            <path d="M2 12L12 17L22 12"></path>
+          </svg>
+        ),
+      },
+      {
+        label: "Bestseller Cards",
+        path: "/admin/bestseller-cards",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
+          </svg>
+        ),
+      },
+      {
+        label: "Home Sections",
+        path: "/admin/home-section",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"></path>
+            <path d="M9 22V12H15V22"></path>
+            <path d="M9 12H15"></path>
+          </svg>
+        ),
+      },
+      {
+        label: "Shop by Store",
+        path: "/admin/shop-by-store",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"></path>
+            <path d="M9 22V12H15V22"></path>
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <path d="M8 7H16M8 11H16M8 15H12"></path>
+          </svg>
+        ),
+      },
+      {
+        label: "Coupon",
+        path: "/admin/coupon",
+        icon: (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round">
+            <path d="M21 5H3C1.89543 5 1 5.89543 1 7V11C2.10457 11 3 11.8954 3 13C3 14.1046 2.10457 15 1 15V19C1 20.1046 1.89543 21 3 21H21C22.1046 21 23 20.1046 23 19V15C21.8954 15 21 14.1046 21 13C21 11.8954 21.8954 11 21 11V7C23 5.89543 22.1046 5 21 5Z"></path>
+            <line x1="10" y1="5" x2="10" y2="21"></line>
+          </svg>
+        ),
+      },
+    ],
+  },
+  {
+    title: "Seller Management",
+
+    items: [
       {
         label: "Manage Seller",
         path: "/admin/manage-seller",
@@ -257,6 +371,7 @@ const menuSections: MenuSection[] = [
       },
     ],
   },
+
   {
     title: "Delivery Section",
     items: [
@@ -301,25 +416,7 @@ const menuSections: MenuSection[] = [
           },
         ],
       },
-      {
-        label: "Coupon",
-        path: "/admin/coupon",
-        icon: (
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M12 6V12M12 18V12"></path>
-            <path d="M8 12H16"></path>
-          </svg>
-        ),
-      },
+
       {
         label: "Delivery Boy",
         path: "/admin/delivery-boy",
@@ -710,104 +807,7 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
-    title: "Promotion",
-    items: [
-      {
-        label: "Home Section",
-        path: "/admin/home-section",
-        icon: (
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round">
-            <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"></path>
-            <path d="M9 22V12H15V22"></path>
-            <path d="M9 12H15"></path>
-          </svg>
-        ),
-      },
-      {
-        label: "Bestseller Cards",
-        path: "/admin/bestseller-cards",
-        icon: (
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round">
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
-          </svg>
-        ),
-      },
-      {
-        label: "Promo Strip",
-        path: "/admin/promo-strip",
-        icon: (
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-            <path d="M3 9H21M9 3V21"></path>
-          </svg>
-        ),
-      },
-      {
-        label: "Lowest Prices",
-        path: "/admin/lowest-prices",
-        icon: (
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z"></path>
-            <path d="M2 17L12 22L22 17"></path>
-            <path d="M2 12L12 17L22 12"></path>
-          </svg>
-        ),
-      },
-      {
-        label: "Shop by Store",
-        path: "/admin/shop-by-store",
-        icon: (
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round">
-            <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"></path>
-            <path d="M9 22V12H15V22"></path>
-            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-            <path d="M8 7H16M8 11H16M8 15H12"></path>
-          </svg>
-        ),
-      },
-    ],
-  },
-  {
+
     title: "Setting",
     items: [
       {

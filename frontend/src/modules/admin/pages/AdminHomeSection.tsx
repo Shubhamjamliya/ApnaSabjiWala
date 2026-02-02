@@ -18,11 +18,16 @@ const DISPLAY_TYPE_OPTIONS = [
 
 const COLUMNS_OPTIONS = [2, 3, 4, 6, 8];
 
-export default function AdminHomeSection() {
+interface AdminHomeSectionProps {
+    readOnly?: boolean;
+}
+
+export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionProps) {
     // Form state
     const [title, setTitle] = useState("");
     const [slug, setSlug] = useState("");
-    const [selectedHeaderCategory, setSelectedHeaderCategory] = useState<string>("");
+    const [sectionHeaderCategory, setSectionHeaderCategory] = useState<string>(""); // Parent Header Category
+    const [selectedHeaderCategory, setSelectedHeaderCategory] = useState<string>(""); // For filtering categories list
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [selectedSubCategories, setSelectedSubCategories] = useState<string[]>([]);
     const [displayType, setDisplayType] = useState<"subcategories" | "products" | "categories">("subcategories");
@@ -185,18 +190,15 @@ export default function AdminHomeSection() {
                 setError("Please select a header category");
                 return;
             }
-            if (selectedCategories.length === 0) {
-                setError("Please select at least one category");
-                return;
-            }
         }
 
         const formData: HomeSectionFormData = {
             title: title.trim(),
             slug: slug.trim(),
-            categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+            headerCategory: sectionHeaderCategory || undefined,
+            categories: selectedCategories,
             // Only include subcategories if displayType is not "categories"
-            subCategories: displayType !== "categories" && selectedSubCategories.length > 0 ? selectedSubCategories : undefined,
+            subCategories: displayType !== "categories" ? selectedSubCategories : undefined,
             displayType,
             columns,
             limit,
@@ -232,6 +234,15 @@ export default function AdminHomeSection() {
         setTitle(section.title);
         setSlug(section.slug);
         setDisplayType(section.displayType);
+
+        // Handle Header Category (Parent)
+        let headerId = "";
+        if (typeof section.headerCategory === 'string') {
+            headerId = section.headerCategory;
+        } else if (section.headerCategory && typeof section.headerCategory === 'object') {
+            headerId = section.headerCategory._id;
+        }
+        setSectionHeaderCategory(headerId);
 
         // Try to determine header category from selected categories (only if displayType is "categories")
         if (section.displayType === "categories") {
@@ -291,6 +302,7 @@ export default function AdminHomeSection() {
     const resetForm = () => {
         setTitle("");
         setSlug("");
+        setSectionHeaderCategory("");
         setSelectedHeaderCategory("");
         setSelectedCategories([]);
         setSelectedSubCategories([]);
@@ -313,19 +325,19 @@ export default function AdminHomeSection() {
             <div className="p-6 pb-0">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-semibold text-neutral-800">
-                        Home Sections
+                        {readOnly ? "View Home Sections" : "Home Sections"}
                     </h1>
                     <div className="text-sm text-blue-500">
                         <span className="text-blue-500 hover:underline cursor-pointer">
                             Home
                         </span>{" "}
-                        <span className="text-neutral-400">/</span> Home Sections
+                        <span className="text-neutral-400">/</span> {readOnly ? "View Home Sections" : "Home Sections"}
                     </div>
                 </div>
             </div>
 
             {/* Success/Error Messages */}
-            {(success || error) && (
+            {!readOnly && (success || error) && (
                 <div className="px-6">
                     {success && (
                         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
@@ -342,87 +354,57 @@ export default function AdminHomeSection() {
 
             {/* Page Content */}
             <div className="flex-1 px-6 pb-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                <div className={`grid grid-cols-1 ${readOnly ? '' : 'lg:grid-cols-3'} gap-6 h-full`}>
                     {/* Left Sidebar: Add/Edit Form */}
-                    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6 flex flex-col">
-                        <h2 className="text-lg font-semibold text-neutral-800 mb-4">
-                            {editingId ? "Edit Section" : "Add Section"}
-                        </h2>
+                    {!readOnly && (
+                        <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6 flex flex-col">
+                            <h2 className="text-lg font-semibold text-neutral-800 mb-4">
+                                {editingId ? "Edit Section" : "Add Section"}
+                            </h2>
 
-                        <div className="space-y-4 flex-1 overflow-y-auto">
-                            {/* Title */}
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                    Section Title <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    placeholder="e.g., Grocery & Kitchen"
-                                    className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                                />
-                            </div>
-
-                            {/* Slug */}
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                    Slug <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={slug}
-                                    onChange={(e) => setSlug(e.target.value)}
-                                    placeholder="grocery-kitchen"
-                                    className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                                />
-                                <p className="text-xs text-neutral-500 mt-1">
-                                    URL-friendly identifier (lowercase, hyphens only)
-                                </p>
-                            </div>
-
-                            {/* Display Type */}
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                    Display Type <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={displayType}
-                                    onChange={(e) => {
-                                        const newDisplayType = e.target.value as "subcategories" | "products" | "categories";
-                                        setDisplayType(newDisplayType);
-                                        // Clear selections when switching display types
-                                        if (newDisplayType === "categories") {
-                                            setSelectedSubCategories([]);
-                                        } else {
-                                            setSelectedHeaderCategory("");
-                                        }
-                                    }}
-                                    className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                                >
-                                    {DISPLAY_TYPE_OPTIONS.map((option) => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Header Category - Only show when displayType is "categories" */}
-                            {displayType === "categories" && (
+                            <div className="space-y-4 flex-1 overflow-y-auto">
+                                {/* Title */}
                                 <div>
                                     <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                        Header Category <span className="text-red-500">*</span>
+                                        Section Title <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                        placeholder="e.g., Grocery & Kitchen"
+                                        className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                                    />
+                                </div>
+
+                                {/* Slug */}
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                        Slug <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={slug}
+                                        onChange={(e) => setSlug(e.target.value)}
+                                        placeholder="grocery-kitchen"
+                                        className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                                    />
+                                    <p className="text-xs text-neutral-500 mt-1">
+                                        URL-friendly identifier (lowercase, hyphens only)
+                                    </p>
+                                </div>
+
+                                {/* Parent Header Category */}
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                        Parent Header Category
                                     </label>
                                     <select
-                                        value={selectedHeaderCategory}
-                                        onChange={(e) => {
-                                            setSelectedHeaderCategory(e.target.value);
-                                            setSelectedCategories([]); // Clear selected categories when header category changes
-                                        }}
+                                        value={sectionHeaderCategory}
+                                        onChange={(e) => setSectionHeaderCategory(e.target.value)}
                                         className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
                                     >
-                                        <option value="">Select a header category</option>
+                                        <option value="">None (Global)</option>
                                         {headerCategories
                                             .filter((hc) => hc.status === "Published")
                                             .map((hc) => (
@@ -432,181 +414,237 @@ export default function AdminHomeSection() {
                                             ))}
                                     </select>
                                     <p className="text-xs text-neutral-500 mt-1">
-                                        Select a header category to filter categories
+                                        Assign this section to a specific header tab
                                     </p>
                                 </div>
-                            )}
 
-                            {/* Categories - Checkbox List */}
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                    Categories
-                                    {displayType === "categories" && (
-                                        <span className="text-red-500 ml-1">*</span>
-                                    )}
-                                </label>
-                                <div className={`border border-neutral-300 rounded max-h-40 overflow-y-auto p-2 ${displayType === "categories" && !selectedHeaderCategory ? 'bg-gray-100' : 'bg-white'
-                                    }`}>
-                                    {displayType === "categories" && !selectedHeaderCategory ? (
-                                        <p className="text-sm text-neutral-400 p-2">Please select a header category first</p>
-                                    ) : filteredCategories.length === 0 ? (
-                                        <p className="text-sm text-neutral-400 p-2">
-                                            {displayType === "categories"
-                                                ? "No categories found for selected header category"
-                                                : "Loading categories..."}
-                                        </p>
-                                    ) : (
-                                        filteredCategories.map((cat) => (
-                                            <label
-                                                key={cat._id}
-                                                className="flex items-center p-2 hover:bg-neutral-50 rounded cursor-pointer"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedCategories.includes(cat._id)}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            setSelectedCategories([...selectedCategories, cat._id]);
-                                                        } else {
-                                                            setSelectedCategories(
-                                                                selectedCategories.filter((id) => id !== cat._id)
-                                                            );
-                                                        }
-                                                    }}
-                                                    className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
-                                                />
-                                                <span className="ml-2 text-sm text-neutral-700">{cat.name}</span>
-                                            </label>
-                                        ))
-                                    )}
-                                </div>
-                                <p className="text-xs text-neutral-500 mt-1">
-                                    {selectedCategories.length} selected
-                                </p>
-                            </div>
-
-                            {/* SubCategories - Checkbox List - Only show when displayType is NOT "categories" */}
-                            {displayType !== "categories" && (
+                                {/* Display Type */}
                                 <div>
                                     <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                        SubCategories
+                                        Display Type <span className="text-red-500">*</span>
                                     </label>
-                                    <div className={`border border-neutral-300 rounded max-h-40 overflow-y-auto p-2 ${selectedCategories.length === 0 ? 'bg-gray-100' : 'bg-white'
+                                    <select
+                                        value={displayType}
+                                        onChange={(e) => {
+                                            const newDisplayType = e.target.value as "subcategories" | "products" | "categories";
+                                            setDisplayType(newDisplayType);
+                                            // Clear selections when switching display types
+                                            if (newDisplayType === "categories") {
+                                                setSelectedSubCategories([]);
+                                            } else {
+                                                setSelectedHeaderCategory("");
+                                            }
+                                        }}
+                                        className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                                    >
+                                        {DISPLAY_TYPE_OPTIONS.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Header Category - Only show when displayType is "categories" */}
+                                {displayType === "categories" && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                            Header Category <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            value={selectedHeaderCategory}
+                                            onChange={(e) => {
+                                                setSelectedHeaderCategory(e.target.value);
+                                                setSelectedCategories([]); // Clear selected categories when header category changes
+                                            }}
+                                            className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                                        >
+                                            <option value="">Select a header category</option>
+                                            {headerCategories
+                                                .filter((hc) => hc.status === "Published")
+                                                .map((hc) => (
+                                                    <option key={hc._id} value={hc._id}>
+                                                        {hc.name}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                        <p className="text-xs text-neutral-500 mt-1">
+                                            Select a header category to filter categories
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Categories - Checkbox List */}
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                        Categories
+                                        {displayType === "categories" && (
+                                            <span className="text-red-500 ml-1">*</span>
+                                        )}
+                                    </label>
+                                    <div className={`border border-neutral-300 rounded max-h-40 overflow-y-auto p-2 ${displayType === "categories" && !selectedHeaderCategory ? 'bg-gray-100' : 'bg-white'
                                         }`}>
-                                        {selectedCategories.length === 0 ? (
-                                            <p className="text-sm text-neutral-400 p-2">Select categories first</p>
-                                        ) : subCategories.length === 0 ? (
-                                            <p className="text-sm text-neutral-400 p-2">No subcategories available</p>
+                                        {displayType === "categories" && !selectedHeaderCategory ? (
+                                            <p className="text-sm text-neutral-400 p-2">Please select a header category first</p>
+                                        ) : filteredCategories.length === 0 ? (
+                                            <p className="text-sm text-neutral-400 p-2">
+                                                {displayType === "categories"
+                                                    ? "No categories found for selected header category"
+                                                    : "Loading categories..."}
+                                            </p>
                                         ) : (
-                                            subCategories.map((sub) => (
+                                            filteredCategories.map((cat) => (
                                                 <label
-                                                    key={sub._id || sub.id}
+                                                    key={cat._id}
                                                     className="flex items-center p-2 hover:bg-neutral-50 rounded cursor-pointer"
                                                 >
                                                     <input
                                                         type="checkbox"
-                                                        checked={selectedSubCategories.includes(sub._id || sub.id || '')}
+                                                        checked={selectedCategories.includes(cat._id)}
                                                         onChange={(e) => {
-                                                            const subId = sub._id || sub.id || '';
                                                             if (e.target.checked) {
-                                                                setSelectedSubCategories([...selectedSubCategories, subId]);
+                                                                setSelectedCategories([...selectedCategories, cat._id]);
                                                             } else {
-                                                                setSelectedSubCategories(
-                                                                    selectedSubCategories.filter((id) => id !== subId)
+                                                                setSelectedCategories(
+                                                                    selectedCategories.filter((id) => id !== cat._id)
                                                                 );
                                                             }
                                                         }}
                                                         className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
                                                     />
-                                                    <span className="ml-2 text-sm text-neutral-700">{sub.subcategoryName}</span>
+                                                    <span className="ml-2 text-sm text-neutral-700">{cat.name}</span>
                                                 </label>
                                             ))
                                         )}
                                     </div>
                                     <p className="text-xs text-neutral-500 mt-1">
-                                        {selectedSubCategories.length} selected
+                                        {selectedCategories.length} selected
                                     </p>
                                 </div>
-                            )}
 
-                            {/* Columns */}
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                    Number of Columns <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={columns}
-                                    onChange={(e) => setColumns(Number(e.target.value))}
-                                    className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                                >
-                                    {COLUMNS_OPTIONS.map((col) => (
-                                        <option key={col} value={col}>
-                                            {col} Columns
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                {/* SubCategories - Checkbox List - Only show when displayType is NOT "categories" */}
+                                {displayType !== "categories" && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                            SubCategories
+                                        </label>
+                                        <div className={`border border-neutral-300 rounded max-h-40 overflow-y-auto p-2 ${selectedCategories.length === 0 ? 'bg-gray-100' : 'bg-white'
+                                            }`}>
+                                            {selectedCategories.length === 0 ? (
+                                                <p className="text-sm text-neutral-400 p-2">Select categories first</p>
+                                            ) : subCategories.length === 0 ? (
+                                                <p className="text-sm text-neutral-400 p-2">No subcategories available</p>
+                                            ) : (
+                                                subCategories.map((sub) => (
+                                                    <label
+                                                        key={sub._id || sub.id}
+                                                        className="flex items-center p-2 hover:bg-neutral-50 rounded cursor-pointer"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedSubCategories.includes(sub._id || sub.id || '')}
+                                                            onChange={(e) => {
+                                                                const subId = sub._id || sub.id || '';
+                                                                if (e.target.checked) {
+                                                                    setSelectedSubCategories([...selectedSubCategories, subId]);
+                                                                } else {
+                                                                    setSelectedSubCategories(
+                                                                        selectedSubCategories.filter((id) => id !== subId)
+                                                                    );
+                                                                }
+                                                            }}
+                                                            className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                                                        />
+                                                        <span className="ml-2 text-sm text-neutral-700">{sub.subcategoryName}</span>
+                                                    </label>
+                                                ))
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-neutral-500 mt-1">
+                                            {selectedSubCategories.length} selected
+                                        </p>
+                                    </div>
+                                )}
 
-                            {/* Limit */}
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                    Item Limit <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    value={limit}
-                                    onChange={(e) => setLimit(Number(e.target.value))}
-                                    min="1"
-                                    max="50"
-                                    className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                                />
-                            </div>
+                                {/* Columns */}
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                        Number of Columns <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        value={columns}
+                                        onChange={(e) => setColumns(Number(e.target.value))}
+                                        className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                                    >
+                                        {COLUMNS_OPTIONS.map((col) => (
+                                            <option key={col} value={col}>
+                                                {col} Columns
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                            {/* Active Status */}
-                            <div>
-                                <label className="flex items-center cursor-pointer">
+                                {/* Limit */}
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                        Item Limit <span className="text-red-500">*</span>
+                                    </label>
                                     <input
-                                        type="checkbox"
-                                        checked={isActive}
-                                        onChange={(e) => setIsActive(e.target.checked)}
-                                        className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                                        type="number"
+                                        value={limit}
+                                        onChange={(e) => setLimit(Number(e.target.value))}
+                                        min="1"
+                                        max="50"
+                                        className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
                                     />
-                                    <span className="ml-2 text-sm font-medium text-neutral-700">
-                                        Active (Show on home page)
-                                    </span>
-                                </label>
+                                </div>
+
+                                {/* Active Status */}
+                                <div>
+                                    <label className="flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={isActive}
+                                            onChange={(e) => setIsActive(e.target.checked)}
+                                            className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                                        />
+                                        <span className="ml-2 text-sm font-medium text-neutral-700">
+                                            Active (Show on home page)
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="mt-6 space-y-2">
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={loading}
+                                    className={`w-full px-4 py-2 rounded font-medium transition-colors ${loading
+                                        ? "bg-gray-400 cursor-not-allowed text-white"
+                                        : "bg-teal-600 hover:bg-teal-700 text-white"
+                                        }`}
+                                >
+                                    {loading
+                                        ? "Saving..."
+                                        : editingId
+                                            ? "Update Section"
+                                            : "Create Section"}
+                                </button>
+                                {editingId && (
+                                    <button
+                                        onClick={resetForm}
+                                        className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded font-medium transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                )}
                             </div>
                         </div>
-
-                        {/* Action Buttons */}
-                        <div className="mt-6 space-y-2">
-                            <button
-                                onClick={handleSubmit}
-                                disabled={loading}
-                                className={`w-full px-4 py-2 rounded font-medium transition-colors ${loading
-                                    ? "bg-gray-400 cursor-not-allowed text-white"
-                                    : "bg-teal-600 hover:bg-teal-700 text-white"
-                                    }`}
-                            >
-                                {loading
-                                    ? "Saving..."
-                                    : editingId
-                                        ? "Update Section"
-                                        : "Create Section"}
-                            </button>
-                            {editingId && (
-                                <button
-                                    onClick={resetForm}
-                                    className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded font-medium transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                            )}
-                        </div>
-                    </div>
+                    )}
 
                     {/* Right Section: View Sections Table */}
-                    <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col">
+                    <div className={`${readOnly ? 'lg:col-span-3' : 'lg:col-span-2'} bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col`}>
                         <div className="bg-teal-600 text-white px-6 py-4 rounded-t-lg">
                             <h2 className="text-lg font-semibold">View Sections</h2>
                         </div>
@@ -635,18 +673,19 @@ export default function AdminHomeSection() {
                                     <tr className="bg-neutral-50 text-xs font-bold text-neutral-800 border-b border-neutral-200">
                                         <th className="p-4">Order</th>
                                         <th className="p-4">Title</th>
+                                        <th className="p-4">Header</th>
                                         <th className="p-4">Type</th>
                                         <th className="p-4">Categories</th>
                                         <th className="p-4">Columns</th>
                                         <th className="p-4">Status</th>
-                                        <th className="p-4">Action</th>
+                                        {!readOnly && <th className="p-4">Action</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {loadingSections ? (
                                         <tr>
                                             <td
-                                                colSpan={7}
+                                                colSpan={readOnly ? 6 : 7}
                                                 className="p-8 text-center text-neutral-400"
                                             >
                                                 Loading sections...
@@ -655,7 +694,7 @@ export default function AdminHomeSection() {
                                     ) : displayedSections.length === 0 ? (
                                         <tr>
                                             <td
-                                                colSpan={7}
+                                                colSpan={readOnly ? 6 : 7}
                                                 className="p-8 text-center text-neutral-400"
                                             >
                                                 No sections found. Create your first section!
@@ -669,11 +708,14 @@ export default function AdminHomeSection() {
                                             >
                                                 <td className="p-4">{section.order}</td>
                                                 <td className="p-4 font-medium">{section.title}</td>
+                                                <td className="p-4 text-xs text-neutral-500">
+                                                    {typeof section.headerCategory === 'object' ? section.headerCategory?.name : "Global"}
+                                                </td>
                                                 <td className="p-4 capitalize">{section.displayType}</td>
                                                 <td className="p-4">
                                                     {section.categories && section.categories.length > 0
                                                         ? section.categories.map((c: any) => c.name).join(", ")
-                                                        : "All"}
+                                                        : "None"}
                                                 </td>
                                                 <td className="p-4">{section.columns}</td>
                                                 <td className="p-4">
@@ -686,48 +728,50 @@ export default function AdminHomeSection() {
                                                         {section.isActive ? "Active" : "Inactive"}
                                                     </span>
                                                 </td>
-                                                <td className="p-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => handleEdit(section)}
-                                                            className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-                                                            title="Edit"
-                                                        >
-                                                            <svg
-                                                                width="14"
-                                                                height="14"
-                                                                viewBox="0 0 24 24"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                strokeWidth="2"
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
+                                                {!readOnly && (
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => handleEdit(section)}
+                                                                className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                                                                title="Edit"
                                                             >
-                                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                                            </svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDelete(section._id)}
-                                                            className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-                                                            title="Delete"
-                                                        >
-                                                            <svg
-                                                                width="14"
-                                                                height="14"
-                                                                viewBox="0 0 24 24"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                strokeWidth="2"
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
+                                                                <svg
+                                                                    width="14"
+                                                                    height="14"
+                                                                    viewBox="0 0 24 24"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    strokeWidth="2"
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                >
+                                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                                </svg>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDelete(section._id)}
+                                                                className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                                                                title="Delete"
                                                             >
-                                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </td>
+                                                                <svg
+                                                                    width="14"
+                                                                    height="14"
+                                                                    viewBox="0 0 24 24"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    strokeWidth="2"
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                >
+                                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                )}
                                             </tr>
                                         ))
                                     )}
@@ -806,12 +850,12 @@ export default function AdminHomeSection() {
 
             {/* Footer */}
             <footer className="text-center py-4 text-sm text-neutral-600 border-t border-neutral-200 bg-white">
-                Copyright Â© 2025. Developed By{" "}
+                Copyright © 2025. Developed By{" "}
                 <a href="#" className="text-blue-600 hover:underline">
                     Apna Sabji Wala - 10 Minute App
                 </a>
             </footer>
-        </div >
+        </div>
     );
 }
 

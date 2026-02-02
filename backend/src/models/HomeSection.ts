@@ -6,6 +6,7 @@ export interface IHomeSection extends Document {
     categories?: mongoose.Types.ObjectId[]; // Changed to array
     subCategories?: mongoose.Types.ObjectId[]; // Changed to array
     products?: mongoose.Types.ObjectId[]; // Manual product selection
+    headerCategory?: mongoose.Types.ObjectId | string;
     displayType: "subcategories" | "products" | "categories";
     columns: number;
     limit: number;
@@ -29,7 +30,12 @@ const HomeSectionSchema = new Schema<IHomeSection>(
             unique: true,
             trim: true,
             lowercase: true,
+            lowercase: true,
             match: [/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"],
+        },
+        headerCategory: {
+            type: Schema.Types.ObjectId,
+            ref: "HeaderCategory",
         },
         categories: {
             type: [{ type: Schema.Types.ObjectId, ref: "Category" }],

@@ -41,6 +41,23 @@ export default function CategoryPage() {
             currentSubcategory,
           } = response.data;
 
+          // If no subcategories returned, try to fetch from all categories as fallback
+          let finalSubcategories = subs || [];
+
+          if (!finalSubcategories.length) {
+            try {
+              const { getCategories } = await import("../../services/api/customerProductService");
+              const allCatsResponse = await getCategories();
+              if (allCatsResponse.success && allCatsResponse.data) {
+                finalSubcategories = allCatsResponse.data.filter((c: any) =>
+                  c.parent === cat._id || (c.parent && c.parent._id === cat._id)
+                );
+              }
+            } catch (err) {
+              console.error("Error fetching fallback subcategories", err);
+            }
+          }
+
           setCategory(cat);
           setSubcategories([
             {
@@ -50,7 +67,7 @@ export default function CategoryPage() {
               icon: "📦",
               isActive: true,
             } as any,
-            ...(subs || []),
+            ...finalSubcategories,
           ]);
 
           // Check URL query params first, then API response
@@ -286,9 +303,8 @@ export default function CategoryPage() {
                   console.log("Clicked subcategory:", subcat.id || subcat._id);
                   setSelectedSubcategory(subcat.id || subcat._id);
                 }}
-                className={`w-full flex flex-col items-center justify-center py-2 relative transition-all duration-200 group ${
-                  isSelected ? "bg-green-50" : "hover:bg-neutral-50"
-                }`}
+                className={`w-full flex flex-col items-center justify-center py-2 relative transition-all duration-200 group ${isSelected ? "bg-green-50" : "hover:bg-neutral-50"
+                  }`}
                 style={{
                   minHeight: "80px",
                 }}>
@@ -299,11 +315,10 @@ export default function CategoryPage() {
 
                 {/* Image Container */}
                 <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl mb-1.5 flex-shrink-0 overflow-hidden transition-all duration-200 shadow-sm ${
-                    isSelected
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl mb-1.5 flex-shrink-0 overflow-hidden transition-all duration-200 shadow-sm ${isSelected
                       ? "ring-2 ring-green-600 ring-offset-2 bg-white"
                       : "bg-neutral-50 border border-neutral-100 group-hover:shadow-md"
-                  }`}>
+                    }`}>
                   {subcat.image ? (
                     <img
                       src={subcat.image}
@@ -326,11 +341,10 @@ export default function CategoryPage() {
 
                 {/* Text Label */}
                 <span
-                  className={`text-[10px] text-center leading-tight px-1 transition-colors ${
-                    isSelected
+                  className={`text-[10px] text-center leading-tight px-1 transition-colors ${isSelected
                       ? "font-bold text-green-700"
                       : "text-neutral-500 group-hover:text-neutral-900"
-                  }`}
+                    }`}
                   style={{
                     wordBreak: "break-word",
                     maxWidth: "100%",
@@ -439,11 +453,10 @@ export default function CategoryPage() {
                   <button
                     key={subId}
                     onClick={() => setSelectedSubcategory(subId)}
-                    className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors flex-shrink-0 whitespace-nowrap ${
-                      isSelected
+                    className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors flex-shrink-0 whitespace-nowrap ${isSelected
                         ? "bg-white border border-neutral-300 text-neutral-900"
                         : "bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50"
-                    }`}>
+                      }`}>
                     <span className="text-sm flex-shrink-0">
                       {subcat.image ? (
                         <img
@@ -558,20 +571,18 @@ export default function CategoryPage() {
                   <div className="w-24 border-r border-neutral-200 flex-shrink-0 bg-neutral-50">
                     <button
                       onClick={() => setSelectedFilterCategory("Type")}
-                      className={`w-full px-3 py-3 text-left text-sm font-medium transition-colors ${
-                        selectedFilterCategory === "Type"
+                      className={`w-full px-3 py-3 text-left text-sm font-medium transition-colors ${selectedFilterCategory === "Type"
                           ? "bg-green-50 text-green-700"
                           : "text-neutral-600 hover:bg-neutral-100"
-                      }`}>
+                        }`}>
                       Type
                     </button>
                     <button
                       onClick={() => setSelectedFilterCategory("Properties")}
-                      className={`w-full px-3 py-3 text-left text-sm font-medium transition-colors ${
-                        selectedFilterCategory === "Properties"
+                      className={`w-full px-3 py-3 text-left text-sm font-medium transition-colors ${selectedFilterCategory === "Properties"
                           ? "bg-green-50 text-green-700"
                           : "text-neutral-600 hover:bg-neutral-100"
-                      }`}>
+                        }`}>
                       Properties
                     </button>
                   </div>
@@ -631,11 +642,10 @@ export default function CategoryPage() {
                   </button>
                   <button
                     onClick={handleApplyFilters}
-                    className={`flex-1 px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-                      selectedFilters.length > 0
+                    className={`flex-1 px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${selectedFilters.length > 0
                         ? "bg-green-600 text-white hover:bg-green-700"
                         : "bg-neutral-300 text-neutral-500 cursor-not-allowed"
-                    }`}
+                      }`}
                     disabled={selectedFilters.length === 0}>
                     Apply
                   </button>

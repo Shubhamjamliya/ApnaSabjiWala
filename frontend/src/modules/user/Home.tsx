@@ -251,7 +251,7 @@ export default function Home() {
 
       {/* Main content */}
       <div
-        className="bg-neutral-50 -mt-2 pt-1 space-y-5 md:space-y-8 md:pt-4">
+        className="bg-emerald-50/30 -mt-2 pt-1 space-y-5 md:space-y-8 md:pt-4">
         {/* Filtered Products Section */}
         {activeTab !== "all" && (
           <div data-products-section className="mt-6 mb-6 md:mt-8 md:mb-8">

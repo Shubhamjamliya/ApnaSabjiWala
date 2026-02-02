@@ -94,8 +94,10 @@ const SellerSignUp = lazy(() => import("./modules/seller/pages/SellerSignUp"));
 const AdminLayout = lazy(() => import("./modules/admin/components/AdminLayout"));
 const AdminDashboard = lazy(() => import("./modules/admin/pages/AdminDashboard"));
 const AdminLogin = lazy(() => import("./modules/admin/pages/AdminLogin"));
+const AdminCatalogManager = lazy(() => import("./modules/admin/pages/AdminCatalogManager"));
 const AdminCategory = lazy(() => import("./modules/admin/pages/AdminCategory"));
 const AdminHeaderCategory = lazy(() => import("./modules/admin/pages/AdminHeaderCategory"));
+
 const AdminSubCategory = lazy(() => import("./modules/admin/pages/AdminSubCategory"));
 const AdminBrand = lazy(() => import("./modules/admin/pages/AdminBrand"));
 const AdminTaxes = lazy(() => import("./modules/admin/pages/AdminTaxes"));
@@ -305,9 +307,12 @@ function App() {
                                     <Routes>
                                       <Route path="" element={<AdminDashboard />} />
                                       <Route path="profile" element={<AdminProfile />} />
+                                      <Route path="catalog-manager" element={<AdminCatalogManager />} />
+                                      <Route path="catalog/sections" element={<AdminHomeSection />} />
                                       <Route path="category" element={<AdminCategory />} />
                                       <Route path="category/header" element={<AdminHeaderCategory />} />
                                       <Route path="subcategory" element={<AdminSubCategory />} />
+
                                       <Route path="subcategory-order" element={<AdminSubcategoryOrder />} />
                                       <Route path="brand" element={<AdminBrand />} />
                                       <Route path="product/taxes" element={<AdminTaxes />} />
@@ -332,7 +337,7 @@ function App() {
                                       <Route path="delivery-app-policy" element={<AdminDeliveryAppPolicy />} />
                                       <Route path="users" element={<AdminUsers />} />
                                       <Route path="faq" element={<AdminFAQ />} />
-                                      <Route path="home-section" element={<AdminHomeSection />} />
+                                      <Route path="home-section" element={<AdminHomeSection readOnly={true} />} />
                                       <Route path="bestseller-cards" element={<AdminBestsellerCards />} />
                                       <Route path="promo-strip" element={<AdminPromoStrip />} />
                                       <Route path="lowest-prices" element={<AdminLowestPrices />} />

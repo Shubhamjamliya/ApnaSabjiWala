@@ -261,14 +261,13 @@ export default function AdminHeaderCategory() {
                 Select Theme Color:
               </label>
               <div className="grid grid-cols-4 gap-3 bg-neutral-50 p-3 rounded border border-neutral-200">
-                {themeOptions.map(themeKey => {
+                {themeOptions.filter(t => t !== 'all').map(themeKey => {
                   const themeObj = themes[themeKey];
                   const color = themeObj.primary[0];
                   const isSelected = selectedTheme === themeKey;
 
                   // Map theme keys to user-friendly color names
                   const colorNames: Record<string, string> = {
-                    all: 'Green',
                     wedding: 'Red',
                     winter: 'Sky Blue',
                     electronics: 'Yellow',
@@ -281,7 +280,10 @@ export default function AdminHeaderCategory() {
                     teal: 'Teal',
                     dark: 'Dark',
                     hotpink: 'Hot Pink',
-                    gold: 'Gold'
+                    gold: 'Gold',
+                    light_brown: 'Light Brown',
+                    vegetable_green: 'Vegetable Green',
+                    fruit_orange: 'Fruit Orange'
                   };
 
                   const displayColor = colorNames[themeKey] || themeKey;
