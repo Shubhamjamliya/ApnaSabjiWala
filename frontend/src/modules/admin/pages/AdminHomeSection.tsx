@@ -34,6 +34,7 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
     const [columns, setColumns] = useState(4);
     const [limit, setLimit] = useState(8);
     const [isActive, setIsActive] = useState(true);
+    const [isGlobal, setIsGlobal] = useState(false);
 
     // Data state
     const [sections, setSections] = useState<HomeSection[]>([]);
@@ -71,9 +72,14 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
             });
             setFilteredCategories(filtered);
             // Clear selected categories if they don't belong to the new header category
-            setSelectedCategories((prev) =>
-                prev.filter((id) => filtered.some((cat) => cat._id === id))
-            );
+            // But if we are editing (or just set it), we want to keep the valid ones.
+            setSelectedCategories((prev) => {
+                // If the user manually changed header category, we probably want to clear.
+                // But this effect runs on any change. 
+                // The safest bet: keep only those IDs that are present in the new filtered list.
+                const validIds = prev.filter((id) => filtered.some((cat) => cat._id === id));
+                return validIds;
+            });
         } else {
             // For other display types, show all root categories
             setFilteredCategories(categories.filter((cat) => !cat.parentId));
@@ -204,6 +210,7 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
             columns,
             limit,
             isActive,
+            isGlobal,
         };
 
         try {
@@ -277,6 +284,7 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
         setColumns(section.columns);
         setLimit(section.limit);
         setIsActive(section.isActive);
+        setIsGlobal(!!section.isGlobal);
         setEditingId(section._id);
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
@@ -311,6 +319,7 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
         setColumns(4);
         setLimit(8);
         setIsActive(true);
+        setIsGlobal(false);
         setEditingId(null);
     };
 
@@ -395,17 +404,17 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
                                     </p>
                                 </div>
 
-                                {/* Parent Header Category */}
+                                {/* Show on Page Tab (formerly Parent Header Category) */}
                                 <div>
                                     <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                        Parent Header Category
+                                        Show on Page Tab
                                     </label>
                                     <select
                                         value={sectionHeaderCategory}
                                         onChange={(e) => setSectionHeaderCategory(e.target.value)}
                                         className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
                                     >
-                                        <option value="">None (Global)</option>
+                                        <option value="">None (Global - Home Page)</option>
                                         {headerCategories
                                             .filter((hc) => hc.status === "Published")
                                             .map((hc) => (
@@ -446,17 +455,23 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
                                     </select>
                                 </div>
 
-                                {/* Header Category - Only show when displayType is "categories" */}
+                                {/* Source Category Group - Filter for selecting categories */}
                                 {displayType === "categories" && (
                                     <div>
                                         <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                            Header Category <span className="text-red-500">*</span>
+                                            Source Category Group <span className="text-red-500">*</span>
                                         </label>
                                         <select
                                             value={selectedHeaderCategory}
                                             onChange={(e) => {
-                                                setSelectedHeaderCategory(e.target.value);
-                                                setSelectedCategories([]); // Clear selected categories when header category changes
+                                                const newHeaderId = e.target.value;
+                                                // Only clear categories if user manually changes the header category,
+                                                // not during initial load or when setting up edit (though that's handled by state setting).
+                                                // We can check if the value actually changed.
+                                                if (newHeaderId !== selectedHeaderCategory) {
+                                                    setSelectedHeaderCategory(newHeaderId);
+                                                    setSelectedCategories([]);
+                                                }
                                             }}
                                             className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
                                         >
@@ -614,6 +629,20 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
                                         </span>
                                     </label>
                                 </div>
+                                {/* Global Status */}
+                                <div>
+                                    <label className="flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={isGlobal}
+                                            onChange={(e) => setIsGlobal(e.target.checked)}
+                                            className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                                        />
+                                        <span className="ml-2 text-sm font-medium text-neutral-700">
+                                            Global Section (Always show on Home Page)
+                                        </span>
+                                    </label>
+                                </div>
                             </div>
 
                             {/* Action Buttons */}
@@ -713,6 +742,11 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
                                                     {section.headerCategory && typeof section.headerCategory === 'object' && 'name' in section.headerCategory
                                                         ? (section.headerCategory as any).name
                                                         : "Global"}
+                                                    {section.isGlobal && section.headerCategory && (
+                                                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                            + Global
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="p-4 capitalize">{section.displayType}</td>
                                                 <td className="p-4">

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import Category from "../../../models/Category";
 import SubCategory from "../../../models/SubCategory";
 import Product from "../../../models/Product";
@@ -62,6 +63,13 @@ export const getCategoryById = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category ID",
+      });
+    }
+
     const category = await Category.findById(id);
 
     if (!category) {
@@ -108,6 +116,13 @@ export const getSubcategories = asyncHandler(
       sortBy = "name",
       sortOrder = "asc",
     } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category ID",
+      });
+    }
 
     // Verify parent category exists
     const parentCategory = await Category.findById(id);

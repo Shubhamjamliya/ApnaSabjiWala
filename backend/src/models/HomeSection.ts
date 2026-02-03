@@ -12,6 +12,7 @@ export interface IHomeSection extends Document {
     limit: number;
     order: number;
     isActive: boolean;
+    isGlobal: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -77,6 +78,10 @@ const HomeSectionSchema = new Schema<IHomeSection>(
         isActive: {
             type: Boolean,
             default: true,
+        },
+        isGlobal: {
+            type: Boolean,
+            default: false,
         },
     },
     {

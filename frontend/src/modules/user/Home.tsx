@@ -59,8 +59,9 @@ export default function Home() {
         startRouteLoading();
         setLoading(true);
         setError(null);
+        // Pass the activeTab as the headerCategorySlug
         const response = await getHomeContent(
-          undefined,
+          activeTab,
           location?.latitude,
           location?.longitude
         );
@@ -126,7 +127,7 @@ export default function Home() {
     };
 
     preloadHeaderCategories();
-  }, [location?.latitude, location?.longitude]);
+  }, [location?.latitude, location?.longitude, activeTab]);
 
   // Restore scroll position when returning to this page
   useEffect(() => {
@@ -214,7 +215,7 @@ export default function Home() {
     [activeTab, products]
   );
 
-  if (loading && !products.length) {
+  if (loading && !products.length && !homeData.homeSections?.length) {
     return <PageLoader />; // Let the global IconLoader handle the initial loading state
   }
 
@@ -252,39 +253,90 @@ export default function Home() {
       {/* Main content */}
       <div
         className="bg-emerald-50/30 -mt-2 pt-1 space-y-5 md:space-y-8 md:pt-4">
-        {/* Filtered Products Section */}
-        {activeTab !== "all" && (
+
+        {/* Dynamic Home Sections - Render sections created by admin (For ALL tabs) */}
+        {homeData.homeSections && homeData.homeSections.length > 0 && (
+          <>
+            {homeData.homeSections.map((section: any) => {
+              const columnCount = Number(section.columns) || 4;
+
+              if (section.displayType === "products" && section.data && section.data.length > 0) {
+                // Strict column mapping as requested - applies to ALL screen sizes including mobile
+                const gridClass = {
+                  2: "grid-cols-2",
+                  3: "grid-cols-3",
+                  4: "grid-cols-4",
+                  6: "grid-cols-6",
+                  8: "grid-cols-8"
+                }[columnCount] || "grid-cols-4";
+
+                // Use compact mode for 4 or more columns to fit content on mobile
+                const isCompact = columnCount >= 4;
+                const gapClass = columnCount >= 4 ? "gap-2" : "gap-3 md:gap-4";
+
+                return (
+                  <div key={section.id} className="mt-6 mb-6 md:mt-8 md:mb-8">
+                    {section.title && (
+                      <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
+                        {section.title}
+                      </h2>
+                    )}
+                    <div className="px-4 md:px-6 lg:px-8">
+                      <div className={`grid ${gridClass} ${gapClass}`}>
+                        {section.data.map((product: any) => (
+                          <ProductCard
+                            key={product.id || product._id}
+                            product={product}
+                            categoryStyle={true}
+                            showBadge={true}
+                            showPackBadge={false}
+                            showStockInfo={false}
+                            compact={isCompact}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <CategoryTileSection
+                  key={section.id}
+                  title={section.title}
+                  tiles={section.data || []}
+                  columns={columnCount as 2 | 3 | 4 | 6 | 8}
+                  showProductCount={false}
+                />
+              );
+            })}
+          </>
+        )}
+
+        {/* Filtered Products Section (Legacy fallback if no dynamic sections, or complementary) */}
+        {activeTab !== "all" && filteredProducts.length > 0 && homeData.homeSections?.length === 0 && (
           <div data-products-section className="mt-6 mb-6 md:mt-8 md:mb-8">
             <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
               {activeTab === "grocery" ? "Grocery Items" : activeTab}
             </h2>
             <div className="px-4 md:px-6 lg:px-8">
-              {filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
-                  {filteredProducts.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      categoryStyle={true}
-                      showBadge={true}
-                      showPackBadge={false}
-                      showStockInfo={true}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 md:py-16 text-neutral-500">
-                  <p className="text-lg md:text-xl mb-2">No products found</p>
-                  <p className="text-sm md:text-base">
-                    Try selecting a different category
-                  </p>
-                </div>
-              )}
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    categoryStyle={true}
+                    showBadge={true}
+                    showPackBadge={false}
+                    showStockInfo={true}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Bestsellers Section */}
+        {/* Bestsellers Section (Global Only) */}
         {activeTab === "all" && (
           <>
             <div className="mt-2 md:mt-4">
@@ -313,65 +365,6 @@ export default function Home() {
 
             {/* Featured this week Section */}
             <FeaturedThisWeek />
-
-            {/* Dynamic Home Sections - Render sections created by admin */}
-            {homeData.homeSections && homeData.homeSections.length > 0 && (
-              <>
-                {homeData.homeSections.map((section: any) => {
-                  const columnCount = Number(section.columns) || 4;
-
-                  if (section.displayType === "products" && section.data && section.data.length > 0) {
-                    // Strict column mapping as requested - applies to ALL screen sizes including mobile
-                    const gridClass = {
-                      2: "grid-cols-2",
-                      3: "grid-cols-3",
-                      4: "grid-cols-4",
-                      6: "grid-cols-6",
-                      8: "grid-cols-8"
-                    }[columnCount] || "grid-cols-4";
-
-                    // Use compact mode for 4 or more columns to fit content on mobile
-                    const isCompact = columnCount >= 4;
-                    const gapClass = columnCount >= 4 ? "gap-2" : "gap-3 md:gap-4";
-
-                    return (
-                      <div key={section.id} className="mt-6 mb-6 md:mt-8 md:mb-8">
-                        {section.title && (
-                          <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
-                            {section.title}
-                          </h2>
-                        )}
-                        <div className="px-4 md:px-6 lg:px-8">
-                          <div className={`grid ${gridClass} ${gapClass}`}>
-                            {section.data.map((product: any) => (
-                              <ProductCard
-                                key={product.id || product._id}
-                                product={product}
-                                categoryStyle={true}
-                                showBadge={true}
-                                showPackBadge={false}
-                                showStockInfo={false}
-                                compact={isCompact}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <CategoryTileSection
-                      key={section.id}
-                      title={section.title}
-                      tiles={section.data || []}
-                      columns={columnCount as 2 | 3 | 4 | 6 | 8}
-                      showProductCount={false}
-                    />
-                  );
-                })}
-              </>
-            )}
 
             {/* Shop by Store Section */}
             <div className="mb-6 mt-6 md:mb-8 md:mt-8">

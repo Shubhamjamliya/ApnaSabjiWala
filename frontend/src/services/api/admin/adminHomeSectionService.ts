@@ -20,6 +20,7 @@ export interface HomeSection {
     limit: number;
     order: number;
     isActive: boolean;
+    isGlobal?: boolean;
     createdAt: string;
     updatedAt: string;
 }
@@ -35,6 +36,7 @@ export interface HomeSectionFormData {
     limit: number;
     order?: number;
     isActive: boolean;
+    isGlobal?: boolean;
 }
 
 export interface HomeSectionResponse {

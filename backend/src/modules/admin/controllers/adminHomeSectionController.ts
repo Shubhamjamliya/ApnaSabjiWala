@@ -103,6 +103,7 @@ export const createHomeSection = async (req: Request, res: Response) => {
             limit: limit || 8,
             order: sectionOrder,
             isActive: isActive !== undefined ? isActive : true,
+            isGlobal: req.body.isGlobal !== undefined ? req.body.isGlobal : false,
         });
 
         await newSection.save();
@@ -170,6 +171,7 @@ export const updateHomeSection = async (req: Request, res: Response) => {
         if (limit !== undefined) section.limit = limit;
         if (order !== undefined) section.order = order;
         if (isActive !== undefined) section.isActive = isActive;
+        if (req.body.isGlobal !== undefined) section.isGlobal = req.body.isGlobal;
 
         await section.save();
 

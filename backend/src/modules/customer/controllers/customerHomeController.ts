@@ -493,9 +493,13 @@ export const getHomeContent = async (req: Request, res: Response) => {
         homeSectionQuery.headerCategory = new mongoose.Types.ObjectId();
       }
     } else {
-      // If "all" (Home Page), show ALL active sections
-      // We removed the filter { headerCategory: { $in: [null, undefined] } }
-      // This means sections assigned to a specific header category will ALSO appear on the home page
+      // If "all" (Home Page), ONLY show Global sections (headerCategory is null/undefined)
+      // OR sections explicitly marked as isGlobal
+      homeSectionQuery.$or = [
+        { headerCategory: null },
+        { headerCategory: { $exists: false } },
+        { isGlobal: true },
+      ];
     }
 
     const homeSections = await HomeSection.find(homeSectionQuery)
