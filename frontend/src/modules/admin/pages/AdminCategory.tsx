@@ -18,6 +18,7 @@ import {
   searchCategories,
   filterCategoriesByStatus,
 } from "../../../utils/categoryUtils";
+import ContentLoader from "../../../components/loaders/ContentLoader";
 
 // --- Icons ---
 const SearchIcon = () => (
@@ -134,7 +135,8 @@ export default function AdminCategory() {
       setError(null);
       const response = await getCategories({
         includeChildren: true,
-      });
+        skipLoader: true,
+      } as any);
       if (response.success) {
         setCategories(response.data);
         if (preserveExpandedIds && preserveExpandedIds.size > 0) {
@@ -401,12 +403,10 @@ export default function AdminCategory() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50">
-        {loading ? (
-          <div className="flex items-center justify-center h-40">
-            <div className="text-neutral-400 animate-pulse">Loading categories...</div>
-          </div>
-        ) : viewMode === "grid" ? (
+      <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50 relative min-h-[400px]">
+        {loading && <ContentLoader />}
+
+        {viewMode === "grid" ? (
           <>
             {filteredCategories.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-neutral-200 rounded-xl bg-white h-96">

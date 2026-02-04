@@ -178,34 +178,56 @@ export const getCategories = asyncHandler(
     const sort: any = {};
     sort[sortBy as string] = sortOrder === "desc" ? -1 : 1;
 
+    // Use .lean() for faster execution
     const categories = await Category.find(query)
       .populate("parentId", "name")
       .populate("headerCategoryId", "name status")
-      .sort(sort);
+      .sort(sort)
+      .lean();
 
-    // Count child categories for each category
-    const categoriesWithCounts = await Promise.all(
-      categories.map(async (category) => {
-        const childrenCount = await Category.countDocuments({
-          parentId: category._id,
-        });
-        // Also count old SubCategory model for backward compatibility
-        const subcategoryCount = await SubCategory.countDocuments({
-          category: category._id,
-        });
-        return {
-          ...category.toObject(),
-          childrenCount,
-          totalSubcategories: childrenCount + subcategoryCount,
-        };
-      })
-    );
+    // Optimize counting: Fetch all child counts in one aggregation
+    // This avoids N+1 problem
+    const categoryIds = categories.map((c: any) => c._id);
+
+    // Aggregation to count children categories
+    const childrenCounts = await Category.aggregate([
+      { $match: { parentId: { $in: categoryIds } } },
+      { $group: { _id: "$parentId", count: { $sum: 1 } } }
+    ]);
+
+    // Map counts to dictionary
+    const childrenCountMap = new Map();
+    childrenCounts.forEach((item: any) => {
+      childrenCountMap.set(item._id.toString(), item.count);
+    });
+
+    // Aggregation to count old subcategories (if still needed)
+    const subCounts = await SubCategory.aggregate([
+      { $match: { category: { $in: categoryIds } } },
+      { $group: { _id: "$category", count: { $sum: 1 } } }
+    ]);
+
+    const subCountMap = new Map();
+    subCounts.forEach((item: any) => {
+      subCountMap.set(item._id.toString(), item.count);
+    });
+
+    // Merge counts
+    const categoriesWithCounts = categories.map((category: any) => {
+      const childrenCount = childrenCountMap.get(category._id.toString()) || 0;
+      const subcategoryCount = subCountMap.get(category._id.toString()) || 0;
+      return {
+        ...category,
+        childrenCount,
+        totalSubcategories: childrenCount + subcategoryCount,
+      };
+    });
 
     // If includeChildren is true, build hierarchical structure
     if (includeChildren === "true") {
       const buildTree = (parentId: any = null): any[] => {
         return categoriesWithCounts
-          .filter((cat) => {
+          .filter((cat: any) => {
             const catParentId = cat.parentId
               ? cat.parentId._id || cat.parentId
               : null;
@@ -213,7 +235,7 @@ export const getCategories = asyncHandler(
             const catParentIdStr = catParentId ? catParentId.toString() : null;
             return catParentIdStr === parentIdStr;
           })
-          .map((cat) => ({
+          .map((cat: any) => ({
             ...cat,
             children: buildTree(cat._id),
           }));

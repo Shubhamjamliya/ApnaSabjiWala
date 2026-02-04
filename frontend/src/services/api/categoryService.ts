@@ -73,15 +73,19 @@ export interface PaginatedResponse<T> {
  * Cached for 10 minutes as categories don't change frequently
  */
 export const getCategories = async (
-  params?: GetCategoriesParams
+  params?: GetCategoriesParams & { skipLoader?: boolean }
 ): Promise<ApiResponse<Category[]>> => {
   const cacheKey = `categories-${JSON.stringify(params || {})}`;
+  // If skipLoader is true, we should pass it to the api call config
+  const { skipLoader, ...queryParams } = params || {};
+
   return apiCache.getOrFetch(
     cacheKey,
     async () => {
-      const response = await api.get<ApiResponse<Category[]>>("/categories", {
-        params,
-      });
+      const config: any = { params: queryParams };
+      if (skipLoader) config.skipLoader = true;
+
+      const response = await api.get<ApiResponse<Category[]>>("/categories", config);
       return response.data;
     },
     10 * 60 * 1000 // 10 minutes cache

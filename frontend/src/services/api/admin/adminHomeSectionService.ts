@@ -46,8 +46,8 @@ export interface HomeSectionResponse {
 }
 
 // Get all home sections
-export const getHomeSections = async (): Promise<HomeSectionResponse> => {
-    const response = await api.get<HomeSectionResponse>("/admin/home-sections");
+export const getHomeSections = async (config?: any): Promise<HomeSectionResponse> => {
+    const response = await api.get<HomeSectionResponse>("/admin/home-sections", config);
     return response.data;
 };
 

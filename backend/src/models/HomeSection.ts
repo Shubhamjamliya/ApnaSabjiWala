@@ -31,7 +31,6 @@ const HomeSectionSchema = new Schema<IHomeSection>(
             unique: true,
             trim: true,
             lowercase: true,
-            lowercase: true,
             match: [/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"],
         },
         headerCategory: {

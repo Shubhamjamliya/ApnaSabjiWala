@@ -19,8 +19,8 @@ export const getHeaderCategoriesPublic = async (skipLoader = false): Promise<Hea
     return response.data;
 };
 
-export const getHeaderCategoriesAdmin = async (): Promise<HeaderCategory[]> => {
-    const response = await api.get<HeaderCategory[]>('/header-categories/admin');
+export const getHeaderCategoriesAdmin = async (config?: any): Promise<HeaderCategory[]> => {
+    const response = await api.get<HeaderCategory[]>('/header-categories/admin', config);
     return response.data;
 };
 

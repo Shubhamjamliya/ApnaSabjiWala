@@ -8,15 +8,20 @@ const useRouteLoader = () => {
   const isInitialMount = useRef(true);
 
   useEffect(() => {
-    // Start loader on navigation
-    // On initial mount, the LoadingProvider already started it (count=1)
-    if (!isInitialMount.current) {
+    // Start loader on navigation, but SKIP for admin routes to avoid full-screen loader on sidebar navigation
+    const isAdminRoute = location.pathname.startsWith('/admin');
+
+    if (!isInitialMount.current && !isAdminRoute) {
       startRouteLoading();
     }
 
     // Small delay to simulate route processing and ensure loader visibility
     const timer = setTimeout(() => {
-      stopRouteLoading(); // This will decrement the count (to 0 on initial mount, or matching the startRouteLoading on navigation)
+      // Only stop if we started it (or if it's initial mount)
+      if (!isAdminRoute || isInitialMount.current) {
+        stopRouteLoading();
+      }
+
       if (isInitialMount.current) {
         isInitialMount.current = false;
       }

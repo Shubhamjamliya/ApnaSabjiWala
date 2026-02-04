@@ -7,8 +7,9 @@ import {
     type HomeSection,
     type HomeSectionFormData,
 } from "../../../services/api/admin/adminHomeSectionService";
-import { getCategories, getSubcategories, type Category, type SubCategory } from "../../../services/api/categoryService";
-import { getHeaderCategoriesAdmin, type HeaderCategory } from "../../../services/api/headerCategoryService";
+import { getCategories, getAllSubcategories, getSubcategories, type Category, type SubCategory } from "../../../services/api/categoryService";
+import { getHeaderCategoriesAdmin, type HeaderCategory } from "../../../services/api/headerCategoryService"; // Updated import
+import ContentLoader from "../../../components/loaders/ContentLoader";
 
 const DISPLAY_TYPE_OPTIONS = [
     { value: "subcategories", label: "Subcategories" },
@@ -121,6 +122,44 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
             setSlug(generatedSlug);
         }
     }, [title, editingId]);
+
+    // Fetch all required data
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            setLoadingSections(true); // Keep your existing state logic
+
+            // Fetch sections, header categories, and product categories in parallel
+            const [sectionsData, headerCatsData, categoriesData] = await Promise.all([
+                homeSectionService.getHomeSections({ skipLoader: true }),
+                getHeaderCategoriesAdmin({ skipLoader: true }),
+                getCategories({ skipLoader: true, includeSubcategories: false })
+            ]);
+
+            setSections(sectionsData.data);
+            setHeaderCategories(headerCatsData);
+
+            // Handle category data format
+            // Check if data is array or object with data property
+            const cats = Array.isArray(categoriesData) ? categoriesData : categoriesData.data || [];
+            if (Array.isArray(cats)) {
+                setCategories(cats);
+            } else {
+                console.error("Invalid categories data format:", categoriesData);
+                setCategories([]);
+            }
+
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            showJsToast({
+                message: "Failed to load data",
+                type: "error"
+            });
+        } finally {
+            setLoading(false);
+            setLoadingSections(false);
+        }
+    };
 
     const fetchSections = async () => {
         try {
@@ -697,7 +736,9 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
                         </div>
 
                         {/* Table */}
-                        <div className="overflow-x-auto flex-1">
+                        <div className="overflow-x-auto flex-1 relative min-h-[400px]">
+                            {/* Local Content Loader */}
+                            {loadingSections && <ContentLoader />}
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-neutral-50 text-xs font-bold text-neutral-800 border-b border-neutral-200">
@@ -712,16 +753,7 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {loadingSections ? (
-                                        <tr>
-                                            <td
-                                                colSpan={readOnly ? 6 : 7}
-                                                className="p-8 text-center text-neutral-400"
-                                            >
-                                                Loading sections...
-                                            </td>
-                                        </tr>
-                                    ) : displayedSections.length === 0 ? (
+                                    {displayedSections.length === 0 && !loadingSections ? (
                                         <tr>
                                             <td
                                                 colSpan={readOnly ? 6 : 7}
