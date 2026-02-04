@@ -20,11 +20,13 @@ export interface Category {
   totalProduct?: number;
   createdAt?: string;
   updatedAt?: string;
+  status?: string;
 }
 
 export interface SubCategory {
   _id: string;
   id?: string;
+  name?: string;
   categoryName: string;
   subcategoryName: string;
   subcategoryImage?: string;

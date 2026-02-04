@@ -117,7 +117,7 @@ export interface Product {
   galleryImages: string[];
   price: number;
   compareAtPrice?: number;
-  stock: number;
+  stock: number | string;
   sku?: string;
   barcode?: string;
   variationType?: string;

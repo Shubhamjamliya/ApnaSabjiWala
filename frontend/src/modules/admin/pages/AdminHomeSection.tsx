@@ -131,7 +131,7 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
 
             // Fetch sections, header categories, and product categories in parallel
             const [sectionsData, headerCatsData, categoriesData] = await Promise.all([
-                homeSectionService.getHomeSections({ skipLoader: true }),
+                getHomeSections({ skipLoader: true }),
                 getHeaderCategoriesAdmin({ skipLoader: true }),
                 getCategories({ skipLoader: true, includeSubcategories: false })
             ]);
@@ -151,10 +151,7 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
 
         } catch (error) {
             console.error("Error fetching data:", error);
-            showJsToast({
-                message: "Failed to load data",
-                type: "error"
-            });
+            setError("Failed to load data");
         } finally {
             setLoading(false);
             setLoadingSections(false);
