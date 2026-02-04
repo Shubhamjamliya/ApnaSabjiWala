@@ -87,24 +87,27 @@ export default function AdminLogin() {
       {/* Login Card */}
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
         {/* Header Section */}
-        <div
-          className="px-6 py-4 text-center border-b border-green-700"
-          style={{
-            backgroundColor: "rgb(21 178 74 / var(--tw-bg-opacity, 1))",
-          }}>
-          <div className="mb-0 -mt-4">
-            <img
-              src="/assets/apnasabjiwala.png"
-              alt="Apna Sabji Wala"
-              className="h-44 w-full max-w-xs mx-auto object-fill object-bottom"
-            />
+        <div className="relative pt-8 pb-6 px-6 text-center bg-gradient-to-br from-green-500 to-green-600 overflow-hidden">
+          {/* Decorative Circles */}
+          <div className="absolute -top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="absolute top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="w-28 h-28 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-2 flex items-center justify-center mb-4 border border-green-400/30 transform hover:scale-105 transition-transform duration-300">
+              <img
+                src="/assets/apnasabjiwala.png"
+                alt="Apna Sabji Wala"
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            <h1 className="text-2xl font-bold text-white mb-1 tracking-tight drop-shadow-sm">
+              Admin Login
+            </h1>
+            <p className="text-green-50 text-sm font-medium bg-green-700/30 px-3 py-1 rounded-full border border-green-400/20">
+              Access your dashboard
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-1 -mt-12">
-            Admin Login
-          </h1>
-          <p className="text-green-50 text-sm -mt-2">
-            Access your admin dashboard
-          </p>
         </div>
 
         {/* Login Form */}
