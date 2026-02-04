@@ -136,7 +136,7 @@ export default function AdminHomeSection({ readOnly = false }: AdminHomeSectionP
                 getCategories({ skipLoader: true, includeSubcategories: false })
             ]);
 
-            setSections(sectionsData.data);
+            setSections(Array.isArray(sectionsData.data) ? sectionsData.data : []);
             setHeaderCategories(headerCatsData);
 
             // Handle category data format

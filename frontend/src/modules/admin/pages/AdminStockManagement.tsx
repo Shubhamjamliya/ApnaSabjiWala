@@ -537,7 +537,7 @@ export default function AdminStockManagement() {
 
                         {/* Tags */}
                         <div className="absolute top-2 left-2 flex flex-col gap-1">
-                          {product.stock <= 0 && (
+                          {typeof product.stock === "number" && product.stock <= 0 && (
                             <span className="px-2 py-1 rounded bg-red-500 text-white text-[10px] font-bold uppercase shadow-sm">
                               Out of Stock
                             </span>
