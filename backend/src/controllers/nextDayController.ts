@@ -1,10 +1,7 @@
 import { Request, Response } from "express";
 import Product from "../models/Product";
-import DeliverySlot, { IDeliverySlot } from "../models/DeliverySlot";
-import Order from "../models/Order";
-import mongoose from "mongoose";
+import DeliverySlot from "../models/DeliverySlot";
 import PageConfig from "../models/PageConfig";
-import HomeSection from "../models/HomeSection";
 
 // Hardcoded for now, can be moved to AppSettings later
 const CUT_OFF_TIME_HOUR = 21; // 9 PM
@@ -27,7 +24,7 @@ const getTomorrowDate = (): Date => {
 
 // --- CLIENT APIS ---
 
-export const getNextDaySlots = async (req: Request, res: Response) => {
+export const getNextDaySlots = async (_req: Request, res: Response) => {
   try {
     const bookingOpen = isBookingOpen();
     if (!bookingOpen) {
@@ -56,18 +53,18 @@ export const getNextDaySlots = async (req: Request, res: Response) => {
       bookedCount: slot.bookedCount,
     }));
 
-    res.json({
+    return res.json({
       success: true,
       data: availableSlots,
       bookingClosed: false,
       targetDate: tomorrow,
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-export const getNextDayProducts = async (req: Request, res: Response) => {
+export const getNextDayProducts = async (_req: Request, res: Response) => {
   try {
     // Determine category based on query if needed, or return all enabled
     const products = await Product.find({
@@ -93,16 +90,16 @@ export const getNextDayProducts = async (req: Request, res: Response) => {
       };
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: mappedProducts,
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-export const getNextDayContent = async (req: Request, res: Response) => {
+export const getNextDayContent = async (_req: Request, res: Response) => {
   try {
     const pageConfig = await PageConfig.findOne({ page: "NEXT_DAY" }).populate({
       path: "sections",
@@ -143,12 +140,12 @@ export const getNextDayContent = async (req: Request, res: Response) => {
       return section;
     }));
 
-    res.json({
+    return res.json({
       success: true,
       data: enhancedSections,
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -158,9 +155,9 @@ export const placeNextDayOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Booking closed for tomorrow" });
     }
 
-    const { items, slotId, addressId, paymentMethod } = req.body;
+    const { items, slotId } = req.body;
     // Note: Assuming middleware attaches req.user (Customer)
-    const customerId = (req as any).user?._id || (req as any).user?.id;
+    // const customerId = (req as any).user?._id || (req as any).user?.id;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: "Cart is empty" });
@@ -174,7 +171,7 @@ export const placeNextDayOrder = async (req: Request, res: Response) => {
     }
 
     // Basic calculation (Simplified for this task)
-    let subtotal = 0;
+    // let subtotal = 0;
     // Iterate items to validate price & stock (omitted deep validation for brevity, but should exist)
     // For now assuming items have correct price passed or re-fetching
 
@@ -194,14 +191,14 @@ export const placeNextDayOrder = async (req: Request, res: Response) => {
     slot.bookedCount += 1;
     await slot.save();
 
-    res.json({
+    return res.json({
       success: true,
       message: "Order placed successfully for tomorrow!",
       orderId: "TEMP_ID_" + Date.now() // Replace with actual Order creation
     });
 
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -223,8 +220,9 @@ export const createDailySlots = async (req: Request, res: Response) => {
       createdSlots.push(newSlot);
     }
 
-    res.json({ success: true, data: createdSlots });
+    return res.json({ success: true, data: createdSlots });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
-}
+};
+

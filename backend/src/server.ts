@@ -18,18 +18,6 @@ dotenv.config();
 const app: Application = express();
 const httpServer = createServer(app);
 
-// Simple CORS configuration - Standard and reliable
-const allowedOrigins = [
-  "https://www.apnasabjiwala.com",
-  "https://apnasabjiwala.com",
-  "https://www.apnasabjiwala.in",
-  "https://apnasabjiwala.in",
-  "https://api.apnasabjiwala.in",
-  "https://apna-sabji-wala.vercel.app/",
-  // Add more origins from environment variable if needed
-  ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",").map(url => url.trim()) : [])
-];
-
 // Simplified CORS for Production Debugging (Allow All)
 app.use(cors({
   origin: true, // Reflects the request origin

@@ -4,7 +4,7 @@ import PageConfig from "../models/PageConfig";
 export const getPageConfig = async (req: Request, res: Response) => {
   try {
     const { page } = req.params;
-    let config = await PageConfig.findOne({ page }).populate("sections");
+    const config = await PageConfig.findOne({ page }).populate("sections");
 
     // If we want to return just the ID list or full objects, populate handles objects. 
     // Admin might need full objects to show details, or just IDs if we list all separately.
@@ -13,10 +13,10 @@ export const getPageConfig = async (req: Request, res: Response) => {
     if (!config) {
       return res.status(200).json({ success: true, data: { page, sections: [] } });
     }
-    res.status(200).json({ success: true, data: config });
+    return res.status(200).json({ success: true, data: config });
   } catch (error) {
     console.error("Error fetching page config:", error);
-    res.status(500).json({ success: false, message: "Error fetching page config", error });
+    return res.status(500).json({ success: false, message: "Error fetching page config", error });
   }
 };
 
@@ -35,9 +35,10 @@ export const updatePageConfig = async (req: Request, res: Response) => {
       { new: true, upsert: true }
     ).populate("sections");
 
-    res.status(200).json({ success: true, data: config, message: "Page configuration updated" });
+    return res.status(200).json({ success: true, data: config, message: "Page configuration updated" });
   } catch (error) {
     console.error("Error updating page config:", error);
-    res.status(500).json({ success: false, message: "Error updating page config", error });
+    return res.status(500).json({ success: false, message: "Error updating page config", error });
   }
 };
+
