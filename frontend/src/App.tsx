@@ -38,6 +38,7 @@ const Categories = lazy(() => import("./modules/user/Categories"));
 const Category = lazy(() => import("./modules/user/Category"));
 const Invoice = lazy(() => import("./modules/user/Invoice"));
 const Login = lazy(() => import("./modules/user/Login"));
+const TomorrowVegBooking = lazy(() => import("./modules/user/TomorrowVegBooking"));
 
 const AboutUs = lazy(() => import("./modules/user/AboutUs"));
 const FAQ = lazy(() => import("./modules/user/FAQ"));
@@ -120,6 +121,7 @@ const AdminSystemUser = lazy(() => import("./modules/admin/pages/AdminSystemUser
 const AdminUsers = lazy(() => import("./modules/admin/pages/AdminUsers"));
 const AdminFAQ = lazy(() => import("./modules/admin/pages/AdminFAQ"));
 const AdminHomeSection = lazy(() => import("./modules/admin/pages/AdminHomeSection"));
+const AdminNextDaySections = lazy(() => import("./modules/admin/pages/AdminNextDaySections"));
 const AdminBestsellerCards = lazy(() => import("./modules/admin/pages/AdminBestsellerCards"));
 const AdminPromoStrip = lazy(() => import("./modules/admin/pages/AdminPromoStrip"));
 const AdminLowestPrices = lazy(() => import("./modules/admin/pages/AdminLowestPrices"));
@@ -311,6 +313,7 @@ function App() {
                                         <Route path="profile" element={<AdminProfile />} />
                                         <Route path="catalog-manager" element={<AdminCatalogManager />} />
                                         <Route path="catalog/sections" element={<AdminHomeSection />} />
+                                        <Route path="next-day-sections" element={<AdminNextDaySections />} />
                                         <Route path="category" element={<AdminCategory />} />
                                         <Route path="category/header" element={<AdminHeaderCategory />} />
                                         <Route path="subcategory" element={<AdminSubCategory />} />
@@ -401,6 +404,7 @@ function App() {
                                     <Route path="/store/fashion-basics" element={<FashionStore />} />
                                     <Route path="/store/toy" element={<ToyStore />} />
                                     <Route path="/store/hobby" element={<HobbyStore />} />
+                                    <Route path="/tomorrow-veg-booking" element={<TomorrowVegBooking />} />
                                   </Routes>
                                 </Suspense>
                               </AppLayout>

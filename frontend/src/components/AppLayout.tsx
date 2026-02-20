@@ -427,7 +427,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   className="flex-1 h-full"
                 >
                   <Link
-                    to="/order-again"
+                    to="/tomorrow-veg-booking"
                     className="flex flex-col items-center justify-center h-full relative"
                   >
                     <div className="flex flex-col items-center justify-center relative z-10">
@@ -437,50 +437,36 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         viewBox="0 0 24 24"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
-                        animate={isActive('/order-again') ? {
+                        animate={isActive('/tomorrow-veg-booking') ? {
                           scale: [1, 1.1, 1],
                           y: [0, -2, 0]
                         } : {}}
                         transition={{
                           duration: 0.4,
                           ease: "easeInOut",
-                          repeat: isActive('/order-again') ? Infinity : 0,
+                          repeat: isActive('/tomorrow-veg-booking') ? Infinity : 0,
                           repeatDelay: 2
                         }}
                       >
-                        {isActive('/order-again') ? (
+                        {isActive('/tomorrow-veg-booking') ? (
                           <>
-                            {/* Shopping bag body */}
-                            <path d="M5 8V6C5 4.34315 6.34315 3 8 3H16C17.6569 3 19 4.34315 19 6V8H21C21.5523 8 22 8.44772 22 9V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V9C2 8.44772 2.44772 8 3 8H5Z" fill="#22c55e" stroke="#1f2937" strokeWidth="2" strokeLinejoin="round" />
-                            {/* Handles */}
-                            <path d="M7 8V6C7 5.44772 7.44772 5 8 5H16C16.5523 5 17 5.44772 17 6V8" stroke="#1f2937" strokeWidth="2" strokeLinecap="round" fill="none" />
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" fill="#22c55e" stroke="#1f2937" strokeWidth="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" stroke="#1f2937" strokeWidth="2" strokeLinecap="round" />
+                            <line x1="8" y1="2" x2="8" y2="6" stroke="#1f2937" strokeWidth="2" strokeLinecap="round" />
+                            <line x1="3" y1="10" x2="21" y2="10" stroke="#1f2937" strokeWidth="2" />
                           </>
                         ) : (
                           <>
-                            {/* Shopping bag body */}
-                            <path d="M5 8V6C5 4.34315 6.34315 3 8 3H16C17.6569 3 19 4.34315 19 6V8H21C21.5523 8 22 8.44772 22 9V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V9C2 8.44772 2.44772 8 3 8H5Z" stroke="#6b7280" strokeWidth="2" strokeLinejoin="round" fill="none" />
-                            {/* Handles */}
-                            <path d="M7 8V6C7 5.44772 7.44772 5 8 5H16C16.5523 5 17 5.44772 17 6V8" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" fill="none" />
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="#6b7280" strokeWidth="2" fill="none" />
+                            <line x1="16" y1="2" x2="16" y2="6" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" />
+                            <line x1="8" y1="2" x2="8" y2="6" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" />
+                            <line x1="3" y1="10" x2="21" y2="10" stroke="#6b7280" strokeWidth="2" />
                           </>
                         )}
-                        {/* Heart inside basket - grows when active, shrinks when inactive */}
-                        <AnimatePresence>
-                          {isActive('/order-again') && (
-                            <motion.path
-                              key="heart"
-                              d="M12 17C11.5 16.5 8 13.5 8 11.5C8 10 9 9 10.5 9C11.2 9 11.8 9.3 12 9.7C12.2 9.3 12.8 9 13.5 9C15 9 16 10 16 11.5C16 13.5 12.5 16.5 12 17Z"
-                              fill="#1f2937"
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              exit={{ scale: 0, opacity: 0 }}
-                              transition={{ duration: 0.3, ease: "easeOut" }}
-                            />
-                          )}
-                        </AnimatePresence>
                       </motion.svg>
                     </div>
-                    <span className={`text-xs mt-0.5 relative z-10 ${isActive('/order-again') ? 'font-medium text-neutral-700' : 'font-medium text-neutral-500'}`}>
-                      Order Again
+                    <span className={`text-xs mt-0.5 relative z-10 ${isActive('/tomorrow-veg-booking') ? 'font-medium text-neutral-700' : 'font-medium text-neutral-500'}`}>
+                      Tomorrow
                     </span>
                   </Link>
                 </motion.div>

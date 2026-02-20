@@ -35,6 +35,11 @@ import paymentRoutes from "./paymentRoutes";
 import sellerWalletRoutes from "./sellerWalletRoutes";
 import deliveryWalletRoutes from "./deliveryWalletRoutes";
 import adminWithdrawalRoutes from "./adminWithdrawalRoutes";
+import nextDayRoutes from "./nextDay.routes";
+import pageConfigRoutes from "./pageConfig.routes";
+
+// ...
+
 
 import {
   createOrder,
@@ -82,6 +87,10 @@ router.use(
 // to prevent Express from matching the broader route first
 router.use("/customer/products", customerProductRoutes);
 router.use("/customer/categories", customerCategoryRoutes);
+
+// Next Day Booking Routes
+router.use("/next-day", nextDayRoutes);
+router.use("/admin/page-config", pageConfigRoutes);
 
 // Tracking routes (must be before general /customer/orders/:id route)
 router.use("/customer", customerTrackingRoutes);

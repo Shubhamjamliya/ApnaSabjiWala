@@ -22,50 +22,21 @@ const httpServer = createServer(app);
 const allowedOrigins = [
   "https://www.apnasabjiwala.com",
   "https://apnasabjiwala.com",
+  "https://www.apnasabjiwala.in",
+  "https://apnasabjiwala.in",
+  "https://api.apnasabjiwala.in",
   "https://apna-sabji-wala.vercel.app/",
   // Add more origins from environment variable if needed
   ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",").map(url => url.trim()) : [])
 ];
 
-const corsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    // In development, allow localhost
-    if (process.env.NODE_ENV !== "production") {
-      if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
-        return callback(null, true);
-      }
-    }
-
-    // Normalize origin (remove trailing slash)
-    const normalizedOrigin = origin.replace(/\/$/, '');
-
-    // Check if origin is in allowed list (exact match or normalized)
-    const isAllowed = allowedOrigins.some(allowed => {
-      const normalizedAllowed = allowed.replace(/\/$/, '');
-      return origin === allowed || normalizedOrigin === normalizedAllowed || origin === normalizedAllowed || normalizedOrigin === allowed;
-    });
-
-    if (isAllowed) {
-      return callback(null, true);
-    }
-
-    // Reject if not allowed - return false instead of error for better handling
-    return callback(null, false);
-  },
+// Simplified CORS for Production Debugging (Allow All)
+app.use(cors({
+  origin: true, // Reflects the request origin
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
-  exposedHeaders: ["Content-Length", "Content-Type"],
-  maxAge: 86400,
-};
-
-// Apply CORS middleware - This handles everything including preflight
-app.use(cors(corsOptions));
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"]
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

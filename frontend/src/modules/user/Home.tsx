@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import HomeHero from "./components/HomeHero";
+
 import PromoStrip from "./components/PromoStrip";
+import NextDayBookingCard from "./components/NextDayBookingCard";
 import LowestPricesEver from "./components/LowestPricesEver";
 import CategoryTileSection from "./components/CategoryTileSection";
 import FeaturedThisWeek from "./components/FeaturedThisWeek";
@@ -246,6 +248,9 @@ export default function Home() {
 
       {/* Promo Strip */}
       <PromoStrip activeTab={activeTab} />
+
+      {/* Next Day Vegetable Booking Card */}
+      <NextDayBookingCard />
 
       {/* LOWEST PRICES EVER Section */}
       <LowestPricesEver activeTab={activeTab} products={homeData.lowestPrices} />

@@ -5,6 +5,11 @@ export interface IOrder extends Document {
   // Order Info
   orderNumber: string;
   orderDate: Date;
+  orderType: "INSTANT" | "NEXT_DAY_VEG";
+  deliverySlot?: {
+    date: Date;
+    timeRange: string;
+  };
 
   // Customer Info
   customer: mongoose.Types.ObjectId;
@@ -110,6 +115,15 @@ const OrderSchema = new Schema<IOrder>(
     orderDate: {
       type: Date,
       default: Date.now,
+    },
+    orderType: {
+      type: String,
+      enum: ["INSTANT", "NEXT_DAY_VEG"],
+      default: "INSTANT",
+    },
+    deliverySlot: {
+      date: Date,
+      timeRange: String,
     },
 
     // Customer Info
