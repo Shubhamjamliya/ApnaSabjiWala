@@ -51,7 +51,7 @@ const menuSections: MenuSection[] = [
           </svg>
         ),
       },
-      {
+      /* {
         label: "Sections",
         path: "/admin/catalog/sections",
         icon: (
@@ -69,7 +69,7 @@ const menuSections: MenuSection[] = [
             <line x1="9" y1="21" x2="9" y2="9"></line>
           </svg>
         ),
-      },
+      }, */
       {
         label: "Categories",
         path: "/admin/category",
@@ -256,7 +256,7 @@ const menuSections: MenuSection[] = [
           </svg>
         ),
       },
-      {
+      /* {
         label: "Next Day Sections",
         path: "/admin/next-day-sections",
         icon: (
@@ -276,7 +276,7 @@ const menuSections: MenuSection[] = [
             <path d="M12 14h-2v2h2v-2zm4 0h-2v2h2v-2zm-4 4h-2v2h2v-2zm4 0h-2v2h2v-2z"></path>
           </svg>
         ),
-      },
+      }, */
       {
         label: "Shop by Store",
         path: "/admin/shop-by-store",

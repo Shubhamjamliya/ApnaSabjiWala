@@ -33,8 +33,7 @@ const CartSchema = new Schema<ICart>(
   }
 );
 
-// Indexes
-CartSchema.index({ customer: 1 });
+// No extra indexes needed, customer is unique
 
 const Cart = mongoose.model<ICart>("Cart", CartSchema);
 

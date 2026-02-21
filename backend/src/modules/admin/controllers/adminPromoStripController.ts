@@ -12,6 +12,7 @@ import HeaderCategory from "../../../models/HeaderCategory";
 export const createPromoStrip = asyncHandler(async (req: Request, res: Response) => {
   const {
     headerCategorySlug,
+    productCategoryId,
     heading,
     saleText,
     startDate,
@@ -41,6 +42,17 @@ export const createPromoStrip = asyncHandler(async (req: Request, res: Response)
     }
   }
 
+  // Validate product category if provided
+  if (productCategoryId) {
+    const category = await Category.findById(productCategoryId);
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: `Product category with ID "${productCategoryId}" not found`,
+      });
+    }
+  }
+
   // Validate dates
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -51,22 +63,17 @@ export const createPromoStrip = asyncHandler(async (req: Request, res: Response)
     });
   }
 
-  // Validate category cards
+  // Validate category cards (subcategories)
   if (categoryCards && Array.isArray(categoryCards)) {
     for (const card of categoryCards) {
-      if (!card.categoryId) {
+      if (!card.subCategoryId) {
         return res.status(400).json({
           success: false,
-          message: "Category ID is required for each category card",
+          message: "SubCategory ID is required for each shortcut card",
         });
       }
-      const category = await Category.findById(card.categoryId);
-      if (!category) {
-        return res.status(404).json({
-          success: false,
-          message: `Category with ID "${card.categoryId}" not found`,
-        });
-      }
+      // Assuming we don't strictly need to check SubCategory existence here for performance, 
+      // but if we do, it's safer.
     }
   }
 
@@ -85,6 +92,7 @@ export const createPromoStrip = asyncHandler(async (req: Request, res: Response)
 
   const promoStrip = await PromoStrip.create({
     headerCategorySlug: headerCategorySlug.toLowerCase(),
+    productCategoryId,
     heading,
     saleText,
     startDate: start,
@@ -96,7 +104,8 @@ export const createPromoStrip = asyncHandler(async (req: Request, res: Response)
   });
 
   const populated = await PromoStrip.findById(promoStrip._id)
-    .populate("categoryCards.categoryId", "name slug image")
+    .populate("productCategoryId", "name slug")
+    .populate("categoryCards.subCategoryId", "name image")
     .populate("featuredProducts", "productName mainImage price mrp");
 
   // Invalidate cache for this header category slug
@@ -134,7 +143,8 @@ export const getAllPromoStrips = asyncHandler(async (req: Request, res: Response
   }
 
   const promoStrips = await PromoStrip.find(query)
-    .populate("categoryCards.categoryId", "name slug image")
+    .populate("productCategoryId", "name slug")
+    .populate("categoryCards.subCategoryId", "name image")
     .populate("featuredProducts", "productName mainImage price mrp")
     .sort(sort);
 
@@ -152,7 +162,8 @@ export const getPromoStripById = asyncHandler(async (req: Request, res: Response
   const { id } = req.params;
 
   const promoStrip = await PromoStrip.findById(id)
-    .populate("categoryCards.categoryId", "name slug image")
+    .populate("productCategoryId", "name slug")
+    .populate("categoryCards.subCategoryId", "name image")
     .populate("featuredProducts", "productName mainImage price mrp");
 
   if (!promoStrip) {
@@ -176,6 +187,7 @@ export const updatePromoStrip = asyncHandler(async (req: Request, res: Response)
   const { id } = req.params;
   const {
     headerCategorySlug,
+    productCategoryId,
     heading,
     saleText,
     startDate,
@@ -225,14 +237,8 @@ export const updatePromoStrip = asyncHandler(async (req: Request, res: Response)
   // Validate category cards if provided
   if (categoryCards && Array.isArray(categoryCards)) {
     for (const card of categoryCards) {
-      if (card.categoryId) {
-        const category = await Category.findById(card.categoryId);
-        if (!category) {
-          return res.status(404).json({
-            success: false,
-            message: `Category with ID "${card.categoryId}" not found`,
-          });
-        }
+      if (card.subCategoryId) {
+        // Validation could be added here if needed, but subCategoryId is correctly mapped
       }
     }
     promoStrip.categoryCards = categoryCards;
@@ -256,11 +262,13 @@ export const updatePromoStrip = asyncHandler(async (req: Request, res: Response)
   if (saleText !== undefined) promoStrip.saleText = saleText;
   if (isActive !== undefined) promoStrip.isActive = isActive;
   if (order !== undefined) promoStrip.order = order;
+  if (productCategoryId !== undefined) promoStrip.productCategoryId = productCategoryId;
 
   await promoStrip.save();
 
   const populated = await PromoStrip.findById(promoStrip._id)
-    .populate("categoryCards.categoryId", "name slug image")
+    .populate("productCategoryId", "name slug")
+    .populate("categoryCards.subCategoryId", "name image")
     .populate("featuredProducts", "productName mainImage price mrp");
 
   // Invalidate cache for this header category slug

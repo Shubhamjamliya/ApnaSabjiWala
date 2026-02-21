@@ -126,9 +126,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isSearchPage = location.pathname === '/search';
   const isCheckoutPage = location.pathname === '/checkout' || location.pathname.startsWith('/checkout/');
   const isCartPage = location.pathname === '/cart';
+  const isTomorrowBookingPage = location.pathname === '/tomorrow-veg-booking';
   const showHeader = isSearchPage && !isCheckoutPage && !isCartPage;
   const showSearchBar = isSearchPage && !isCheckoutPage && !isCartPage;
-  const showFooter = !isCheckoutPage && !isProductDetailPage;
+  const showFooter = !isCheckoutPage && !isProductDetailPage && !isTomorrowBookingPage;
 
   return (
     <div className="flex flex-col min-h-screen w-full overflow-x-hidden">

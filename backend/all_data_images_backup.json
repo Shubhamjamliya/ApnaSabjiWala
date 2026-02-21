@@ -1,0 +1,2601 @@
+{
+  "headerCategories": [
+    {
+      "name": "Vegetablezz",
+      "slug": "wedding",
+      "image": "https://res.cloudinary.com/dprp3xtqh/image/upload/v1771663494/apnasabjiwala/header_categories/acffyf5uqe5msgmgfnhx.jpg"
+    }
+  ],
+  "categories": [
+    {
+      "name": "Breakfast & Instant Food",
+      "slug": "breakfast-and-instant-food",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744330/speeup/categories/klyrhm7sijgyozwcu6ny.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Powdered Spices",
+      "slug": "masala-oil-and-more-powdered-spices",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574268/subcategories/tecwhlwia3frqfeuzpid.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Baby Hygiene",
+      "slug": "baby-care-baby-hygiene",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574282/subcategories/vmy1cg1dp0fizvo2cjw3.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Bath & Body",
+      "slug": "personal-care-bath-and-body",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574292/subcategories/vih4aevxud48nyq5pi2i.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Spinach",
+      "slug": "vegetables-and-fruits-leafy-and-herbs-spinach",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585262/sub-subcategories/zjgcfvez6mrvvfkbwp7a.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Mango Juice",
+      "slug": "cold-drinks-and-juices-fruit-juices-mango-juice",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585322/sub-subcategories/djmyavsnljuefugdcmpb.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Basmati Rice",
+      "slug": "atta-rice-and-dal-rice-basmati-rice",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585399/sub-subcategories/nylc97sceuuxgcevyfzc.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Tomato Ketchup",
+      "slug": "sauces-and-spreads-sauces-tomato-ketchup",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585424/sub-subcategories/dajjt3l0azzqnkflgywb.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Mixed Pickle",
+      "slug": "sauces-and-spreads-pickles-mixed-pickle",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585428/sub-subcategories/tbqdac8vaipa4xvkzlgj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Whole Chicken",
+      "slug": "chicken-meat-and-fish-chicken-whole-chicken",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585431/sub-subcategories/ilqrrgmpld6xfovbwtia.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Paan Corner",
+      "slug": "paan-corner",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766746700/speeup/categories/wvvgy1poze5elat8tr8p.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Instant food",
+      "slug": "instant-food",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766747089/speeup/categories/cqzoikp7jwfkeuucsvx3.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Oil",
+      "slug": "oil",
+      "headerCategory": null
+    },
+    {
+      "name": "Chips & Namkeen",
+      "slug": "munchies-chips-and-namkeen",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574235/subcategories/mqvfvtv4qlpjirorqgdy.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Biscuits",
+      "slug": "munchies-biscuits",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Baking Needs",
+      "slug": "sweet-tooth-baking-needs",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Bakery & Biscuits",
+      "slug": "bakery-and-biscuits",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744374/speeup/categories/gjdqpz0vteanqgtyu825.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Coffee",
+      "slug": "tea-coffee-and-more-coffee",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574258/subcategories/ze6jwibsmwzqzow4froo.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Brinjal",
+      "slug": "vegetables-and-fruits-fresh-vegetables-brinjal",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585251/sub-subcategories/ueznjgmj8l8awhjnfkdn.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Apple",
+      "slug": "vegetables-and-fruits-fresh-fruits-apple",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585254/sub-subcategories/bpnj2lwwrwusxj5v2rhq.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Pomegranate",
+      "slug": "vegetables-and-fruits-fresh-fruits-pomegranate",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585260/sub-subcategories/d0qhcs3vzrfbxysebmjr.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Broccoli",
+      "slug": "vegetables-and-fruits-exotic-broccoli",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585268/sub-subcategories/ruvjtfbstqogautnymqm.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Zucchini",
+      "slug": "vegetables-and-fruits-exotic-zucchini",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585271/sub-subcategories/snhhzobbikpoy5iwkgve.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Bhujia",
+      "slug": "munchies-chips-and-namkeen-bhujia",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585290/sub-subcategories/okd2zm0ermtboczvsfpv.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Sugar",
+      "slug": "sweet-tooth-baking-needs-sugar",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585348/sub-subcategories/rkva2dl0cw2gypvx8mcr.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Cocoa Powder",
+      "slug": "sweet-tooth-baking-needs-cocoa-powder",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585356/sub-subcategories/vlcjvkbq3pttpd9wyue2.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Turmeric",
+      "slug": "masala-oil-and-more-powdered-spices-turmeric",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585414/sub-subcategories/kzy1resptkn72a5navv1.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Mango Pickle",
+      "slug": "sauces-and-spreads-pickles-mango-pickle",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585426/sub-subcategories/c4zmz1ahrqfdm6rbgefz.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Mobile & Accessories",
+      "slug": "mobile-accessories",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766410827/speeup/categories/xjtdr8i5grcec6bbzmsj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Instant Meals",
+      "slug": "breakfast-and-instant-food-instant-meals",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574245/subcategories/uelvzzal4ud87npjtcvb.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Desserts",
+      "slug": "sweet-tooth-desserts",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Tea, Coffee & More",
+      "slug": "tea-coffee-and-more",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744393/speeup/categories/movqxvuk6vpw24zjvtol.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Chutney",
+      "slug": "sauces-and-spreads-chutney",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574272/subcategories/imonhhdypoqpqtqbv684.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Baby Food",
+      "slug": "baby-care-baby-food",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574280/subcategories/hoex71eqctjpklcza5cn.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Pharma & Wellness",
+      "slug": "pharma-and-wellness",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744525/speeup/categories/lfpkvn9ywdooiga5r4av.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Home & Office",
+      "slug": "home-and-office",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744574/speeup/categories/z4bsgnluzah1c6xgjibq.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Electrical",
+      "slug": "home-and-office-electrical",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574296/subcategories/xc7mkdqeyaiuju0grepm.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Full Cream Milk",
+      "slug": "dairy-bread-and-eggs-milk-full-cream-milk",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585273/sub-subcategories/iolssieaf8ndvlzczsx3.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Samosa Patti",
+      "slug": "munchies-indian-snacks-samosa-patti",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585312/sub-subcategories/zir1bvmi1img96u3geio.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Plum Cake",
+      "slug": "bakery-and-biscuits-cakes-plum-cake",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585359/sub-subcategories/u5rxajwlb8bpucwwsfvy.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Coriander Seeds",
+      "slug": "masala-oil-and-more-whole-spices-coriander-seeds",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585412/sub-subcategories/toxgxk80eel7enfhelws.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Dairy milk",
+      "slug": "dairy-milk",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766757432/speeup/categories/ztmt6taghunvy7jm3rea.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Mobile Cases & Covers",
+      "slug": "mobile-cases-covers",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766410921/speeup/categories/yvxqmz9tc8ysfi5fsghr.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Exotic",
+      "slug": "vegetables-and-fruits-exotic",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Spreads",
+      "slug": "breakfast-and-instant-food-spreads",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Indian Sweets",
+      "slug": "sweet-tooth-indian-sweets",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574248/subcategories/b1imwn9wvcdplaqvtc03.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Atta, Rice & Dal",
+      "slug": "atta-rice-and-dal",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744411/speeup/categories/m6qbqjvkjfqfkb6n267s.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Onion",
+      "slug": "vegetables-and-fruits-fresh-vegetables-onion",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585249/sub-subcategories/zomdu8gvxdb0rgu5dkhy.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Orange",
+      "slug": "vegetables-and-fruits-fresh-fruits-orange",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585258/sub-subcategories/eavq6muglc1ttqoucw50.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Toned Milk",
+      "slug": "dairy-bread-and-eggs-milk-toned-milk",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585272/sub-subcategories/fmjxkxy4ybi5vza2zn28.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Dark Chocolate",
+      "slug": "munchies-chocolates-dark-chocolate",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585311/sub-subcategories/ix9c0ziun9smkdsex0e4.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Khakhra",
+      "slug": "munchies-indian-snacks-khakhra",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585315/sub-subcategories/ink2fve9l5cwafezslbh.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Instant Noodles",
+      "slug": "breakfast-and-instant-food-instant-meals-instant-noodles",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585332/sub-subcategories/rwzncoro9ccwgrsgs3hk.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Wheat Rusk",
+      "slug": "bakery-and-biscuits-rusks-wheat-rusk",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585363/sub-subcategories/yogory9cyaq7aokkpmmq.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Chilli Powder",
+      "slug": "masala-oil-and-more-powdered-spices-chilli-powder",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585415/sub-subcategories/j4kbvu2put14ib3cocti.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Groundnut Oil",
+      "slug": "masala-oil-and-more-cooking-oil-groundnut-oil",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585422/sub-subcategories/dap54xksxnygva0qbdb0.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Chocolate",
+      "slug": "chocolate",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766757357/speeup/categories/isme0y78v7izakiie9rs.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Bridal Sarees",
+      "slug": "bridal-sarees",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766410471/speeup/categories/weqhctmmkxdphtk7wzrj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Curd & Paneer",
+      "slug": "dairy-bread-and-eggs-curd-and-paneer",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574231/subcategories/beznr7coc5bqolj0s7vf.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Cold Drinks & Juices",
+      "slug": "cold-drinks-and-juices",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744273/speeup/categories/orla9hfypufgy0914hwc.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Water",
+      "slug": "cold-drinks-and-juices-water",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574243/subcategories/ojtxitsyvab5vdkvaswj.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Atta & Flour",
+      "slug": "atta-rice-and-dal-atta-and-flour",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574261/subcategories/n5zb48uarrrr6ytb3gw5.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Pet Food",
+      "slug": "pet-care-pet-food",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574297/subcategories/rj4jk1dkkxksqlmc4msc.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Mint",
+      "slug": "vegetables-and-fruits-leafy-and-herbs-mint",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585265/sub-subcategories/qjk1iq94rw8c3yjc7vf7.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Marie Biscuits",
+      "slug": "munchies-biscuits-marie-biscuits",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585299/sub-subcategories/p67dipv6sexhdxihhkg9.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Bath & Care",
+      "slug": "bath-care",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766747347/speeup/categories/ons7fprdse7guupepng8.png",
+      "headerCategory": null
+    },
+    {
+      "name": "BabyCare",
+      "slug": "babycare",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766747944/speeup/categories/khgl5rnxyprjgtodamxk.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Chocolates",
+      "slug": "munchies-chocolates",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Organic & Healthy Living",
+      "slug": "organic-and-healthy-living",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744489/speeup/categories/qyohz0xqodijgisw2zy0.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Dry Fruits",
+      "slug": "organic-and-healthy-living-dry-fruits",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574277/subcategories/tcz3hbgsw1j28akxsewx.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Tomato",
+      "slug": "vegetables-and-fruits-fresh-vegetables-tomato",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585249/sub-subcategories/q9pygacnceixrjw3zncw.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Cauliflower",
+      "slug": "vegetables-and-fruits-fresh-vegetables-cauliflower",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585253/sub-subcategories/umlj4ladaoactusebda1.png",
+      "headerCategory": null
+    },
+    {
+      "name": "White Bread",
+      "slug": "dairy-bread-and-eggs-bread-and-buns-white-bread",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585279/sub-subcategories/ebm68aj7sw2u6h1zunfn.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Black Tea",
+      "slug": "tea-coffee-and-more-tea-black-tea",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585365/sub-subcategories/hsysqd9rkobz8qot6zz8.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Toor Dal",
+      "slug": "atta-rice-and-dal-dal-and-pulses-toor-dal",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585402/sub-subcategories/mn8xt24y71o0fcxvzv6d.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Chicken Curry Cut",
+      "slug": "chicken-meat-and-fish-chicken-chicken-curry-cut",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585433/sub-subcategories/tfmqm9jihvtoddnxukde.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Glucose & Marie",
+      "slug": "glucose-marie",
+      "headerCategory": null
+    },
+    {
+      "name": "Tea",
+      "slug": "tea-coffee-and-more-tea",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574256/subcategories/hgjkrodqcea2lihq269k.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Energy Drink Cans",
+      "slug": "cold-drinks-and-juices-energy-drinks-energy-drink-cans",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585327/sub-subcategories/vr0g3d9iib6ssfahjyt2.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Sweets",
+      "slug": "sweets",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766757265/speeup/categories/p1olhbglmtsxlpuxoysj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Bridal Lehengas",
+      "slug": "bridal-lehengas",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766410419/speeup/categories/uarbbvd1wkjn97oz8yru.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Winter Clothing",
+      "slug": "winter-clothing",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766410596/speeup/categories/u3dx4gybufcvuhlmjzqy.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Sweaters & Cardigans",
+      "slug": "sweaters-cardigans",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766410659/speeup/categories/bt687e27wcldq3i5eblf.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Cakes",
+      "slug": "bakery-and-biscuits-cakes",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574251/subcategories/jhlhjys3dkbeswcboiyc.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Fish",
+      "slug": "chicken-meat-and-fish-fish",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574275/subcategories/c6e97uml0846pvvmkf2t.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Stationery",
+      "slug": "home-and-office-stationery",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574295/subcategories/wfe0q1rphjwhhzirzmee.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Papaya",
+      "slug": "vegetables-and-fruits-fresh-fruits-papaya",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585259/sub-subcategories/fqfcklirq2qjly59l3q7.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Brown Bread",
+      "slug": "dairy-bread-and-eggs-bread-and-buns-brown-bread",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585281/sub-subcategories/zw0t1w3uep2wpkbcp3np.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Mixture",
+      "slug": "munchies-chips-and-namkeen-mixture",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585294/sub-subcategories/whhga5e6s5ddt1taqxox.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Milk Chocolate",
+      "slug": "munchies-chocolates-milk-chocolate",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585309/sub-subcategories/dtikhvi7euekwsbqac8k.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Orange Drink",
+      "slug": "cold-drinks-and-juices-soft-drinks-orange-drink",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585317/sub-subcategories/tk9v6rny5yiiwapk3gwj.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Mixed Fruit Juice",
+      "slug": "cold-drinks-and-juices-fruit-juices-mixed-fruit-juice",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585325/sub-subcategories/zsq2xqmqmcgcqd9cqw8w.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Butter Cookies",
+      "slug": "bakery-and-biscuits-cookies-butter-cookies",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585361/sub-subcategories/ap383mcwsl1rhp9jip2e.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Multigrain Atta",
+      "slug": "atta-rice-and-dal-atta-and-flour-multigrain-atta",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585398/sub-subcategories/x3qhyfci4h5mpeosqbrc.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Ice Creame & More",
+      "slug": "ice-creame-more",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766747109/speeup/categories/fedryaztymyqvazdikum.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Skin & Face",
+      "slug": "skin-face",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766747446/speeup/categories/ghsjfroao0mbpnyjjgzf.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Feminine Hygiene",
+      "slug": "feminine-hygiene",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766747540/speeup/categories/gwxkbfk1sb5d7s7esufy.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Fresh Vegetables",
+      "slug": "vegetables-and-fruits-fresh-vegetables",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574227/subcategories/degwkuhxzqnppczaqnmb.png",
+      "headerCategory": "Vegetablezz"
+    },
+    {
+      "name": "Chicken, Meat & Fish",
+      "slug": "chicken-meat-and-fish",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744471/speeup/categories/gzgqx5gctd7vyzvdvlpx.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Cleaning Essentials",
+      "slug": "cleaning-essentials",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744543/speeup/categories/qkwgs5afpdgmew4epfq8.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Laundry",
+      "slug": "cleaning-essentials-laundry",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574290/subcategories/stk2ylydggvyaomys1rl.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Oral Care",
+      "slug": "personal-care-oral-care",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574294/subcategories/fow4levbfxv00djp5j8y.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Cream Biscuits",
+      "slug": "munchies-biscuits-cream-biscuits",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585296/sub-subcategories/zveaqstlrvfkqrtxtxsv.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Boiled Rice",
+      "slug": "atta-rice-and-dal-rice-boiled-rice",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585401/sub-subcategories/dml7nid1iu1zir0yzkfu.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Chana Dal",
+      "slug": "atta-rice-and-dal-dal-and-pulses-chana-dal",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585407/sub-subcategories/bywyokuwhooarm4mfka2.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Mustard Oil",
+      "slug": "masala-oil-and-more-cooking-oil-mustard-oil",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585417/sub-subcategories/onm2cxaot1frc0nly8cp.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Beauty & Cosmetics",
+      "slug": "beauty-cosmetics",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766747496/speeup/categories/vgftok6wrrjag4xzt4tv.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Indian Snacks",
+      "slug": "munchies-indian-snacks",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574236/subcategories/udfcwzmzmcgaza9d0rjz.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Banana",
+      "slug": "vegetables-and-fruits-fresh-fruits-banana",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585256/sub-subcategories/moea8fhhszgwtx5c5l9v.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Coriander",
+      "slug": "vegetables-and-fruits-leafy-and-herbs-coriander",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585264/sub-subcategories/bgbpiibkpjifqwanpobh.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Paneer",
+      "slug": "dairy-bread-and-eggs-curd-and-paneer-paneer",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585277/sub-subcategories/y24kt787gmnjufsjvo6k.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Burger Buns",
+      "slug": "dairy-bread-and-eggs-bread-and-buns-burger-buns",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585282/sub-subcategories/s4sbalpc3etzhowzqee7.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Potato Chips",
+      "slug": "munchies-chips-and-namkeen-potato-chips",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585287/sub-subcategories/unponv3oa1or1kgvjcco.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Pasta",
+      "slug": "breakfast-and-instant-food-instant-meals-pasta",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585335/sub-subcategories/lsjt4qmyzemydwh40mo6.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Rasgulla",
+      "slug": "sweet-tooth-indian-sweets-rasgulla",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585341/sub-subcategories/cmk7ekz8vfw5chtch3t0.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Chips & Crisps",
+      "slug": "chips-crisps",
+      "headerCategory": null
+    },
+    {
+      "name": "Bridal Gowns",
+      "slug": "bridal-gowns",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766410524/speeup/categories/fswoxstsyx1xcyayjowk.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Smartphones",
+      "slug": "smartphones",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766410859/speeup/categories/vxi1ac0xizdqawp4be1m.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Masala, Oil & More",
+      "slug": "masala-oil-and-more",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744430/speeup/categories/qmozuvlyussyiogfriyu.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Vitamins",
+      "slug": "pharma-and-wellness-vitamins",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574286/subcategories/azair2brr9kmteoo2j5n.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Pet Hygiene",
+      "slug": "pet-care-pet-hygiene",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Cow Milk",
+      "slug": "dairy-bread-and-eggs-milk-cow-milk",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585274/sub-subcategories/r4oz4rac1hovvccfduad.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "White Eggs",
+      "slug": "dairy-bread-and-eggs-eggs-white-eggs",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585284/sub-subcategories/waekswcjlrapfwsrtpuj.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Ice Cream",
+      "slug": "sweet-tooth-desserts-ice-cream",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585344/sub-subcategories/dyyqdsjypx4cf5gdryqg.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Chilli Sauce",
+      "slug": "sauces-and-spreads-sauces-chilli-sauce",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585425/sub-subcategories/jamdwfkgs6rvutfwarxc.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Health & Pharma",
+      "slug": "health-pharma",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766748032/speeup/categories/qhpntlr75wqrz0n4uwyq.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Bridal Wear",
+      "slug": "bridal-wear",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766409742/speeup/categories/qbqveis4htcqufvir83k.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Milk",
+      "slug": "dairy-bread-and-eggs-milk",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574230/subcategories/xxbxwzl0h5novgga3tb4.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Soft Drinks",
+      "slug": "cold-drinks-and-juices-soft-drinks",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574237/subcategories/as98ghg3wgw6c5tel0ai.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Sauces & Spreads",
+      "slug": "sauces-and-spreads",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744455/speeup/categories/wpaeimcxxmpraky0zlwk.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Fenugreek",
+      "slug": "vegetables-and-fruits-leafy-and-herbs-fenugreek",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585266/sub-subcategories/bvdydofabdmusjjvffug.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Lettuce",
+      "slug": "vegetables-and-fruits-exotic-lettuce",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585269/sub-subcategories/datraebiyohvialfmqsx.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Lemon Drink",
+      "slug": "cold-drinks-and-juices-soft-drinks-lemon-drink",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585320/sub-subcategories/dhke0mwaz0as5i4m8zub.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Peanut Butter",
+      "slug": "breakfast-and-instant-food-spreads-peanut-butter",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585337/sub-subcategories/slbyilvv3jkrehxrw0iq.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Gulab Jamun",
+      "slug": "sweet-tooth-indian-sweets-gulab-jamun",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585340/sub-subcategories/bfjxlujrmxd8gfrtbwc5.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Protein Drink",
+      "slug": "tea-coffee-and-more-health-drinks-protein-drink",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585392/sub-subcategories/tgyz9evqtudqlsq2pwsw.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Malt Drink",
+      "slug": "tea-coffee-and-more-health-drinks-malt-drink",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585394/sub-subcategories/trgi6xe1y3sjypfcaawp.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Moong Dal",
+      "slug": "atta-rice-and-dal-dal-and-pulses-moong-dal",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585404/sub-subcategories/rfcdyndkvxce4i6zgvlt.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Refined Oil",
+      "slug": "masala-oil-and-more-cooking-oil-refined-oil",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585419/sub-subcategories/fr6wwq7pksd8t01xleku.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Mutton Curry Cut",
+      "slug": "chicken-meat-and-fish-mutton-mutton-curry-cut",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585434/sub-subcategories/pel18geobncr3rnnakf2.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Bhujia & Mixtures",
+      "slug": "bhujia-mixtures",
+      "headerCategory": null
+    },
+    {
+      "name": "Eye Makeup",
+      "slug": "eye-makeup",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766411703/speeup/categories/tcscs1eih4evhaulppzi.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Leafy & Herbs",
+      "slug": "vegetables-and-fruits-leafy-and-herbs",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574229/subcategories/fatdinptha6kqtdwhemo.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Munchies",
+      "slug": "munchies",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744216/speeup/categories/fw203npuelr9xxqixvpa.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Fruit Juices",
+      "slug": "cold-drinks-and-juices-fruit-juices",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574239/subcategories/uh3xsvqqqaox2wsezexw.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Rice",
+      "slug": "atta-rice-and-dal-rice",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574262/subcategories/eupn58kma1f7t427b5hc.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Cooking Oil",
+      "slug": "masala-oil-and-more-cooking-oil",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Chicken",
+      "slug": "chicken-meat-and-fish-chicken",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574274/subcategories/pqrwcwp3av5vt1mhfdcv.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Diapers",
+      "slug": "baby-care-diapers",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Home Cleaning",
+      "slug": "cleaning-essentials-home-cleaning",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574288/subcategories/pyj5wcbvzzt2i6qoipdt.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Pet Care",
+      "slug": "pet-care",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744590/speeup/categories/jnr6dbyjeqm4hchy13tf.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Frozen Desserts",
+      "slug": "sweet-tooth-desserts-frozen-desserts",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585345/sub-subcategories/bkwpve3exm7mbawk6xog.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Filter Coffee",
+      "slug": "tea-coffee-and-more-coffee-filter-coffee",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585391/sub-subcategories/ig0cawirpmz9nttt91ys.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Coconut Chutney",
+      "slug": "sauces-and-spreads-chutney-coconut-chutney",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585430/sub-subcategories/vsqmkzqkhxzx2qzesq1p.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Makeup",
+      "slug": "makeup",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766411527/speeup/categories/w1tdl0gr4ybjpi0gwlqc.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Vegetables",
+      "slug": "vegetables-and-fruits",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744123/speeup/categories/wmh8lcut5sqgc8lvdrka.png",
+      "headerCategory": "Vegetablezz"
+    },
+    {
+      "name": "Fresh Fruits",
+      "slug": "vegetables-and-fruits-fresh-fruits",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574228/subcategories/wvopwlbprqsv3amra2au.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Bread & Buns",
+      "slug": "dairy-bread-and-eggs-bread-and-buns",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574232/subcategories/uovahxg6g4wbhkhlrfiu.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Sweet Tooth",
+      "slug": "sweet-tooth",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744349/speeup/categories/gkufvqy0jtfbewpnvppe.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Cookies",
+      "slug": "bakery-and-biscuits-cookies",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574253/subcategories/xadpkxrxkclwilfuan0k.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Rusks",
+      "slug": "bakery-and-biscuits-rusks",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574254/subcategories/ecnv8v575z3ovvg5oyfi.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Whole Spices",
+      "slug": "masala-oil-and-more-whole-spices",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574266/subcategories/kaggsktc88eud4mfuvyr.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Pickles",
+      "slug": "sauces-and-spreads-pickles",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Seeds",
+      "slug": "organic-and-healthy-living-seeds",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574278/subcategories/i08dtugspfnxeyef0ac6.png",
+      "headerCategory": null
+    },
+    {
+      "name": "OTC Medicines",
+      "slug": "pharma-and-wellness-otc-medicines",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574284/subcategories/swxhxx9akxgz6rbb8cup.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Personal Care",
+      "slug": "personal-care",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744558/speeup/categories/nkkmmuvtfzo6vn0abs3u.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Buttermilk",
+      "slug": "dairy-bread-and-eggs-curd-and-paneer-buttermilk",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585278/sub-subcategories/ohqfs2wzpczzxq2w3sf2.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Cola",
+      "slug": "cold-drinks-and-juices-soft-drinks-cola",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585316/sub-subcategories/fnwl6hyuvzn4m8jucg1t.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Tea Cake",
+      "slug": "bakery-and-biscuits-cakes-tea-cake",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585357/sub-subcategories/a48vgvou78giubzicsyd.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Oat Cookies",
+      "slug": "bakery-and-biscuits-cookies-oat-cookies",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585362/sub-subcategories/t7shmxaryxdw9fm6mtnh.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Cumin",
+      "slug": "masala-oil-and-more-whole-spices-cumin",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585411/sub-subcategories/oaataqgxupgfcbgvn8er.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Sweets & Chocolates",
+      "slug": "sweets-chocolates",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766747057/speeup/categories/geedyt4fmibprqvb0dce.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Indian sweets",
+      "slug": "indian-sweets",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766757305/speeup/categories/yyu1zugmsljhdya0nhna.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Energy Drinks",
+      "slug": "cold-drinks-and-juices-energy-drinks",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574241/subcategories/wnet0b1orehmq2y9l8zx.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Sauces",
+      "slug": "sauces-and-spreads-sauces",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574271/subcategories/u100wfa4urxhz9wxsfkf.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Organic Staples",
+      "slug": "organic-and-healthy-living-organic-staples",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Hair Care",
+      "slug": "personal-care-hair-care",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574293/subcategories/jhmm4ofkqcrj3mcf2hwp.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Potato",
+      "slug": "vegetables-and-fruits-fresh-vegetables-potato",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585247/sub-subcategories/emar4knwqwt9nqrimo0v.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Curd",
+      "slug": "dairy-bread-and-eggs-curd-and-paneer-curd",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585276/sub-subcategories/eipwfbhionnikvpuqqet.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Mineral Water",
+      "slug": "cold-drinks-and-juices-water-mineral-water",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585329/sub-subcategories/tzjsaqmxqjel8mrcsk2d.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Sparkling Water",
+      "slug": "cold-drinks-and-juices-water-sparkling-water",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585330/sub-subcategories/ewlotpvw7nzz5itxd7oo.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Wheat Atta",
+      "slug": "atta-rice-and-dal-atta-and-flour-wheat-atta",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585397/sub-subcategories/iiikzjx29biewofgjaeg.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Dairy, Bread & Eggs",
+      "slug": "dairy-bread-and-eggs",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744195/speeup/categories/aupcta3jdr83wp6ap1xy.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Eggs",
+      "slug": "dairy-bread-and-eggs-eggs",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574233/subcategories/pnvcffasqersfsli9gpx.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Health Drinks",
+      "slug": "tea-coffee-and-more-health-drinks",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574260/subcategories/mhmc55unowodp9hq6xqt.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Dal & Pulses",
+      "slug": "atta-rice-and-dal-dal-and-pulses",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574264/subcategories/hpeksdsej5y8ie4usisz.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Mutton",
+      "slug": "chicken-meat-and-fish-mutton",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Baby Care",
+      "slug": "baby-care",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766744506/speeup/categories/xvkejoa15urxvv7yk9tl.png",
+      "headerCategory": null
+    },
+    {
+      "name": "First Aid",
+      "slug": "pharma-and-wellness-first-aid",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Dishwash",
+      "slug": "cleaning-essentials-dishwash",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766574291/subcategories/ssebltue2h1opyiikc3p.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "Kitchenware",
+      "slug": "home-and-office-kitchenware",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766568398/categories/dqomxa9hk5dnzntuo8oj.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Chocolate Spread",
+      "slug": "breakfast-and-instant-food-spreads-chocolate-spread",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585338/sub-subcategories/zes4otgomgymcgrbpdrb.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Green Tea",
+      "slug": "tea-coffee-and-more-tea-green-tea",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585370/sub-subcategories/sycsqtcyg1d8bnxjxxfa.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Instant Coffee",
+      "slug": "tea-coffee-and-more-coffee-instant-coffee",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766585389/sub-subcategories/pywdlx7lpxnxjqnbptag.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Hair",
+      "slug": "hair",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766747403/speeup/categories/dlnww5elfmgkozot7y0f.png",
+      "headerCategory": null
+    },
+    {
+      "name": "Snacks & Munchies",
+      "slug": "snacks-munchies",
+      "headerCategory": null
+    },
+    {
+      "name": "Mutton food",
+      "slug": "mutton-food",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769748573/dhakadsnazzy/categories/i04xk9kphynctitzr1rf.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Chicken food",
+      "slug": "chicken-food",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769748613/dhakadsnazzy/categories/ibzzmzctrshn8x0gmnxq.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Chicken curry",
+      "slug": "chicken-curry",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769748870/dhakadsnazzy/categories/x5mhac3fgg7fiaabo0ix.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Butter chicken curry",
+      "slug": "butter-chicken-curry",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769748946/dhakadsnazzy/categories/nxail2iaz5crywzahbde.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Fried chicken",
+      "slug": "fried-chicken",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769749102/dhakadsnazzy/categories/dbfbsb3ea6m33fk5w5br.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Biryani (nonveg)",
+      "slug": "biryani-nonveg",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769749257/dhakadsnazzy/categories/ronk509puikhroydyiwx.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Chicken Biryani",
+      "slug": "chicken-biryani",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769749313/dhakadsnazzy/categories/laqazu31hlnskqix0bkb.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Mutton Biryani",
+      "slug": "mutton-biryani",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769749389/dhakadsnazzy/categories/g85wm7iwgjt5op6f8gus.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Eggs biryani",
+      "slug": "eggs-biryani",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769749440/dhakadsnazzy/categories/cez0al24cmgv53z9psgg.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Mutton curry",
+      "slug": "mutton-curry",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769749722/dhakadsnazzy/categories/lmbd1xhlky0bedlhskqy.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Eggs food",
+      "slug": "eggs-food",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769764303/dhakadsnazzy/categories/c7qmsugvhxnqugicawhm.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Anda Curry",
+      "slug": "anda-curry",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769764355/dhakadsnazzy/categories/xhslnoayvofccczueujb.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Fish Dishes",
+      "slug": "fish-dishes",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769764598/dhakadsnazzy/categories/sq7thvmeplyn3ndspe2n.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Junk food",
+      "slug": "pizza",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769766313/dhakadsnazzy/categories/hv6gtrfsj1zwxvfvrk9n.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Veg food",
+      "slug": "veg-food",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769768671/dhakadsnazzy/categories/b7zctlte9kxvbgjo8r9o.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Sabji Recipe",
+      "slug": "sabji-recipe",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769769347/dhakadsnazzy/categories/apjrwi4aenvrvzvb0kx4.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Roti - Paratha",
+      "slug": "roti-paratha",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769769595/dhakadsnazzy/categories/brdu9yxb0yrd60nftiol.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Rice 🍚",
+      "slug": "rice",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769769795/dhakadsnazzy/categories/tnkoerxzn5wxkau3rovb.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Daal",
+      "slug": "daal",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769770035/dhakadsnazzy/categories/ucr0wrzyi33b2wc5odvu.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Sabjiya",
+      "slug": "sabjiya",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769770632/dhakadsnazzy/categories/h1jjufziswrhbjsnum4t.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Daal (Sabji)",
+      "slug": "daal-sabji",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769770789/dhakadsnazzy/categories/e2gjbquk0fdbhakkhqxc.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Roti parathas",
+      "slug": "roti-parathas",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769770873/dhakadsnazzy/categories/lyb8k6yswrb1t50czbg1.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Rice khichdi",
+      "slug": "rice-khichdi",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769770918/dhakadsnazzy/categories/ofeeq5cghsqlhk3imlmb.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Girl' s Clothes",
+      "slug": "girl-s-clothes",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769772874/dhakadsnazzy/categories/hcpn8lnfmuuozji9qeed.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Boys ( men's) clothes",
+      "slug": "boys-men-s-clothes",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769772917/dhakadsnazzy/categories/idvdwuimy5dvgdjrimkc.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Little Boy clothes",
+      "slug": "little-boy-clothes",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769772945/dhakadsnazzy/categories/sylvcqulo9thutnkklbo.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Little girls clothes",
+      "slug": "little-girls-clothes",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769772979/dhakadsnazzy/categories/dnv5io9yz5hmryw2i31b.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Sunglasses 🕶️",
+      "slug": "sunglasses",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769773421/dhakadsnazzy/categories/uouak5eqocgezsorater.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Watch ⌚",
+      "slug": "watch",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769773459/dhakadsnazzy/categories/svz5lc9ai5ry2vpf5yml.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Belts Purse 👜",
+      "slug": "belts-purse",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769773588/dhakadsnazzy/categories/repi2rgxarg2ofjazzon.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Shirt",
+      "slug": "shirt",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769780076/dhakadsnazzy/categories/chetat0wgqq4blfebqnk.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Jeans / Pant",
+      "slug": "jeans-pant",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769780111/dhakadsnazzy/categories/yubm7pzkdo9w5aqabz3z.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "T shirt 👕",
+      "slug": "t-shirt",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769780149/dhakadsnazzy/categories/dug2tdfrcqrvpvf2aqso.jpg",
+      "headerCategory": null
+    },
+    {
+      "name": "Lower",
+      "slug": "lower",
+      "image": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1769780215/dhakadsnazzy/categories/ztjotcxjfnxupj0mvet9.webp",
+      "headerCategory": null
+    },
+    {
+      "name": "patatoes",
+      "slug": "patatoes",
+      "image": "https://res.cloudinary.com/dprp3xtqh/image/upload/v1769844759/apnasabjiwala/categories/xux1hbkk7qa8f4mcsjpw.jpg",
+      "headerCategory": null
+    }
+  ],
+  "subCategories": [],
+  "products": [
+    {
+      "name": "Amul Taaza Toned Fresh Milk",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735247/speeup/products/Amul_Taaza_Toned_Fresh_Milk.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735247/speeup/products/Amul_Taaza_Toned_Fresh_Milk.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Coca-Cola Soft Drink (750 ml) - Pack of 2",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766412870/speeup/products/396483b.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766412870/speeup/products/396483b.jpg"
+      ],
+      "category": "Cold Drinks & Juices",
+      "subcategory": null
+    },
+    {
+      "name": "Parle Milano Chocolate Chip Biscuit",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766754111/speeup/products/Parle_Milano_Chocolate_Chip_Biscuit.jpg",
+      "galleryImages": [],
+      "category": "Bakery & Biscuits",
+      "subcategory": null
+    },
+    {
+      "name": "Parle-G Glucose Biscuit - Pack of 2",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766754112/speeup/products/Parle-G_Glucose_Biscuit_-_Pack_of_2.jpg",
+      "galleryImages": [],
+      "category": "Bakery & Biscuits",
+      "subcategory": null
+    },
+    {
+      "name": "bean",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767773248/speeup/products/zvodkprr4dvpihknkjmn.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767773249/speeup/products/gallery/vngqfrv5qnrsj7xmovrh.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Onion",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735233/speeup/products/Onion.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735233/speeup/products/Onion.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Banana",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735238/speeup/products/Banana.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735238/speeup/products/Banana.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Pepsi Black Zero Calories Soft Drink - Buy 5 Get 1",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735265/speeup/products/478019b.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735265/speeup/products/478019b.jpg"
+      ],
+      "category": "Cold Drinks & Juices",
+      "subcategory": null
+    },
+    {
+      "name": "Open & Eat Gulab Jamun by Gits",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735268/speeup/products/Open_Eat_Gulab_Jamun_by_Gits.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735268/speeup/products/Open_Eat_Gulab_Jamun_by_Gits.jpg"
+      ],
+      "category": "Sweet Tooth",
+      "subcategory": null
+    },
+    {
+      "name": "ITC Master Chef Desi Style Chicken Burger Patty (Frozen)",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735284/speeup/products/452651b.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735284/speeup/products/452651b.jpg"
+      ],
+      "category": "Chicken, Meat & Fish",
+      "subcategory": null
+    },
+    {
+      "name": "cullie flower",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767444934/speeup/products/ly9hm26nty2y1tn6mtu8.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767444936/speeup/products/gallery/bbkboqb1gvydqulam9wl.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Apple",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767770312/speeup/products/kwqmmqayv4dvq2odljth.png",
+      "galleryImages": [],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Fresh Pineapple",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1768206859/speeup/products/pum2qg2uk6pbmmq9jp59.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1768206861/speeup/products/gallery/eu2xa00mizxdntk5qwgo.webp"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Potato",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735231/speeup/products/Potato.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735231/speeup/products/Potato.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Hybrid Tomato",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735234/speeup/products/Hybrid_Tomato.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735234/speeup/products/Hybrid_Tomato.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Gokul Full Cream Fresh Milk",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735249/speeup/products/Gokul_Full_Cream_Fresh_Milk.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735249/speeup/products/Gokul_Full_Cream_Fresh_Milk.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "English Oven Sandwich White Bread",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735254/speeup/products/English_Oven_Sandwich_White_Bread.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735254/speeup/products/English_Oven_Sandwich_White_Bread.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Apple",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766995873/speeup/products/wyhw9s225scs16yzksew.png",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766995875/speeup/products/gallery/enotynjclibjmp5l9yzs.png"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Cabbage",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767605114/speeup/products/wmz5c58ukqgtnbioci7i.jpg",
+      "galleryImages": [],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Fresh Pineapple",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767607794/speeup/products/dpxj07oha63qtdwv4iwl.jpg",
+      "galleryImages": [],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Britannia Brown Bread",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735256/speeup/products/Britannia_Brown_Bread.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735256/speeup/products/Britannia_Brown_Bread.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Let's Try Ragi Kaju Pista Cookies",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735270/speeup/products/Let_s_Try_Ragi_Kaju_Pista_Cookies.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735270/speeup/products/Let_s_Try_Ragi_Kaju_Pista_Cookies.jpg"
+      ],
+      "category": "Bakery & Biscuits",
+      "subcategory": null
+    },
+    {
+      "name": "Fresh Kiwi",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767603224/speeup/products/qcwh4v9kbkhcyknrxglq.webp",
+      "galleryImages": [],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Gowardhan Curd",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735252/speeup/products/Gowardhan_Curd.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735252/speeup/products/Gowardhan_Curd.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Catch Cumin Seeds  Jeera Seeds",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735278/speeup/products/Catch_Cumin_Seeds_Jeera_Seeds.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735278/speeup/products/Catch_Cumin_Seeds_Jeera_Seeds.jpg"
+      ],
+      "category": "Masala, Oil & More",
+      "subcategory": null
+    },
+    {
+      "name": "Everest Turmeric PowderHaldi",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735280/speeup/products/Everest_Turmeric_Powder_Haldi.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735280/speeup/products/Everest_Turmeric_Powder_Haldi.jpg"
+      ],
+      "category": "Masala, Oil & More",
+      "subcategory": null
+    },
+    {
+      "name": "Fresh Kiwi",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767336344/speeup/products/lmks2fguq7xczfxck41o.webp",
+      "galleryImages": [],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Table White White Eggs (10 pieces)",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735257/speeup/products/Table_White_White_Eggs_10_pieces.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735257/speeup/products/Table_White_White_Eggs_10_pieces.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Lay's American Style Cream & Onion Potato Chips",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766412860/speeup/products/578b.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766412860/speeup/products/578b.jpg"
+      ],
+      "category": "Munchies",
+      "subcategory": null
+    },
+    {
+      "name": "pineapple",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766999345/speeup/products/vdrzaporytt7xsaaasft.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766999346/speeup/products/gallery/yuengrzjfcg4nm0izxyu.jpg",
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766999346/speeup/products/gallery/cmvmvopwra4ko0gxuxus.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Amul Masti Curd",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735251/speeup/products/Amul_Masti_Curd.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735251/speeup/products/Amul_Masti_Curd.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Kurkure Solid Masti Masala Twisteez Crisps",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766754115/speeup/products/132817b.jpg",
+      "galleryImages": [],
+      "category": "Munchies",
+      "subcategory": null
+    },
+    {
+      "name": "Anmol Rasgulla 250g",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766812245/speeup/products/lojl5sdbfkopk285dtto.png",
+      "galleryImages": [],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "orange",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767366086/speeup/products/o5k5ptiu2g9rvdy9okha.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767366088/speeup/products/gallery/catjghgbbifxcgfse8py.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Varikatri Brinjal",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735236/speeup/products/Varikatri_Brinjal.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735236/speeup/products/Varikatri_Brinjal.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Britannia Vitarich Sandwich White Bread",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735253/speeup/products/Britannia_Vitarich_Sandwich_White_Bread.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735253/speeup/products/Britannia_Vitarich_Sandwich_White_Bread.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Licious Brown Eggs",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735259/speeup/products/Licious_Brown_Eggs.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735259/speeup/products/Licious_Brown_Eggs.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Everest Tikhalal Red Chilli Powder",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735281/speeup/products/Everest_Tikhalal_Red_Chilli_Powder.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735281/speeup/products/Everest_Tikhalal_Red_Chilli_Powder.jpg"
+      ],
+      "category": "Masala, Oil & More",
+      "subcategory": null
+    },
+    {
+      "name": "Potato",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767604566/speeup/products/d0qtobiq3krrs6z3q96l.jpg",
+      "galleryImages": [],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Tomato",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767604825/speeup/products/ztyvtq8fnh5b2rtm9nbz.jpg",
+      "galleryImages": [],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Fresh Kiwi from 9111",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1768286843/speeup/products/kc72lofnrrlxslvujmet.webp",
+      "galleryImages": [],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Tata Tea Agni Special Blend Tea",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735271/speeup/products/Tata_Tea_Agni_Special_Blend_Tea.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735271/speeup/products/Tata_Tea_Agni_Special_Blend_Tea.jpg"
+      ],
+      "category": "Tea, Coffee & More",
+      "subcategory": null
+    },
+    {
+      "name": "Organic Tattva Organic Ajwain Seeds",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735279/speeup/products/Organic_Tattva_Organic_Ajwain_Seeds.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735279/speeup/products/Organic_Tattva_Organic_Ajwain_Seeds.jpg"
+      ],
+      "category": "Masala, Oil & More",
+      "subcategory": null
+    },
+    {
+      "name": "Fresh Kiwi",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767603660/speeup/products/dbasrtdqg8l7n8ztrpwe.webp",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767603664/speeup/products/gallery/q3ziqfjtndl9ipemqsyc.webp"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Table White White Eggs - 30 Pieces Tray",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735258/speeup/products/Table_White_White_Eggs_-_30_Pieces_Tray.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735258/speeup/products/Table_White_White_Eggs_-_30_Pieces_Tray.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Daawat Rozana Super Basmati Rice",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735277/speeup/products/Daawat_Rozana_Super_Basmati_Rice.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735277/speeup/products/Daawat_Rozana_Super_Basmati_Rice.jpg"
+      ],
+      "category": "Atta, Rice & Dal",
+      "subcategory": null
+    },
+    {
+      "name": "Cauliflower",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766998652/speeup/products/fbfg6adghu8viss4rixo.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766998652/speeup/products/gallery/auzhmibjvebvnxxmungg.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Coriander Bunch",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735245/speeup/products/Coriander_Bunch.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735245/speeup/products/Coriander_Bunch.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Amul Cow Fresh Milk",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735250/speeup/products/Amul_Cow_Fresh_Milk.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735250/speeup/products/Amul_Cow_Fresh_Milk.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Red Bull Energy Drink (250 ml)",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735267/speeup/products/Red_Bull_Energy_Drink_250_ml.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735267/speeup/products/Red_Bull_Energy_Drink_250_ml.jpg"
+      ],
+      "category": "Cold Drinks & Juices",
+      "subcategory": null
+    },
+    {
+      "name": "Continental Xtra Instant Coffee",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735273/speeup/products/Continental_Xtra_Instant_Coffee.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735273/speeup/products/Continental_Xtra_Instant_Coffee.jpg"
+      ],
+      "category": "Tea, Coffee & More",
+      "subcategory": null
+    },
+    {
+      "name": "Dairy milk mixed buttons",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766812112/speeup/products/witu5bpnzwchexvft9ip.png",
+      "galleryImages": [],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "Orange",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766998046/speeup/products/aplxhd8fwk6e9a986kef.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766998047/speeup/products/gallery/lixcuo9oou9zrc5tdywv.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Washinton Apple",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735237/speeup/products/Washinton_Apple.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735237/speeup/products/Washinton_Apple.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Papaya",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735240/speeup/products/Papaya.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735240/speeup/products/Papaya.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Monster Energy Drink",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735266/speeup/products/Monster_Energy_Drink.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735266/speeup/products/Monster_Energy_Drink.jpg"
+      ],
+      "category": "Cold Drinks & Juices",
+      "subcategory": null
+    },
+    {
+      "name": "Daawat Pulav Basmati Rice (Slender Grains)",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735276/speeup/products/Daawat_Pulav_Basmati_Rice_Slender_Grains.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735276/speeup/products/Daawat_Pulav_Basmati_Rice_Slender_Grains.jpg"
+      ],
+      "category": "Atta, Rice & Dal",
+      "subcategory": null
+    },
+    {
+      "name": "Hershey's Creamy  Milk Chocolate bar",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766990774/speeup/products/bxsi5ps6ae1mhch5zzgr.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766990775/speeup/products/gallery/xcyxtssiyiambgo10dmv.jpg",
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766990775/speeup/products/gallery/bvnlopmfxmwjfkvjqia9.jpg",
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766990775/speeup/products/gallery/nxyrxisuq1c4j764ertt.jpg"
+      ],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "green chillie",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767445062/speeup/products/cuwlpee7tsvfv2tiawer.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767445063/speeup/products/gallery/uwrtn07kmisuslfxou6u.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Cadbury Chocobakes Choco Chip Cookies",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735269/speeup/products/Cadbury_Chocobakes_Choco_Chip_Cookies.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735269/speeup/products/Cadbury_Chocobakes_Choco_Chip_Cookies.jpg"
+      ],
+      "category": "Bakery & Biscuits",
+      "subcategory": null
+    },
+    {
+      "name": "iD Instant Coffee Powde",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735274/speeup/products/iD_Instant_Coffee_Powde.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735274/speeup/products/iD_Instant_Coffee_Powde.jpg"
+      ],
+      "category": "Tea, Coffee & More",
+      "subcategory": null
+    },
+    {
+      "name": "Cadbury Dairy Milk Top Deck",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766811954/speeup/products/fhmp3namxeoma0euuqda.png",
+      "galleryImages": [],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "Shree Ganesh Idol",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767097787/speeup/products/v8nnw0kmfrtlhy5qfjhs.jpg",
+      "galleryImages": [],
+      "category": "Home & Office",
+      "subcategory": null
+    },
+    {
+      "name": "Baby Spinach Hydroponically Grown",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735244/speeup/products/Baby_Spinach_Hydroponically_Grown.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735244/speeup/products/Baby_Spinach_Hydroponically_Grown.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Lay's India's Magic Masala Potato Chips (40 g)",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766412855/speeup/products/240092a.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766412855/speeup/products/240092a.jpg"
+      ],
+      "category": "Munchies",
+      "subcategory": null
+    },
+    {
+      "name": "Everest Coriander PowderDhania",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735282/speeup/products/Everest_Coriander_Powder_Dhania.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735282/speeup/products/Everest_Coriander_Powder_Dhania.jpg"
+      ],
+      "category": "Masala, Oil & More",
+      "subcategory": null
+    },
+    {
+      "name": "Bhikharam Chandmal Besan Laddoo",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766812365/speeup/products/yokged2kemklqyidf6b8.png",
+      "galleryImages": [],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "Pineapple",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767365904/speeup/products/fetmzdlmzecdkgf2wgvo.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767365905/speeup/products/gallery/y70ax6k25swhkao7oiz5.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Pomegranate",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735241/speeup/products/1c3d4e0b-c49d-41bb-95d8-cb7fa63c9c08.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735241/speeup/products/1c3d4e0b-c49d-41bb-95d8-cb7fa63c9c08.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Brooke Bond Red Label Natural Care Tea",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735272/speeup/products/Brooke_Bond_Red_Label_Natural_Care_Tea.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735272/speeup/products/Brooke_Bond_Red_Label_Natural_Care_Tea.jpg"
+      ],
+      "category": "Tea, Coffee & More",
+      "subcategory": null
+    },
+    {
+      "name": "Balaji Ratlami Sev Bhujia",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766754114/speeup/products/Balaji_Ratlami_Sev_Bhujia.jpg",
+      "galleryImages": [],
+      "category": "Munchies",
+      "subcategory": null
+    },
+    {
+      "name": "Fresh Pineapple",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767170870/speeup/products/nuetpudowji3fuu17v7b.jpg",
+      "galleryImages": [],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Orange",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767770396/speeup/products/xc3eahaqpczvagpymlv7.jpg",
+      "galleryImages": [],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Amul Taaza Homogenised Toned Milk",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735246/speeup/products/Amul_Taaza_Homogenised_Toned_Milk.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735246/speeup/products/Amul_Taaza_Homogenised_Toned_Milk.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Amul Gold Full Cream Fresh Milk",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735248/speeup/products/Amul_Gold_Full_Cream_Fresh_Milk.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735248/speeup/products/Amul_Gold_Full_Cream_Fresh_Milk.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "UPF Healthy Brown Eggs",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735261/speeup/products/UPF_Healthy_Brown_Eggs.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735261/speeup/products/UPF_Healthy_Brown_Eggs.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Godrej Real Good Chicken Curry Cut",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735283/speeup/products/Godrej_Real_Good_Chicken_Curry_Cut.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735283/speeup/products/Godrej_Real_Good_Chicken_Curry_Cut.jpg"
+      ],
+      "category": "Chicken, Meat & Fish",
+      "subcategory": null
+    },
+    {
+      "name": "Fortune Premium Kachi Ghani Pure Mustard Oil",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766754116/speeup/products/15907c.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766754116/speeup/products/15907c.jpg"
+      ],
+      "category": "Oil",
+      "subcategory": null
+    },
+    {
+      "name": "green chillie",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766999028/speeup/products/af4qgzeceuf7u00tm1ov.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766999028/speeup/products/gallery/nwbmcmolpy0p4p0vtx8c.jpg",
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766999029/speeup/products/gallery/lvyv2fpm7jgjkt4kkcky.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Maggie",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767770402/speeup/products/vihduhlinltkq79x4uup.webp",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767770404/speeup/products/gallery/jmzjtmdoonxahc0ednfp.jpg"
+      ],
+      "category": "Breakfast & Instant Food",
+      "subcategory": null
+    },
+    {
+      "name": "Cadbury Dairy Milk Top Deck",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766811954/speeup/products/fhmp3namxeoma0euuqda.png",
+      "galleryImages": [],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "Dairy milk mixed buttons",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766812112/speeup/products/witu5bpnzwchexvft9ip.png",
+      "galleryImages": [],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "Anmol Rasgulla 250g",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766812245/speeup/products/lojl5sdbfkopk285dtto.png",
+      "galleryImages": [],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "Bhikharam Chandmal Besan Laddoo",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766812365/speeup/products/yokged2kemklqyidf6b8.png",
+      "galleryImages": [],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "Shree Ganesh Idol",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767097787/speeup/products/v8nnw0kmfrtlhy5qfjhs.jpg",
+      "galleryImages": [],
+      "category": "Home & Office",
+      "subcategory": null
+    },
+    {
+      "name": "Potato",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735231/speeup/products/Potato.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735231/speeup/products/Potato.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Onion",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735233/speeup/products/Onion.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735233/speeup/products/Onion.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Hybrid Tomato",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735234/speeup/products/Hybrid_Tomato.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735234/speeup/products/Hybrid_Tomato.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Varikatri Brinjal",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735236/speeup/products/Varikatri_Brinjal.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735236/speeup/products/Varikatri_Brinjal.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Washinton Apple",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735237/speeup/products/Washinton_Apple.jpg",
+      "galleryImages": [],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Banana",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735238/speeup/products/Banana.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735238/speeup/products/Banana.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Papaya",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735240/speeup/products/Papaya.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735240/speeup/products/Papaya.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Pomegranate",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735241/speeup/products/1c3d4e0b-c49d-41bb-95d8-cb7fa63c9c08.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735241/speeup/products/1c3d4e0b-c49d-41bb-95d8-cb7fa63c9c08.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Baby Spinach Hydroponically Grown",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735244/speeup/products/Baby_Spinach_Hydroponically_Grown.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735244/speeup/products/Baby_Spinach_Hydroponically_Grown.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Coriander Bunch",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735245/speeup/products/Coriander_Bunch.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735245/speeup/products/Coriander_Bunch.jpg"
+      ],
+      "category": "Vegetables",
+      "subcategory": null
+    },
+    {
+      "name": "Amul Taaza Homogenised Toned Milk",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735246/speeup/products/Amul_Taaza_Homogenised_Toned_Milk.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735246/speeup/products/Amul_Taaza_Homogenised_Toned_Milk.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Amul Taaza Toned Fresh Milk",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735247/speeup/products/Amul_Taaza_Toned_Fresh_Milk.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735247/speeup/products/Amul_Taaza_Toned_Fresh_Milk.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Amul Gold Full Cream Fresh Milk",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735248/speeup/products/Amul_Gold_Full_Cream_Fresh_Milk.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735248/speeup/products/Amul_Gold_Full_Cream_Fresh_Milk.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Gokul Full Cream Fresh Milk",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735249/speeup/products/Gokul_Full_Cream_Fresh_Milk.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735249/speeup/products/Gokul_Full_Cream_Fresh_Milk.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Amul Cow Fresh Milk",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735250/speeup/products/Amul_Cow_Fresh_Milk.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735250/speeup/products/Amul_Cow_Fresh_Milk.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Amul Masti Curd",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735251/speeup/products/Amul_Masti_Curd.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735251/speeup/products/Amul_Masti_Curd.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Gowardhan Curd",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735252/speeup/products/Gowardhan_Curd.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735252/speeup/products/Gowardhan_Curd.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Britannia Vitarich Sandwich White Bread",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735253/speeup/products/Britannia_Vitarich_Sandwich_White_Bread.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735253/speeup/products/Britannia_Vitarich_Sandwich_White_Bread.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "English Oven Sandwich White Bread",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735254/speeup/products/English_Oven_Sandwich_White_Bread.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735254/speeup/products/English_Oven_Sandwich_White_Bread.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Britannia Brown Bread",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735256/speeup/products/Britannia_Brown_Bread.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735256/speeup/products/Britannia_Brown_Bread.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Table White White Eggs (10 pieces)",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735257/speeup/products/Table_White_White_Eggs_10_pieces.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735257/speeup/products/Table_White_White_Eggs_10_pieces.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Table White White Eggs - 30 Pieces Tray",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735258/speeup/products/Table_White_White_Eggs_-_30_Pieces_Tray.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735258/speeup/products/Table_White_White_Eggs_-_30_Pieces_Tray.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Licious Brown Eggs",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735259/speeup/products/Licious_Brown_Eggs.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735259/speeup/products/Licious_Brown_Eggs.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "UPF Healthy Brown Eggs",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735261/speeup/products/UPF_Healthy_Brown_Eggs.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735261/speeup/products/UPF_Healthy_Brown_Eggs.jpg"
+      ],
+      "category": "Dairy, Bread & Eggs",
+      "subcategory": null
+    },
+    {
+      "name": "Lay's American Style Cream & Onion Potato Chips",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766412860/speeup/products/578b.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766412860/speeup/products/578b.jpg"
+      ],
+      "category": "Munchies",
+      "subcategory": null
+    },
+    {
+      "name": "Lay's India's Magic Masala Potato Chips (40 g)",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766412855/speeup/products/240092a.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766412855/speeup/products/240092a.jpg"
+      ],
+      "category": "Munchies",
+      "subcategory": null
+    },
+    {
+      "name": "Coca-Cola Soft Drink (750 ml) - Pack of 2",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766412870/speeup/products/396483b.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766412870/speeup/products/396483b.jpg"
+      ],
+      "category": "Cold Drinks & Juices",
+      "subcategory": null
+    },
+    {
+      "name": "Pepsi Black Zero Calories Soft Drink - Buy 5 Get 1",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735265/speeup/products/478019b.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735265/speeup/products/478019b.jpg"
+      ],
+      "category": "Cold Drinks & Juices",
+      "subcategory": null
+    },
+    {
+      "name": "Monster Energy Drink",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735266/speeup/products/Monster_Energy_Drink.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735266/speeup/products/Monster_Energy_Drink.jpg"
+      ],
+      "category": "Cold Drinks & Juices",
+      "subcategory": null
+    },
+    {
+      "name": "Red Bull Energy Drink (250 ml)",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735267/speeup/products/Red_Bull_Energy_Drink_250_ml.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735267/speeup/products/Red_Bull_Energy_Drink_250_ml.jpg"
+      ],
+      "category": "Cold Drinks & Juices",
+      "subcategory": null
+    },
+    {
+      "name": "Open & Eat Gulab Jamun by Gits",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735268/speeup/products/Open_Eat_Gulab_Jamun_by_Gits.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735268/speeup/products/Open_Eat_Gulab_Jamun_by_Gits.jpg"
+      ],
+      "category": "Sweet Tooth",
+      "subcategory": null
+    },
+    {
+      "name": "Cadbury Chocobakes Choco Chip Cookies",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735269/speeup/products/Cadbury_Chocobakes_Choco_Chip_Cookies.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735269/speeup/products/Cadbury_Chocobakes_Choco_Chip_Cookies.jpg"
+      ],
+      "category": "Bakery & Biscuits",
+      "subcategory": null
+    },
+    {
+      "name": "Let's Try Ragi Kaju Pista Cookies",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735270/speeup/products/Let_s_Try_Ragi_Kaju_Pista_Cookies.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735270/speeup/products/Let_s_Try_Ragi_Kaju_Pista_Cookies.jpg"
+      ],
+      "category": "Bakery & Biscuits",
+      "subcategory": null
+    },
+    {
+      "name": "Tata Tea Agni Special Blend Tea",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735271/speeup/products/Tata_Tea_Agni_Special_Blend_Tea.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735271/speeup/products/Tata_Tea_Agni_Special_Blend_Tea.jpg"
+      ],
+      "category": "Tea, Coffee & More",
+      "subcategory": null
+    },
+    {
+      "name": "Brooke Bond Red Label Natural Care Tea",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735272/speeup/products/Brooke_Bond_Red_Label_Natural_Care_Tea.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735272/speeup/products/Brooke_Bond_Red_Label_Natural_Care_Tea.jpg"
+      ],
+      "category": "Tea, Coffee & More",
+      "subcategory": null
+    },
+    {
+      "name": "Continental Xtra Instant Coffee",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735273/speeup/products/Continental_Xtra_Instant_Coffee.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735273/speeup/products/Continental_Xtra_Instant_Coffee.jpg"
+      ],
+      "category": "Tea, Coffee & More",
+      "subcategory": null
+    },
+    {
+      "name": "iD Instant Coffee Powde",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735274/speeup/products/iD_Instant_Coffee_Powde.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735274/speeup/products/iD_Instant_Coffee_Powde.jpg"
+      ],
+      "category": "Tea, Coffee & More",
+      "subcategory": null
+    },
+    {
+      "name": "Daawat Pulav Basmati Rice (Slender Grains)",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735276/speeup/products/Daawat_Pulav_Basmati_Rice_Slender_Grains.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735276/speeup/products/Daawat_Pulav_Basmati_Rice_Slender_Grains.jpg"
+      ],
+      "category": "Atta, Rice & Dal",
+      "subcategory": null
+    },
+    {
+      "name": "Daawat Rozana Super Basmati Rice",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735277/speeup/products/Daawat_Rozana_Super_Basmati_Rice.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735277/speeup/products/Daawat_Rozana_Super_Basmati_Rice.jpg"
+      ],
+      "category": "Atta, Rice & Dal",
+      "subcategory": null
+    },
+    {
+      "name": "Catch Cumin Seeds  Jeera Seeds",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735278/speeup/products/Catch_Cumin_Seeds_Jeera_Seeds.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735278/speeup/products/Catch_Cumin_Seeds_Jeera_Seeds.jpg"
+      ],
+      "category": "Masala, Oil & More",
+      "subcategory": null
+    },
+    {
+      "name": "Organic Tattva Organic Ajwain Seeds",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735279/speeup/products/Organic_Tattva_Organic_Ajwain_Seeds.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735279/speeup/products/Organic_Tattva_Organic_Ajwain_Seeds.jpg"
+      ],
+      "category": "Masala, Oil & More",
+      "subcategory": null
+    },
+    {
+      "name": "Everest Turmeric PowderHaldi",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735280/speeup/products/Everest_Turmeric_Powder_Haldi.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735280/speeup/products/Everest_Turmeric_Powder_Haldi.jpg"
+      ],
+      "category": "Masala, Oil & More",
+      "subcategory": null
+    },
+    {
+      "name": "Everest Tikhalal Red Chilli Powder",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735281/speeup/products/Everest_Tikhalal_Red_Chilli_Powder.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735281/speeup/products/Everest_Tikhalal_Red_Chilli_Powder.jpg"
+      ],
+      "category": "Masala, Oil & More",
+      "subcategory": null
+    },
+    {
+      "name": "Everest Coriander PowderDhania",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735282/speeup/products/Everest_Coriander_Powder_Dhania.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735282/speeup/products/Everest_Coriander_Powder_Dhania.jpg"
+      ],
+      "category": "Masala, Oil & More",
+      "subcategory": null
+    },
+    {
+      "name": "Godrej Real Good Chicken Curry Cut",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735283/speeup/products/Godrej_Real_Good_Chicken_Curry_Cut.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735283/speeup/products/Godrej_Real_Good_Chicken_Curry_Cut.jpg"
+      ],
+      "category": "Chicken, Meat & Fish",
+      "subcategory": null
+    },
+    {
+      "name": "ITC Master Chef Desi Style Chicken Burger Patty (Frozen)",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735284/speeup/products/452651b.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766735284/speeup/products/452651b.jpg"
+      ],
+      "category": "Chicken, Meat & Fish",
+      "subcategory": null
+    },
+    {
+      "name": "Parle Milano Chocolate Chip Biscuit",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766754111/speeup/products/Parle_Milano_Chocolate_Chip_Biscuit.jpg",
+      "galleryImages": [],
+      "category": "Bakery & Biscuits",
+      "subcategory": null
+    },
+    {
+      "name": "Parle-G Glucose Biscuit - Pack of 2",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766754112/speeup/products/Parle-G_Glucose_Biscuit_-_Pack_of_2.jpg",
+      "galleryImages": [],
+      "category": "Bakery & Biscuits",
+      "subcategory": null
+    },
+    {
+      "name": "Balaji Ratlami Sev Bhujia",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766754114/speeup/products/Balaji_Ratlami_Sev_Bhujia.jpg",
+      "galleryImages": [],
+      "category": "Munchies",
+      "subcategory": null
+    },
+    {
+      "name": "Kurkure Solid Masti Masala Twisteez Crisps",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766754115/speeup/products/132817b.jpg",
+      "galleryImages": [],
+      "category": "Munchies",
+      "subcategory": null
+    },
+    {
+      "name": "Fortune Premium Kachi Ghani Pure Mustard Oil",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766754116/speeup/products/15907c.jpg",
+      "galleryImages": [
+        "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766754116/speeup/products/15907c.jpg"
+      ],
+      "category": "Oil",
+      "subcategory": null
+    },
+    {
+      "name": "Cadbury Dairy Milk Top Deck",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766811954/speeup/products/fhmp3namxeoma0euuqda.png",
+      "galleryImages": [],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "Dairy milk mixed buttons",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766812112/speeup/products/witu5bpnzwchexvft9ip.png",
+      "galleryImages": [],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "Anmol Rasgulla 250g",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766812245/speeup/products/lojl5sdbfkopk285dtto.png",
+      "galleryImages": [],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "Bhikharam Chandmal Besan Laddoo",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1766812365/speeup/products/yokged2kemklqyidf6b8.png",
+      "galleryImages": [],
+      "category": "Sweets & Chocolates",
+      "subcategory": null
+    },
+    {
+      "name": "Shree Ganesh Idol",
+      "mainImage": "https://res.cloudinary.com/dv1l9sb4p/image/upload/v1767097787/speeup/products/v8nnw0kmfrtlhy5qfjhs.jpg",
+      "galleryImages": [],
+      "category": "Home & Office",
+      "subcategory": null
+    }
+  ],
+  "exportedAt": "2026-02-21T10:47:30.252Z"
+}

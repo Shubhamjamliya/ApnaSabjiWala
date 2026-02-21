@@ -2,14 +2,16 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IPromoStrip extends Document {
   headerCategorySlug: string; // Links to HeaderCategory slug (e.g., "all", "grocery", "fashion")
+  productCategoryId?: mongoose.Types.ObjectId; // Links to the main Product Category
   heading: string; // e.g., "HOUSEFULL SALE"
   saleText: string; // e.g., "SALE"
   startDate: Date; // Sale start date
   endDate: Date; // Sale end date
   categoryCards: Array<{
-    categoryId: mongoose.Types.ObjectId; // Reference to Category
+    subCategoryId: mongoose.Types.ObjectId; // Reference to SubCategory
     title: string; // Custom title for the card
     badge: string; // e.g., "Up to 55% OFF"
+    images: string[]; // 4 product images
     discountPercentage: number; // Discount percentage (0-100)
     order: number; // Display order
   }>;
@@ -28,6 +30,10 @@ const PromoStripSchema = new Schema<IPromoStrip>(
       required: [true, "Header category slug is required"],
       trim: true,
       lowercase: true,
+    },
+    productCategoryId: {
+      type: Schema.Types.ObjectId,
+      ref: "Category",
     },
     heading: {
       type: String,
@@ -57,9 +63,9 @@ const PromoStripSchema = new Schema<IPromoStrip>(
     },
     categoryCards: [
       {
-        categoryId: {
+        subCategoryId: {
           type: Schema.Types.ObjectId,
-          ref: "Category",
+          ref: "SubCategory",
           required: true,
         },
         title: {
@@ -71,6 +77,10 @@ const PromoStripSchema = new Schema<IPromoStrip>(
           type: String,
           required: true,
           trim: true,
+        },
+        images: {
+          type: [String],
+          default: [],
         },
         discountPercentage: {
           type: Number,

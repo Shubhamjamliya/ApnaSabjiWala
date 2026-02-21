@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  getHomeSections,
-  type HomeSection,
-} from "../../../services/api/admin/adminHomeSectionService";
-import {
+  getCategories,
   getSubcategories,
   type Category,
   type SubCategory,
@@ -162,67 +159,43 @@ export default function AdminCatalogManager() {
   const navigate = useNavigate();
 
   // Data State
-  const [sections, setSections] = useState<HomeSection[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
 
   // Selection State
-  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
   // Search State
-  const [searchSection, setSearchSection] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
   const [searchSubCategory, setSearchSubCategory] = useState("");
   const [searchProduct, setSearchProduct] = useState("");
 
   // Loading States
-  const [loadingSections, setLoadingSections] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const [loadingSubCats, setLoadingSubCats] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
-  // -- Fetch Sections --
+  // -- Fetch Categories --
   useEffect(() => {
-    fetchSections();
+    fetchCategories();
   }, []);
 
-  const fetchSections = async () => {
-    setLoadingSections(true);
+  const fetchCategories = async () => {
+    setLoadingCategories(true);
     try {
-      const res = await getHomeSections();
+      const res = await getCategories();
       if (res.success && Array.isArray(res.data)) {
-        setSections(res.data);
+        setCategories(res.data);
       }
     } catch (e) {
       console.error(e);
     } finally {
-      setLoadingSections(false);
+      setLoadingCategories(false);
     }
   };
-
-  // -- 1. Section -> Categories --
-  useEffect(() => {
-    if (selectedSectionId) {
-      const section = sections.find(s => s._id === selectedSectionId);
-      if (section && section.categories && section.categories.length > 0) {
-        // If section has categories populated, use them
-        setCategories(section.categories as unknown as Category[]);
-      } else {
-        setCategories([]);
-      }
-    } else {
-      setCategories([]);
-    }
-    // Reset DOWNSTREAM
-    setSelectedCategoryId(null);
-    setSubCategories([]);
-    setSelectedSubCategoryId(null);
-    setProducts([]);
-    setSelectedProductId(null);
-  }, [selectedSectionId, sections]);
 
   // -- 2. Category -> SubCategories --
   useEffect(() => {
@@ -292,12 +265,54 @@ export default function AdminCatalogManager() {
         </div>
 
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate("/admin/home-section")}
-            className="px-4 py-2 bg-neutral-900 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-neutral-800 transition-all shadow-lg active:scale-95"
-          >
-            Configure Logic
-          </button>
+          <div className="hidden lg:flex items-center gap-3 mr-4">
+            <button
+              onClick={() => navigate("/admin/promo-strip")}
+              className="flex flex-col items-center justify-center p-2 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-100 text-purple-600 transition-all hover:scale-105"
+            >
+              <div className="p-1 mb-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                  <path d="M3 9H21M9 3V21"></path>
+                </svg>
+              </div>
+              <span className="text-[9px] font-bold uppercase">Promo Strip</span>
+            </button>
+            <button
+              onClick={() => navigate("/admin/lowest-prices")}
+              className="flex flex-col items-center justify-center p-2 rounded-xl bg-orange-50 hover:bg-orange-100 border border-orange-100 text-orange-600 transition-all hover:scale-105"
+            >
+              <div className="p-1 mb-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L2 7L12 12L22 7L12 2Z"></path>
+                  <path d="M2 17L12 22L22 17"></path>
+                </svg>
+              </div>
+              <span className="text-[9px] font-bold uppercase">Lowest Price</span>
+            </button>
+            <button
+              onClick={() => navigate("/admin/bestseller-cards")}
+              className="flex flex-col items-center justify-center p-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-100 text-blue-600 transition-all hover:scale-105"
+            >
+              <div className="p-1 mb-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
+                </svg>
+              </div>
+              <span className="text-[9px] font-bold uppercase">Bestsellers</span>
+            </button>
+            <button
+              onClick={() => navigate("/admin/shop-by-store")}
+              className="flex flex-col items-center justify-center p-2 rounded-xl bg-pink-50 hover:bg-pink-100 border border-pink-100 text-pink-600 transition-all hover:scale-105"
+            >
+              <div className="p-1 mb-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"></path>
+                </svg>
+              </div>
+              <span className="text-[9px] font-bold uppercase">Stores</span>
+            </button>
+          </div>
           <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-neutral-50 rounded-full border border-neutral-100">
             <span className="text-xs font-bold text-neutral-400">STATUS:</span>
             <span className="text-xs font-bold text-teal-600">CONNECTED</span>
@@ -307,37 +322,14 @@ export default function AdminCatalogManager() {
 
       {/* Hierarchy Container */}
       <div className="flex-1 flex bg-neutral-50/30 overflow-x-auto overflow-y-hidden custom-scrollbar">
-        {/* Panel 1: Home Sections */}
-        <CatalogPanel
-          title="Home Sections"
-          subtitle="Level 1"
-          items={sections}
-          selectedId={selectedSectionId}
-          onSelect={(s) => setSelectedSectionId(s._id)}
-          loading={loadingSections}
-          searchQuery={searchSection}
-          onSearchChange={setSearchSection}
-          renderItem={(s) => (
-            <div>
-              <div className={`font-bold text-sm ${selectedSectionId === s._id ? "text-white" : "text-neutral-800"}`}>{s.title}</div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-tighter ${selectedSectionId === s._id ? "bg-white/20 text-white" : "bg-neutral-100 text-neutral-500"}`}>
-                  {s.displayType}
-                </span>
-              </div>
-            </div>
-          )}
-          onAdd={() => navigate("/admin/catalog/sections")}
-        />
-
-        {/* Panel 2: Categories */}
+        {/* Panel 1: Categories */}
         <CatalogPanel
           title="Categories"
-          subtitle="Level 2"
+          subtitle="Level 1"
           items={categories}
           selectedId={selectedCategoryId}
           onSelect={(c) => setSelectedCategoryId(c._id)}
-          emptyMessage={selectedSectionId ? "No categories linked" : "Select Section"}
+          loading={loadingCategories}
           searchQuery={searchCategory}
           onSearchChange={setSearchCategory}
           renderItem={(cat) => (
@@ -358,15 +350,15 @@ export default function AdminCatalogManager() {
           onAdd={() => navigate("/admin/category")}
         />
 
-        {/* Panel 3: SubCategories */}
+        {/* Panel 2: SubCategories */}
         <CatalogPanel
           title="Sub-Categories"
-          subtitle="Level 3"
+          subtitle="Level 2"
           items={subCategories}
           selectedId={selectedSubCategoryId}
           onSelect={(s) => setSelectedSubCategoryId(s._id || s.id || "")}
           loading={loadingSubCats}
-          emptyMessage={selectedCategoryId ? "No subcategories" : "Bridge from category"}
+          emptyMessage={selectedCategoryId ? "No subcategories" : "Select category"}
           searchQuery={searchSubCategory}
           onSearchChange={setSearchSubCategory}
           renderItem={(sub) => (
@@ -382,15 +374,15 @@ export default function AdminCatalogManager() {
           onAdd={selectedCategoryId ? () => navigate("/admin/category") : undefined}
         />
 
-        {/* Panel 4: Products */}
+        {/* Panel 3: Products */}
         <CatalogPanel
           title="Products"
-          subtitle="Level 4"
+          subtitle="Level 3"
           items={products}
           selectedId={selectedProductId}
           onSelect={(p) => setSelectedProductId(p._id)}
           loading={loadingProducts}
-          emptyMessage={selectedSubCategoryId ? "Empty shelf" : "Finalize hierarchy"}
+          emptyMessage={selectedSubCategoryId ? "Empty shelf" : "Select subcategory"}
           searchQuery={searchProduct}
           onSearchChange={setSearchProduct}
           renderItem={(prod) => (
@@ -411,6 +403,21 @@ export default function AdminCatalogManager() {
                   {!prod.publish && <span className="text-[9px] font-bold px-1 rounded bg-orange-50 text-orange-600 border border-orange-100">DRAFT</span>}
                 </div>
               </div>
+              {selectedProductId === prod._id && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/admin/product/edit/${prod._id}`);
+                  }}
+                  className="ml-auto p-1.5 bg-white/20 hover:bg-white/40 text-white rounded-lg transition-all"
+                  title="Edit Product"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+              )}
             </div>
           )}
           onAdd={selectedSubCategoryId ? () => navigate("/admin/product/add") : undefined}
@@ -422,7 +429,7 @@ export default function AdminCatalogManager() {
         <div className="flex items-center gap-6 text-xs font-bold text-neutral-400">
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
-            <span>TOTAL SECTIONS: {sections.length}</span>
+            <span>TOTAL CATEGORIES: {categories.length}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>

@@ -9,6 +9,7 @@ import { getCategories } from '../../../services/api/customerProductService';
 import { Category } from '../../../types/domain';
 import { getHeaderCategoriesPublic } from '../../../services/api/headerCategoryService';
 import { getIconByName } from '../../../utils/iconLibrary';
+import homeIcon from '@assets/category/Home-icon.png';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -23,19 +24,15 @@ interface Tab {
   icon: React.ReactNode;
 }
 
-const ALL_TAB: Tab = {
+const HOME_TAB: Tab = {
   id: 'all',
-  label: 'All',
-  icon: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9 22V12H15V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
+  label: 'Home',
+  icon: <img src={homeIcon} alt="Home" className="w-10 h-10 object-contain" />,
 };
 
+
 export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroProps) {
-  const [tabs, setTabs] = useState<Tab[]>([ALL_TAB]);
+  const [tabs, setTabs] = useState<Tab[]>([HOME_TAB]);
 
   useEffect(() => {
     const fetchHeaderCategories = async () => {
@@ -45,9 +42,15 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           const mapped = cats.map(c => ({
             id: c.slug,
             label: c.name,
-            icon: getIconByName(c.iconName)
+            icon: c.image ? (
+              <img src={c.image} alt={c.name} className="w-10 h-10 object-contain" />
+            ) : (
+              <div className="w-10 h-10 flex items-center justify-center">
+                {getIconByName(c.conName)}
+              </div>
+            )
           }));
-          setTabs([ALL_TAB, ...mapped]);
+          setTabs([HOME_TAB, ...mapped]);
         }
       } catch (error) {
         console.error('Failed to fetch header categories', error);
@@ -370,25 +373,11 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
         </div>
 
         {/* Category Tabs */}
-        <div className="border-b border-neutral-400/40 w-full" style={{ paddingBottom: 0 }}>
+        <div className="w-full" style={{ paddingBottom: '16px' }}>
           <div
             ref={tabsContainerRef}
-            className="relative flex gap-2 md:gap-3 overflow-x-auto scrollbar-hide -mx-4 md:mx-0 px-4 md:px-6 lg:px-8 md:justify-center scroll-smooth"
-            style={{ paddingBottom: '12px' }}
-            data-padding-bottom="md:8px"
+            className="flex gap-4 md:gap-6 overflow-x-auto scrollbar-hide px-4 md:px-6 lg:px-8 md:justify-center scroll-smooth"
           >
-            {/* Sliding Indicator */}
-            {indicatorStyle.width > 0 && (
-              <div
-                className="absolute bottom-0 h-1 bg-neutral-900 rounded-t-md transition-all duration-300 ease-out pointer-events-none"
-                style={{
-                  left: `${indicatorStyle.left}px`,
-                  width: `${indicatorStyle.width}px`,
-                  transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  zIndex: 0,
-                }}
-              />
-            )}
 
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
@@ -409,23 +398,22 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
                     }
                   }}
                   onClick={() => handleTabClick(tab.id)}
-                  className={`flex-shrink-0 flex flex-col md:flex-row items-center justify-center min-w-[50px] md:min-w-fit md:px-3 py-1 md:py-1.5 relative ${tabColor} z-10`}
-                  style={{
-                    transition: 'color 0.3s ease-out',
-                  }}
+                  className="flex-shrink-0 flex flex-col items-center gap-2 group outline-none"
                   type="button"
                 >
-                  <div className={`mb-0.5 md:hidden w-5 h-5 flex items-center justify-center ${tabColor}`} style={{
-                    transition: 'color 0.3s ease-out, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    transform: isActive ? 'scale(1.1)' : 'scale(1)',
-                  }}>
-                    {tab.icon}
+                  <div
+                    className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isActive
+                        ? 'bg-white shadow-[0_0_0_3px_#111827,0_4px_12px_rgba(0,0,0,0.15)] scale-110 z-20'
+                        : 'bg-white shadow-md border border-neutral-100 hover:shadow-lg group-hover:scale-105'
+                      }`}
+                  >
+                    <div className="transition-all duration-300">
+                      {tab.icon}
+                    </div>
                   </div>
                   <span
-                    className={`text-[10px] md:text-xs md:whitespace-nowrap ${isActive ? 'font-semibold' : 'font-medium'}`}
-                    style={{
-                      transition: 'font-weight 0.3s ease-out',
-                    }}
+                    className={`text-[10px] md:text-sm text-center font-bold leading-tight max-w-[80px] transition-all duration-300 ${isActive ? 'text-neutral-900 scale-105' : 'text-neutral-500'
+                      }`}
                   >
                     {tab.label}
                   </span>

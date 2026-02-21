@@ -1,9 +1,10 @@
 import api from "../config";
 
 export interface CategoryCard {
-  categoryId: string | { _id: string; name?: string; slug?: string; image?: string };
+  subCategoryId: string | { _id: string; name?: string; image?: string };
   title: string;
   badge: string;
+  images: string[];
   discountPercentage: number;
   order: number;
   _id?: string;
@@ -12,6 +13,7 @@ export interface CategoryCard {
 export interface PromoStrip {
   _id: string;
   headerCategorySlug: string;
+  productCategoryId?: string | { _id: string; name?: string; slug?: string };
   heading: string;
   saleText: string;
   startDate: string;
@@ -27,6 +29,7 @@ export interface PromoStrip {
 
 export interface PromoStripFormData {
   headerCategorySlug: string;
+  productCategoryId?: string;
   heading: string;
   saleText: string;
   startDate: string;

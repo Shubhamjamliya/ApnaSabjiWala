@@ -4,8 +4,9 @@ export interface HeaderCategory {
     _id: string; // MongoDB ID
     id?: string; // For backward compatibility if needed
     name: string;
-    iconLibrary: string; // 'IonIcons' | 'MaterialIcons' | 'FontAwesome' | 'Feather'
-    iconName: string;
+    image?: string; // Cloudinary URL
+    iconLibrary?: string; // Optional for legacy support
+    iconName?: string;
     slug: string; // Maps to theme key
     relatedCategory?: string;
     status: 'Published' | 'Unpublished';

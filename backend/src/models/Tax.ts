@@ -36,7 +36,7 @@ const taxSchema = new Schema<ITax>(
 
 // Index for faster queries
 taxSchema.index({ status: 1 });
-taxSchema.index({ name: 1 });
+// Index already created by unique: true
 
 const Tax = model<ITax>("Tax", taxSchema);
 

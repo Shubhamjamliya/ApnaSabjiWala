@@ -101,48 +101,68 @@ export const getNextDayProducts = async (_req: Request, res: Response) => {
 
 export const getNextDayContent = async (_req: Request, res: Response) => {
   try {
-    const pageConfig = await PageConfig.findOne({ page: "NEXT_DAY" }).populate({
-      path: "sections",
-      match: { isActive: true }, // Only fetch active sections
-      populate: [
-        { path: "categories", select: "name slug image" },
-        { path: "subCategories", select: "subcategoryName slug" },
-        { path: "products", select: "productName price mainImage stock nextDay unit" }
-      ]
-    });
+    // 1. Fetch all active root categories
+    const Category = (await import("../models/Category")).default;
+    const SubCategory = (await import("../models/SubCategory")).default;
 
-    if (!pageConfig || !pageConfig.sections) {
-      return res.json({ success: true, data: [] });
-    }
+    const categories = await Category.find({ status: "Active", parentId: null })
+      .sort({ order: 1 })
+      .lean();
 
-    // Enhance sections: If a section is meant to show products but uses categories as source, 
-    // fetch distinct products from those categories.
-    // We can do this map concurrently.
-    const enhancedSections = await Promise.all(pageConfig.sections.map(async (section: any) => {
-      // If displayType is products and we have categories but no explicit products
-      if (["products", "categories"].includes(section.displayType) && section.categories?.length > 0 && (!section.products || section.products.length === 0)) {
-        const categoryIds = section.categories.map((c: any) => c._id);
-        const products = await Product.find({
-          category: { $in: categoryIds },
-          "nextDay.enabled": true, // Only Next Day enabled products
-          publish: true,
-          status: "Active"
-        })
-          .limit(section.limit || 10)
-          .select("productName price mainImage stock nextDay unit");
+    // 2. Fetch all products enabled for next day
+    const nextDayProducts = await Product.find({
+      "nextDay.enabled": true,
+      status: "Active",
+      publish: true
+    })
+      .select("productName price mainImage stock nextDay unit category subcategory")
+      .lean();
 
-        // Attach these products to the section object safely
-        // Mongoose documents are immutable directly unless converted to Object
-        const sectionObj = section.toObject();
-        sectionObj.products = products;
-        return sectionObj;
-      }
-      return section;
+    // 3. Build hierarchy: Category -> Subcategory -> Products
+    const enhancedSections = await Promise.all(categories.map(async (cat: any) => {
+      // Find subcategories for this category
+      const subcategories = await SubCategory.find({ category: cat._id })
+        .sort({ order: 1 })
+        .lean();
+
+      // Find products for this category
+      const catProducts = nextDayProducts.filter(p => p.category?.toString() === cat._id.toString());
+
+      if (catProducts.length === 0) return null;
+
+      const mappedProducts = catProducts.map(p => {
+        const price = p.nextDay?.price || p.price;
+        const stock = p.nextDay?.stock || 0;
+        return {
+          _id: p._id,
+          productName: p.productName,
+          name: p.productName,
+          image: p.mainImage,
+          price: price,
+          originalPrice: p.price,
+          stock: stock,
+          unit: p.unit
+        };
+      });
+
+      return {
+        _id: cat._id,
+        id: cat._id,
+        title: cat.name,
+        name: cat.name,
+        displayType: "products",
+        products: mappedProducts,
+        subcategories: subcategories.map(s => ({
+          _id: s._id,
+          name: s.name,
+          image: s.image
+        }))
+      };
     }));
 
     return res.json({
       success: true,
-      data: enhancedSections,
+      data: enhancedSections.filter(Boolean),
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });

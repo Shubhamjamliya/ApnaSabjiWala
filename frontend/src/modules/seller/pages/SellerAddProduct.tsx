@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { uploadImage, uploadImages } from "../../../services/api/uploadService";
 import {
   validateImageFile,
@@ -16,10 +16,8 @@ import {
 import {
   getCategories,
   getSubcategories,
-  getSubSubCategories,
   Category,
   SubCategory,
-  SubSubCategory,
 } from "../../../services/api/categoryService";
 import { getActiveTaxes, Tax } from "../../../services/api/taxService";
 import { getBrands, Brand } from "../../../services/api/brandService";
@@ -31,12 +29,13 @@ import {
 export default function SellerAddProduct() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith("/admin");
   const [formData, setFormData] = useState({
     productName: "",
     headerCategory: "",
     category: "",
     subcategory: "",
-    subSubCategory: "",
     publish: "No",
     popular: "No",
     dealOfDay: "No",
@@ -82,7 +81,6 @@ export default function SellerAddProduct() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
-  const [subSubCategories, setSubSubCategories] = useState<SubSubCategory[]>([]);
   const [taxes, setTaxes] = useState<Tax[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [headerCategories, setHeaderCategories] = useState<HeaderCategory[]>(
@@ -162,10 +160,6 @@ export default function SellerAddProduct() {
                 (product.subcategory as any)?._id ||
                 product.subcategoryId ||
                 "",
-              subSubCategory:
-                (product.subSubCategory as any)?._id ||
-                (product as any).subSubCategoryId ||
-                "",
               publish: product.publish ? "Yes" : "No",
               popular: product.popular ? "Yes" : "No",
               dealOfDay: product.dealOfDay ? "Yes" : "No",
@@ -232,21 +226,8 @@ export default function SellerAddProduct() {
   }, [formData.category]);
 
   useEffect(() => {
-    const fetchSubSubs = async () => {
-      if (formData.subcategory) {
-        try {
-          const res = await getSubSubCategories(formData.subcategory);
-          if (res.success) setSubSubCategories(res.data);
-        } catch (err) {
-          console.error("Error fetching sub-subcategories:", err);
-        }
-      } else {
-        setSubSubCategories([]);
-        setFormData((prev) => ({ ...prev, subSubCategory: "" }));
-      }
-    };
     if (formData.subcategory) {
-      fetchSubSubs();
+      // Logic for subcategory change if any
     }
   }, [formData.subcategory]);
 
@@ -268,10 +249,8 @@ export default function SellerAddProduct() {
             ...prev,
             category: "",
             subcategory: "",
-            subSubCategory: "",
           }));
           setSubcategories([]);
-          setSubSubCategories([]);
         }
       }
     } else {
@@ -460,7 +439,6 @@ export default function SellerAddProduct() {
         headerCategoryId: formData.headerCategory || undefined,
         categoryId: formData.category || undefined,
         subcategoryId: formData.subcategory || undefined,
-        subSubCategoryId: formData.subSubCategory || undefined,
         brandId: formData.brand || undefined,
         publish: formData.publish === "Yes",
         popular: formData.popular === "Yes",
@@ -508,7 +486,6 @@ export default function SellerAddProduct() {
               headerCategory: "",
               category: "",
               subcategory: "",
-              subSubCategory: "",
               publish: "No",
               popular: "No",
               dealOfDay: "No",
@@ -540,7 +517,11 @@ export default function SellerAddProduct() {
           }
           setSuccessMessage("");
           // Navigate to product list
-          navigate("/seller/product/list");
+          if (isAdmin) {
+            navigate("/admin/catalog-manager");
+          } else {
+            navigate("/seller/product/list");
+          }
         }, 1500);
       } else {
         setUploadError(response.message || "Failed to create product");
@@ -669,32 +650,6 @@ export default function SellerAddProduct() {
                     {subcategories.map((sub) => (
                       <option key={sub._id} value={sub._id}>
                         {sub.subcategoryName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Select Sub-SubCategory
-                    {!formData.subcategory && (
-                      <span className="text-xs text-neutral-500 ml-1">
-                        (Select subcategory first)
-                      </span>
-                    )}
-                  </label>
-                  <select
-                    name="subSubCategory"
-                    value={formData.subSubCategory}
-                    onChange={handleChange}
-                    disabled={!formData.subcategory}
-                    className={`w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${!formData.subcategory
-                      ? "bg-neutral-100 cursor-not-allowed text-neutral-500"
-                      : "bg-white"
-                      }`}>
-                    <option value="">Select Sub-SubCategory</option>
-                    {subSubCategories.map((subSub) => (
-                      <option key={subSub._id} value={subSub._id}>
-                        {subSub.name}
                       </option>
                     ))}
                   </select>
@@ -1317,12 +1272,12 @@ export default function SellerAddProduct() {
                 ? "bg-neutral-400 cursor-not-allowed text-white"
                 : "bg-teal-600 hover:bg-teal-700 text-white"
                 }`}>
-              {uploading ? "Uploading Images..." : "Add Product"}
+              {uploading ? "Saving..." : (id ? "Update Product" : "Add Product")}
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+        </form >
+      </div >
+    </div >
   );
 }
 

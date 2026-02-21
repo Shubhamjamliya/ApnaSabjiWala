@@ -118,15 +118,15 @@ export const getProducts = async (req: Request, res: Response) => {
 
       // Special handling for Category and "and" -> "&"
       if (modelName === "Category" && value.includes("and")) {
-         const withAmpersand = value.replace(/-and-/g, " & ").replace(/-/g, " ");
-         item = await model
-           .findOne({
-             ...baseQuery,
-             name: { $regex: new RegExp(`^${withAmpersand}$`, "i") },
-           })
-           .select("_id")
-           .lean();
-         if (item) return item._id;
+        const withAmpersand = value.replace(/-and-/g, " & ").replace(/-/g, " ");
+        item = await model
+          .findOne({
+            ...baseQuery,
+            name: { $regex: new RegExp(`^${withAmpersand}$`, "i") },
+          })
+          .select("_id")
+          .lean();
+        if (item) return item._id;
       }
 
       return null;
@@ -142,19 +142,23 @@ export const getProducts = async (req: Request, res: Response) => {
     }
 
     if (subcategory) {
-      // Try to resolve from Category model first (new structure where subcategories are categories with parentId)
-      let subcategoryId = await resolveId(
-        Category,
-        subcategory as string,
-        "Category"
-      );
-      // If not found in Category, try old SubCategory model (backward compatibility)
-      if (!subcategoryId) {
+      // Try resolving as ID first
+      let subcategoryId: any = subcategory;
+      if (!mongoose.Types.ObjectId.isValid(subcategory as string)) {
+        // Try to resolve from Category model first (new structure where subcategories are categories with parentId)
         subcategoryId = await resolveId(
-          SubCategory,
+          Category,
           subcategory as string,
-          "SubCategory"
+          "Category"
         );
+        // If not found in Category, try old SubCategory model (backward compatibility)
+        if (!subcategoryId) {
+          subcategoryId = await resolveId(
+            SubCategory,
+            subcategory as string,
+            "SubCategory"
+          );
+        }
       }
       if (subcategoryId) query.subcategory = subcategoryId;
     }
@@ -180,6 +184,7 @@ export const getProducts = async (req: Request, res: Response) => {
 
     // Calculate skip for pagination
     const skip = (Number(page) - 1) * Number(limit);
+
 
     // Build sort object
     let sortOptions: any = { createdAt: -1 }; // Default new to old

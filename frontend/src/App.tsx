@@ -322,6 +322,8 @@ function App() {
                                         <Route path="brand" element={<AdminBrand />} />
                                         <Route path="product/taxes" element={<AdminTaxes />} />
                                         <Route path="product/list" element={<AdminStockManagement />} />
+                                        <Route path="product/add" element={<SellerAddProduct />} />
+                                        <Route path="product/edit/:id" element={<SellerAddProduct />} />
                                         <Route path="manage-seller/list" element={<AdminManageSellerList />} />
                                         <Route path="manage-seller/transaction" element={<AdminSellerTransaction />} />
                                         <Route path="delivery-boy/manage" element={<AdminManageDeliveryBoy />} />

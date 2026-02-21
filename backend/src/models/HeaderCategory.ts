@@ -2,8 +2,9 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IHeaderCategory extends Document {
     name: string;
-    iconLibrary: string;
-    iconName: string;
+    image?: string; // Cloudinary URL for the logo
+    iconLibrary?: string;
+    iconName?: string;
     slug: string;
     relatedCategory?: string; // Links to a product category
     order: number;
@@ -15,8 +16,9 @@ export interface IHeaderCategory extends Document {
 const HeaderCategorySchema: Schema = new Schema(
     {
         name: { type: String, required: true },
-        iconLibrary: { type: String, required: true },
-        iconName: { type: String, required: true },
+        image: { type: String, required: false }, // Cloudinary URL
+        iconLibrary: { type: String, required: false },
+        iconName: { type: String, required: false },
         slug: { type: String, required: true, unique: true },
         relatedCategory: { type: String, required: false },
         order: { type: Number, default: 0 },

@@ -41,6 +41,7 @@ export const createHeaderCategory = async (req: Request, res: Response) => {
   try {
     const {
       name,
+      image,
       iconLibrary,
       iconName,
       slug,
@@ -58,6 +59,7 @@ export const createHeaderCategory = async (req: Request, res: Response) => {
 
     const category = await HeaderCategory.create({
       name,
+      image,
       iconLibrary,
       iconName,
       slug,
@@ -75,13 +77,11 @@ export const createHeaderCategory = async (req: Request, res: Response) => {
 // @desc    Update a header category
 // @route   PUT /api/v1/header-categories/:id
 // @access  Private/Admin
-// @desc    Update a header category
-// @route   PUT /api/v1/header-categories/:id
-// @access  Private/Admin
 export const updateHeaderCategory = async (req: Request, res: Response) => {
   try {
     const {
       name,
+      image,
       iconLibrary,
       iconName,
       slug,
@@ -103,6 +103,7 @@ export const updateHeaderCategory = async (req: Request, res: Response) => {
       }
 
       category.name = name || category.name;
+      category.image = image !== undefined ? image : category.image;
       category.iconLibrary = iconLibrary || category.iconLibrary;
       category.iconName = iconName || category.iconName;
       category.slug = slug || category.slug;

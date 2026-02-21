@@ -7,7 +7,7 @@ export interface IPageConfig extends Document {
 
 const PageConfigSchema = new Schema<IPageConfig>(
   {
-    page: { type: String, required: true, unique: true, index: true },
+    page: { type: String, required: true, unique: true },
     sections: [{ type: Schema.Types.ObjectId, ref: "HomeSection" }],
   },
   { timestamps: true }

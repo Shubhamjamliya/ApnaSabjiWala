@@ -142,7 +142,10 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   } = req.query;
 
   // Build query
-  const query: any = { seller: sellerId };
+  const query: any = {};
+  if (req.user.userType !== "Admin") {
+    query.seller = sellerId;
+  }
 
   // Search filter
   if (search) {
@@ -229,9 +232,14 @@ export const getProductById = asyncHandler(
       });
     }
 
-    const product = await Product.findOne({ _id: id, seller: sellerId })
+    const query: any = { _id: id };
+    if (req.user.userType !== "Admin") {
+      query.seller = sellerId;
+    }
+
+    const product = await Product.findOne(query)
       .populate("category", "name")
-      .populate("subcategory", "subcategoryName")
+      .populate("subcategory", "name")
       .populate("headerCategoryId", "name slug")
       .populate("brand", "name")
       .populate("tax", "name rate");
@@ -318,9 +326,8 @@ export const updateProduct = asyncHandler(
         if (Number(variation.discPrice) > Number(variation.price)) {
           return res.status(400).json({
             success: false,
-            message: `Discounted price cannot be greater than price for variation ${
-              variation.title || variation.value
-            }`,
+            message: `Discounted price cannot be greater than price for variation ${variation.title || variation.value
+              }`,
           });
         }
       }
@@ -347,7 +354,11 @@ export const updateProduct = asyncHandler(
     }
 
     // Use findOne and then save to trigger pre-save hooks
-    const product = await Product.findOne({ _id: id, seller: sellerId });
+    const query: any = { _id: id };
+    if (req.user.userType !== "Admin") {
+      query.seller = sellerId;
+    }
+    const product = await Product.findOne(query);
 
     if (!product) {
       // Check if product exists at all
@@ -377,7 +388,7 @@ export const updateProduct = asyncHandler(
     // Re-populate for response
     const populatedProduct = await Product.findById(product._id)
       .populate("category", "name")
-      .populate("subcategory", "subcategoryName")
+      .populate("subcategory", "name")
       .populate("headerCategoryId", "name slug")
       .populate("brand", "name")
       .populate("tax", "name rate");
@@ -403,10 +414,12 @@ export const deleteProduct = asyncHandler(
     console.log("DEBUG deleteProduct: sellerId from token:", sellerId);
     console.log("DEBUG deleteProduct: productId:", id);
 
-    const product = await Product.findOneAndDelete({
-      _id: id,
-      seller: sellerId,
-    });
+    const query: any = { _id: id };
+    if (req.user.userType !== "Admin") {
+      query.seller = sellerId;
+    }
+
+    const product = await Product.findOneAndDelete(query);
 
     if (!product) {
       return res.status(404).json({
@@ -430,7 +443,11 @@ export const updateStock = asyncHandler(async (req: Request, res: Response) => {
   const { id, variationId } = req.params;
   const { stock, status } = req.body;
 
-  const product = await Product.findOne({ _id: id, seller: sellerId });
+  const query: any = { _id: id };
+  if (req.user.userType !== "Admin") {
+    query.seller = sellerId;
+  }
+  const product = await Product.findOne(query);
 
   if (!product) {
     return res.status(404).json({
@@ -487,8 +504,13 @@ export const updateProductStatus = asyncHandler(
     if (popular !== undefined) updateData.popular = popular;
     if (dealOfDay !== undefined) updateData.dealOfDay = dealOfDay;
 
+    const query: any = { _id: id };
+    if (req.user.userType !== "Admin") {
+      query.seller = sellerId;
+    }
+
     const product = await Product.findOneAndUpdate(
-      { _id: id, seller: sellerId },
+      query,
       updateData,
       { new: true, runValidators: true }
     );
@@ -527,10 +549,11 @@ export const bulkUpdateStock = asyncHandler(
     for (const update of updates) {
       const { productId, variationId, stock } = update;
 
-      const product = await Product.findOne({
-        _id: productId,
-        seller: sellerId,
-      });
+      const query: any = { _id: productId };
+      if (req.user.userType !== "Admin") {
+        query.seller = sellerId;
+      }
+      const product = await Product.findOne(query);
       if (product) {
         const variation: any = product.variations?.find(
           (v: any) => v._id?.toString() === variationId

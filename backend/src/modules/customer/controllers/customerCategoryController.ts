@@ -189,11 +189,11 @@ export const getCategoryById = async (req: Request, res: Response) => {
 
         // If not found, try replacing " and " with " & " specifically for categories like "Vegetables & Fruits"
         if (!category && id.includes("and")) {
-           const withAmpersand = id.replace(/-and-/g, " & ").replace(/-/g, " ");
-           category = await Category.findOne({
-             name: { $regex: new RegExp(`^${withAmpersand}$`, "i") },
-             status: "Active",
-           }).lean();
+          const withAmpersand = id.replace(/-and-/g, " & ").replace(/-/g, " ");
+          category = await Category.findOne({
+            name: { $regex: new RegExp(`^${withAmpersand}$`, "i") },
+            status: "Active",
+          }).lean();
         }
       }
     }
@@ -240,23 +240,30 @@ export const getCategoryById = async (req: Request, res: Response) => {
     // Ensure category._id is treated as ObjectId for the query
     let catId = category._id;
     if (typeof catId === 'string') {
-        try {
-            catId = new mongoose.Types.ObjectId(catId);
-        } catch (e) {
-            console.error("Failed to cast category ID to ObjectId:", e);
-        }
+      try {
+        catId = new mongoose.Types.ObjectId(catId);
+      } catch (e) {
+        console.error("Failed to cast category ID to ObjectId:", e);
+      }
     }
 
-    // Query for BOTH ObjectId and String representation to be safe against legacy data references
-    // Use Category model to find subcategories (children) instead of separate SubCategory model
-    // Using parentId to find children
-    const subcategories = await Category.find({
-      parentId: { $in: [catId, catId.toString()] },
-      status: "Active"
+    // Query the SubCategory model for items belonging to this category
+    const subcategories = (await SubCategory.find({
+      category: catId
     })
-      .select("name image order slug icon")
+      .select("name image order")
       .sort({
         order: 1,
+      })).map((s: any) => {
+        const subObj = s.toObject ? s.toObject() : s;
+        return {
+          ...subObj,
+          id: subObj._id.toString(),
+          _id: subObj._id.toString(),
+          name: subObj.name,
+          subcategoryName: subObj.name, // Support both field names for compatibility
+          categoryId: catId.toString()
+        };
       });
 
     console.log(`[getCategoryById] Found ${subcategories.length} subcategories for ${category.name}`);

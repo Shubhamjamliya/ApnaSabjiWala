@@ -33,6 +33,7 @@ export default function Home() {
   const [homeData, setHomeData] = useState<any>({
     bestsellers: [],
     categories: [],
+    subcategories: [], // Tab-specific subcategories
     homeSections: [], // Dynamic sections created by admin
     shops: [],
     promoBanners: [],
@@ -259,6 +260,9 @@ export default function Home() {
       <div
         className="bg-emerald-50/30 -mt-2 pt-1 space-y-5 md:space-y-8 md:pt-4">
 
+        {/* Featured This Week Section */}
+        <FeaturedThisWeek />
+
         {/* Dynamic Home Sections - Render sections created by admin (For ALL tabs) */}
         {homeData.homeSections && homeData.homeSections.length > 0 && (
           <>
@@ -266,7 +270,6 @@ export default function Home() {
               const columnCount = Number(section.columns) || 4;
 
               if (section.displayType === "products" && section.data && section.data.length > 0) {
-                // Strict column mapping as requested - applies to ALL screen sizes including mobile
                 const gridClass = {
                   2: "grid-cols-2",
                   3: "grid-cols-3",
@@ -275,7 +278,6 @@ export default function Home() {
                   8: "grid-cols-8"
                 }[columnCount] || "grid-cols-4";
 
-                // Use compact mode for 4 or more columns to fit content on mobile
                 const isCompact = columnCount >= 4;
                 const gapClass = columnCount >= 4 ? "gap-2" : "gap-3 md:gap-4";
 
@@ -318,22 +320,20 @@ export default function Home() {
           </>
         )}
 
-        {/* Filtered Products Section (Legacy fallback if no dynamic sections, or complementary) */}
-        {activeTab !== "all" && filteredProducts.length > 0 && homeData.homeSections?.length === 0 && (
-          <div data-products-section className="mt-6 mb-6 md:mt-8 md:mb-8">
-            <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
-              {activeTab === "grocery" ? "Grocery Items" : activeTab}
+        {/* Bestsellers Section (Dynamic) */}
+        {homeData.bestsellers && homeData.bestsellers.length > 0 && (
+          <div className="mt-6 mb-6 md:mt-8 md:mb-8">
+            <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight">
+              Bestsellers
             </h2>
             <div className="px-4 md:px-6 lg:px-8">
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-4">
-                {filteredProducts.map((product) => (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+                {homeData.bestsellers.map((product: any) => (
                   <ProductCard
-                    key={product.id}
+                    key={product.id || product._id}
                     product={product}
                     categoryStyle={true}
                     showBadge={true}
-                    showPackBadge={false}
-                    showStockInfo={true}
                   />
                 ))}
               </div>
@@ -341,92 +341,40 @@ export default function Home() {
           </div>
         )}
 
-        {/* Bestsellers Section (Global Only) */}
-        {activeTab === "all" && (
-          <>
-            <div className="mt-2 md:mt-4">
-              <CategoryTileSection
-                title="Bestsellers"
-                tiles={
-                  homeData.bestsellers && homeData.bestsellers.length > 0
-                    ? homeData.bestsellers
-                      .slice(0, 6)
-                      .map((card: any) => {
-                        // Bestseller cards have categoryId and productImages array from backend
-                        return {
-                          id: card.id,
-                          categoryId: card.categoryId,
-                          name: card.name || "Category",
-                          productImages: card.productImages || [],
-                          productCount: card.productCount || 0,
-                        };
-                      })
-                    : []
-                }
-                columns={3}
-                showProductCount={true}
-              />
-            </div>
+        {/* Root Category Tiles - Showing main categories at the top of 'All' tab */}
+        {activeTab === "all" && homeData.categories && homeData.categories.length > 0 && (
+          <div className="mt-2 md:mt-4">
+            <CategoryTileSection
+              title="Categories"
+              tiles={homeData.categories}
+              columns={4}
+              showProductCount={false}
+            />
+          </div>
+        )}
 
-            {/* Featured this week Section */}
-            <FeaturedThisWeek />
+        {/* Subcategory Tiles - Showing sub-collections for specific header tabs (Simple Mode) */}
+        {activeTab !== "all" && homeData.subcategories && homeData.subcategories.length > 0 && (
+          <div className="mt-2 md:mt-4">
+            <CategoryTileSection
+              title={`Explore ${activeTab.replace('-', ' ')}`}
+              tiles={homeData.subcategories}
+              columns={4}
+              showProductCount={false}
+            />
+          </div>
+        )}
 
-            {/* Shop by Store Section */}
-            <div className="mb-6 mt-6 md:mb-8 md:mt-8">
-              <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight">
-                Shop by Store
-              </h2>
-              <div className="px-4 md:px-6 lg:px-8">
-                <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-4">
-                  {(homeData.shops || []).map((tile: any) => {
-                    const hasImages =
-                      tile.image ||
-                      (tile.productImages &&
-                        tile.productImages.filter(Boolean).length > 0);
-
-                    return (
-                      <div key={tile.id} className="flex flex-col">
-                        <div
-                          onClick={() => {
-                            const storeSlug =
-                              tile.slug || tile.id.replace("-store", "");
-                            saveScrollPosition();
-                            navigate(`/store/${storeSlug}`);
-                          }}
-                          className="block bg-white rounded-xl shadow-sm border border-neutral-200 hover:shadow-md transition-shadow cursor-pointer overflow-hidden">
-                          {hasImages ? (
-                            <img
-                              src={
-                                tile.image ||
-                                (tile.productImages
-                                  ? tile.productImages[0]
-                                  : "")
-                              }
-                              alt={tile.name}
-                              className="w-full h-16 object-cover"
-                            />
-                          ) : (
-                            <div
-                              className={`w-full h-16 flex items-center justify-center text-3xl text-neutral-300 ${tile.bgColor || "bg-neutral-50"
-                                }`}>
-                              {tile.name.charAt(0)}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Tile name - outside card */}
-                        <div className="mt-1.5 text-center">
-                          <span className="text-xs font-semibold text-neutral-900 line-clamp-2 leading-tight">
-                            {tile.name}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </>
+        {/* Shop by Store Section */}
+        {homeData.shops && homeData.shops.length > 0 && (
+          <div className="mt-6 mb-10 md:mb-16">
+            <CategoryTileSection
+              title="Shop by Store"
+              tiles={homeData.shops}
+              columns={4}
+              showProductCount={false}
+            />
+          </div>
         )}
       </div>
     </div>
