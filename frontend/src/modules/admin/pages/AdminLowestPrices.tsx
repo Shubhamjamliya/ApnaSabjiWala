@@ -67,9 +67,9 @@ export default function AdminLowestPrices() {
     // Filter products based on search term and exclude already added products
     const filteredProducts = availableProducts.filter((product) => {
         // Get IDs of products already in lowest prices
-        const existingProductIds = lowestPricesProducts.map((lp) =>
-            typeof lp.product === "string" ? lp.product : lp.product._id
-        );
+        const existingProductIds = lowestPricesProducts
+            .map((lp) => (typeof lp.product === "string" ? lp.product : lp.product?._id))
+            .filter((id): id is string => !!id);
 
         // Exclude already added products
         if (existingProductIds.includes(product._id)) {
@@ -137,7 +137,7 @@ export default function AdminLowestPrices() {
     const handleEdit = (lowestPricesProduct: LowestPricesProduct) => {
         const productId = typeof lowestPricesProduct.product === "string"
             ? lowestPricesProduct.product
-            : lowestPricesProduct.product._id;
+            : lowestPricesProduct.product?._id || "";
         setSelectedProduct(productId);
         setOrder(lowestPricesProduct.order);
         setIsActive(lowestPricesProduct.isActive);

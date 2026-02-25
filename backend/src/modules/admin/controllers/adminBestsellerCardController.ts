@@ -12,9 +12,12 @@ export const getBestsellerCards = async (_req: Request, res: Response) => {
             .sort({ order: 1 })
             .lean();
 
+        // Filter out cards whose category might have been deleted
+        const validCards = cards.filter((card: any) => card.category !== null);
+
         return res.status(200).json({
             success: true,
-            data: cards,
+            data: validCards,
         });
     } catch (error: any) {
         return res.status(500).json({
@@ -256,10 +259,13 @@ export const reorderBestsellerCards = async (req: Request, res: Response) => {
             .sort({ order: 1 })
             .lean();
 
+        // Filter out cards whose category might have been deleted
+        const validUpdatedCards = updatedCards.filter((card: any) => card.category !== null);
+
         return res.status(200).json({
             success: true,
             message: "Bestseller cards reordered successfully",
-            data: updatedCards,
+            data: validUpdatedCards,
         });
     } catch (error: any) {
         return res.status(500).json({

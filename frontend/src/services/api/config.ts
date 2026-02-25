@@ -29,10 +29,40 @@ const api: AxiosInstance = axios.create({
   },
 });
 
+// Role-specific storage keys
+const AUTH_TOKEN_KEYS: Record<string, string> = {
+  admin: "adminAuthToken",
+  seller: "sellerAuthToken",
+  delivery: "deliveryAuthToken",
+  customer: "authToken",
+};
+
+const USER_DATA_KEYS: Record<string, string> = {
+  admin: "adminUserData",
+  seller: "sellerUserData",
+  delivery: "deliveryUserData",
+  customer: "userData",
+};
+
+// Determine the role based on URL or current path
+const getRole = (url?: string): string => {
+  const currentPath = window.location.pathname;
+  const targetUrl = url || "";
+
+  if (currentPath.includes("/admin") || targetUrl.includes("/admin/")) return "admin";
+  if (currentPath.includes("/seller") || targetUrl.includes("/seller/") || targetUrl.includes("/sellers")) return "seller";
+  if (currentPath.includes("/delivery") || targetUrl.includes("/delivery/")) return "delivery";
+
+  return "customer";
+};
+
 // Request interceptor - Add token to requests
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem("authToken");
+    const role = getRole(config.url);
+    const tokenKey = AUTH_TOKEN_KEYS[role];
+    const token = localStorage.getItem(tokenKey);
+
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -49,72 +79,62 @@ api.interceptors.response.use(
     return response;
   },
   (error: any) => {
-    // Only handle 401 (Unauthorized) for auto-logout
-    // 403 (Forbidden) means user is authenticated but doesn't have permission - DO NOT LOGOUT
     if (error.response?.status === 401) {
-      // Check if this is an authentication endpoint (OTP verification, etc.)
-      // Don't redirect for auth endpoints - let the component handle the error
       const isAuthEndpoint = error.config?.url?.includes("/auth/");
-
-      // Check if there was a token in the request (meaning user was logged in)
       const hadToken = error.config?.headers?.Authorization;
 
-      // Only redirect if:
-      // 1. It's not an auth endpoint
-      // 2. There was a token in the request (user was logged in but token expired)
-      // 3. User is not already on login/signup pages
       if (!isAuthEndpoint && hadToken) {
         const currentPath = window.location.pathname;
-
-        // Skip redirect if already on public auth pages (login/signup)
         if (currentPath.includes("/login") || currentPath.includes("/signup")) {
           return Promise.reject(error);
         }
 
-        // Token expired or invalid - clear token and redirect to appropriate login
-        // Determine which login page based on the Current URL or API endpoint
-        const apiUrl = error.config?.url || "";
+        const role = getRole(error.config?.url);
         let redirectPath = "/login";
 
-        if (currentPath.includes("/admin/") || apiUrl.includes("/admin/")) {
+        if (role === "admin") {
           redirectPath = "/admin/login";
-        } else if (
-          currentPath.includes("/seller/") ||
-          apiUrl.includes("/seller/") ||
-          apiUrl.includes("/sellers")
-        ) {
+        } else if (role === "seller") {
           redirectPath = "/seller/login";
-        } else if (
-          currentPath.includes("/delivery/") ||
-          apiUrl.includes("/delivery/")
-        ) {
+        } else if (role === "delivery") {
           redirectPath = "/delivery/login";
         }
 
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("userData");
+        localStorage.removeItem(AUTH_TOKEN_KEYS[role]);
+        localStorage.removeItem(USER_DATA_KEYS[role]);
         window.location.href = redirectPath;
       }
-      // If no token was present, user is just browsing as guest - don't redirect
-      // Just reject the promise so the component can handle it gracefully
     }
-    // For 403 and other errors, just reject the promise so the UI can handle it
     return Promise.reject(error);
   }
 );
 
 // Token management helpers
-export const setAuthToken = (token: string) => {
-  localStorage.setItem("authToken", token);
+export const setAuthToken = (token: string, role?: string) => {
+  const userRole = role || getRole();
+  localStorage.setItem(AUTH_TOKEN_KEYS[userRole], token);
 };
 
-export const getAuthToken = (): string | null => {
-  return localStorage.getItem("authToken");
+export const setUserData = (userData: any, role?: string) => {
+  const userRole = role || getRole();
+  localStorage.setItem(USER_DATA_KEYS[userRole], JSON.stringify(userData));
 };
 
-export const removeAuthToken = () => {
-  localStorage.removeItem("authToken");
-  localStorage.removeItem("userData");
+export const getAuthToken = (role?: string): string | null => {
+  const userRole = role || getRole();
+  return localStorage.getItem(AUTH_TOKEN_KEYS[userRole]);
+};
+
+export const getUserData = (role?: string): any | null => {
+  const userRole = role || getRole();
+  const data = localStorage.getItem(USER_DATA_KEYS[userRole]);
+  return data ? JSON.parse(data) : null;
+};
+
+export const removeAuthToken = (role?: string) => {
+  const userRole = role || getRole();
+  localStorage.removeItem(AUTH_TOKEN_KEYS[userRole]);
+  localStorage.removeItem(USER_DATA_KEYS[userRole]);
 };
 
 export default api;

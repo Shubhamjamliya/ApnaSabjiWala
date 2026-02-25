@@ -141,7 +141,7 @@ export default function AdminBestsellerCards() {
     const handleEdit = (card: BestsellerCard) => {
         setName(card.name);
         setSelectedCategory(
-            typeof card.category === "string" ? card.category : card.category._id
+            typeof card.category === "string" ? card.category : card.category?._id || ""
         );
         setOrder(card.order);
         setIsActive(card.isActive);
@@ -313,17 +313,16 @@ export default function AdminBestsellerCards() {
                             <button
                                 onClick={handleSubmit}
                                 disabled={loading}
-                                className={`w-full px-4 py-2 rounded font-medium transition-colors ${
-                                    loading
+                                className={`w-full px-4 py-2 rounded font-medium transition-colors ${loading
                                         ? "bg-gray-400 cursor-not-allowed text-white"
                                         : "bg-teal-600 hover:bg-teal-700 text-white"
-                                }`}
+                                    }`}
                             >
                                 {loading
                                     ? "Saving..."
                                     : editingId
-                                    ? "Update Card"
-                                    : "Create Card"}
+                                        ? "Update Card"
+                                        : "Create Card"}
                             </button>
                             {editingId && (
                                 <button
@@ -401,15 +400,14 @@ export default function AdminBestsellerCards() {
                                                 <td className="p-4">
                                                     {typeof card.category === "string"
                                                         ? card.category
-                                                        : card.category.name}
+                                                        : card.category?.name || "Category not found"}
                                                 </td>
                                                 <td className="p-4">
                                                     <span
-                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                            card.isActive
+                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${card.isActive
                                                                 ? "bg-green-100 text-green-800"
                                                                 : "bg-gray-100 text-gray-800"
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {card.isActive ? "Active" : "Inactive"}
                                                     </span>
@@ -474,11 +472,10 @@ export default function AdminBestsellerCards() {
                                     <button
                                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                                         disabled={currentPage === 1}
-                                        className={`px-3 py-1.5 rounded text-sm border ${
-                                            currentPage === 1
+                                        className={`px-3 py-1.5 rounded text-sm border ${currentPage === 1
                                                 ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
                                                 : "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-300"
-                                        }`}
+                                            }`}
                                     >
                                         Previous
                                     </button>
@@ -487,11 +484,10 @@ export default function AdminBestsellerCards() {
                                             setCurrentPage((p) => Math.min(totalPages, p + 1))
                                         }
                                         disabled={currentPage === totalPages}
-                                        className={`px-3 py-1.5 rounded text-sm border ${
-                                            currentPage === totalPages
+                                        className={`px-3 py-1.5 rounded text-sm border ${currentPage === totalPages
                                                 ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
                                                 : "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-300"
-                                        }`}
+                                            }`}
                                     >
                                         Next
                                     </button>

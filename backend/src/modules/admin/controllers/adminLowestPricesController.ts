@@ -11,9 +11,12 @@ export const getLowestPricesProducts = async (_req: Request, res: Response) => {
             .sort({ order: 1 })
             .lean();
 
+        // Filter out products that might have been deleted but still exist in LowestPricesProduct
+        const validProducts = products.filter((p: any) => p.product !== null);
+
         return res.status(200).json({
             success: true,
-            data: products,
+            data: validProducts,
         });
     } catch (error: any) {
         return res.status(500).json({
@@ -244,10 +247,13 @@ export const reorderLowestPricesProducts = async (req: Request, res: Response) =
             .sort({ order: 1 })
             .lean();
 
+        // Filter out products that might have been deleted but still exist in LowestPricesProduct
+        const validUpdatedProducts = updatedProducts.filter((p: any) => p.product !== null);
+
         return res.status(200).json({
             success: true,
             message: "Lowest prices products reordered successfully",
-            data: updatedProducts,
+            data: validUpdatedProducts,
         });
     } catch (error: any) {
         return res.status(500).json({

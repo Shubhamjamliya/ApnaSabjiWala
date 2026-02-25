@@ -9,6 +9,8 @@ import {
   getAuthToken,
   removeAuthToken,
   setAuthToken,
+  getUserData,
+  setUserData,
 } from "../services/api/config";
 
 interface User {
@@ -32,24 +34,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Initialize state synchronously from localStorage
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     const storedToken = getAuthToken();
-    const storedUser = localStorage.getItem("userData");
+    const storedUser = getUserData();
     return !!(storedToken && storedUser);
   });
 
   const [user, setUser] = useState<User | null>(() => {
-    const storedUser = localStorage.getItem("userData");
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        // Ensure userType is set for backward compatibility
-        // If user is authenticated but userType is missing, we'll infer it from context
-        // For now, we'll set it when needed in OrdersContext
-        return userData;
-      } catch (error) {
-        return null;
-      }
-    }
-    return null;
+    return getUserData();
   });
 
   const [token, setToken] = useState<string | null>(() => {
@@ -59,27 +49,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Effect to sync state if localStorage changes externally or on mount validation
   useEffect(() => {
     const storedToken = getAuthToken();
-    const storedUser = localStorage.getItem("userData");
+    const userData = getUserData();
 
-    if (storedToken && storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        // Ensure userType is set for backward compatibility
-        // If missing, we'll let OrdersContext handle it based on context
-        // Only update if state doesn't match to avoid loops
-        if (!isAuthenticated || token !== storedToken) {
-          setToken(storedToken);
-          setUser(userData);
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        removeAuthToken();
-        setToken(null);
-        setUser(null);
-        setIsAuthenticated(false);
+    if (storedToken && userData) {
+      if (!isAuthenticated || token !== storedToken) {
+        setToken(storedToken);
+        setUser(userData);
+        setIsAuthenticated(true);
       }
     } else if (isAuthenticated) {
-      // Logged out
       setToken(null);
       setUser(null);
       setIsAuthenticated(false);
@@ -87,11 +65,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (newToken: string, userData: User) => {
+    const role = userData.userType?.toLowerCase() || "customer";
     setToken(newToken);
     setUser(userData);
     setIsAuthenticated(true);
-    setAuthToken(newToken);
-    localStorage.setItem("userData", JSON.stringify(userData));
+    setAuthToken(newToken, role);
+    setUserData(userData, role);
 
     // Register FCM token for push notifications after successful login
     import("../services/pushNotificationService").then(({ registerFCMToken }) => {
@@ -125,10 +104,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    const role = user?.userType?.toLowerCase() || "customer";
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
-    removeAuthToken();
+    removeAuthToken(role);
 
     // Remove FCM token on logout
     import("../services/pushNotificationService").then(({ removeFCMToken }) => {
@@ -139,8 +119,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateUser = (userData: User) => {
+    const role = userData.userType?.toLowerCase() || "customer";
     setUser(userData);
-    localStorage.setItem("userData", JSON.stringify(userData));
+    setUserData(userData, role);
   };
 
   return (
