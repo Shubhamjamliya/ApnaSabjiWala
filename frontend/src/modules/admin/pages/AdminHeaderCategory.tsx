@@ -25,6 +25,7 @@ export default function AdminHeaderCategory() {
   const [selectedCategory, setSelectedCategory] = useState(''); // Slug of product category
   const [selectedTheme, setSelectedTheme] = useState('all'); // Maps to slug/color
   const [selectedStatus, setSelectedStatus] = useState<'Published' | 'Unpublished'>('Published');
+  const [headerCategoryOrder, setHeaderCategoryOrder] = useState<number>(1);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,6 +61,7 @@ export default function AdminHeaderCategory() {
     setSelectedCategory('');
     setSelectedTheme('all');
     setSelectedStatus('Published');
+    setHeaderCategoryOrder(1);
     setEditingId(null);
   };
 
@@ -104,6 +106,7 @@ export default function AdminHeaderCategory() {
         slug: selectedTheme, // Theme identifier
         relatedCategory: selectedCategory, // Slug of the linked product category
         status: selectedStatus,
+        order: headerCategoryOrder,
       };
 
       if (editingId) {
@@ -133,6 +136,7 @@ export default function AdminHeaderCategory() {
     setSelectedCategory(category.relatedCategory || '');
     setSelectedTheme(category.slug);
     setSelectedStatus(category.status);
+    setHeaderCategoryOrder(category.order || 1);
     setImageFile(null);
   };
 
@@ -302,6 +306,21 @@ export default function AdminHeaderCategory() {
               </div>
             </div>
 
+            {/* Default Order */}
+            <div>
+              <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                Display Order:
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={headerCategoryOrder}
+                onChange={(e) => setHeaderCategoryOrder(parseInt(e.target.value) || 1)}
+                className="w-full px-4 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+              />
+              <p className="mt-1 text-[10px] text-neutral-500 italic">Determines the order in which tabs are shown (1 is first).</p>
+            </div>
+
             {/* Status & Actions */}
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-3">
@@ -369,13 +388,17 @@ export default function AdminHeaderCategory() {
               <thead className="bg-neutral-50 sticky top-0 z-10">
                 <tr>
                   <th className="px-5 py-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest border-b border-neutral-200">Tab Details</th>
+                  <th className="px-5 py-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest border-b border-neutral-200 text-center">Order</th>
                   <th className="px-5 py-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest border-b border-neutral-200 text-center">Color</th>
                   <th className="px-5 py-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest border-b border-neutral-200 text-center">Status</th>
                   <th className="px-5 py-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest border-b border-neutral-200 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {displayedCategories.map((category) => (
+                {displayedCategories.map((category) => {
+                  const isHome = category.slug === 'all' || category.name.toUpperCase() === 'HOME';
+                  
+                  return (
                   <tr key={category._id} className="hover:bg-teal-50/30 transition-colors group">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
@@ -383,10 +406,18 @@ export default function AdminHeaderCategory() {
                           <img src={category.image || '/placeholder.png'} alt="" className="max-w-full max-h-full object-contain" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-neutral-800">{category.name}</p>
+                          <p className="text-sm font-bold text-neutral-800">
+                            {category.name}
+                            {isHome && <span className="text-[9px] font-bold text-teal-600 bg-teal-100 px-1 py-0.5 rounded ml-1">DEFAULT</span>}
+                          </p>
                           <p className="text-[10px] text-teal-600 font-medium">L: {category.relatedCategory || 'All Categories'}</p>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      <span className="text-xs font-bold text-neutral-600 bg-neutral-100 px-2 py-1 rounded">
+                        {isHome ? '-1' : (category.order || '-')}
+                      </span>
                     </td>
                     <td className="px-5 py-4 text-center">
                       <div className="w-4 h-4 rounded-full mx-auto shadow-sm border border-black/10" style={{ background: themes[category.slug]?.primary[0] || '#ccc' }} />
@@ -401,19 +432,22 @@ export default function AdminHeaderCategory() {
                         <button
                           onClick={() => handleEdit(category)}
                           className="p-1.5 text-neutral-400 hover:text-teal-600 hover:bg-white rounded-lg transition-all"
+                          title="Edit"
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
                         <button
-                          onClick={() => handleDelete(category._id)}
-                          className="p-1.5 text-neutral-400 hover:text-red-500 hover:bg-white rounded-lg transition-all"
+                          onClick={() => !isHome && handleDelete(category._id)}
+                          disabled={isHome}
+                          title={isHome ? "Default category cannot be deleted" : "Delete"}
+                          className={`p-1.5 rounded-lg transition-all ${isHome ? 'text-neutral-200 cursor-not-allowed' : 'text-neutral-400 hover:text-red-500 hover:bg-white'}`}
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"></path></svg>
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>

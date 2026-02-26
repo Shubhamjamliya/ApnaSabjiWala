@@ -9,6 +9,22 @@ export const getAdminHeaderCategories = async (
   res: Response
 ) => {
   try {
+    let homeCategory = await HeaderCategory.findOne({ slug: "all" });
+    if (!homeCategory) {
+      homeCategory = await HeaderCategory.findOne({ name: { $regex: /^HOME$/i } });
+      if (homeCategory) {
+        homeCategory.slug = "all";
+        await homeCategory.save();
+      } else {
+        await HeaderCategory.create({
+          name: "HOME",
+          slug: "all",
+          status: "Published",
+          order: -100
+        });
+      }
+    }
+
     const categories = await HeaderCategory.find().sort({
       order: 1,
       createdAt: -1,

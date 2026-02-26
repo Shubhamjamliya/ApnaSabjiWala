@@ -50,6 +50,10 @@ export default function CategoryTileSection({
       navigate(`/store/${tile.categoryId || (tile as any).sellerId || tile.id}`);
       return;
     }
+    if (tile.type === "category") {
+      navigate(`/category/${tile.slug || tile.categoryId || tile.id}`);
+      return;
+    }
     if (tile.categoryId) {
       navigate(`/category/${tile.categoryId}`);
       return;

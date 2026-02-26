@@ -1,7 +1,8 @@
 import api from "../config";
 
 export interface CategoryCard {
-  subCategoryId: string | { _id: string; name?: string; image?: string };
+  subCategoryId?: string | { _id: string; name?: string; image?: string };
+  productId?: string | { _id: string; productName?: string; mainImage?: string };
   title: string;
   badge: string;
   images: string[];

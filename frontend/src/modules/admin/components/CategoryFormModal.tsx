@@ -654,6 +654,7 @@ export default function CategoryFormModal({
           </div>
 
           {/* Parent Category (only for create/edit, not subcategory mode) */}
+          {/*
           {!isSubcategoryMode && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -683,8 +684,10 @@ export default function CategoryFormModal({
               )}
             </div>
           )}
+          */}
 
           {/* Display Order */}
+          {/*
           <div className="mb-4">
             <label className="block text-sm font-medium text-neutral-700 mb-2">
               Display Order
@@ -703,6 +706,7 @@ export default function CategoryFormModal({
               <p className="mt-1 text-sm text-red-600">{errors.order}</p>
             )}
           </div>
+          */}
 
           {/* Commission Rate - Only for SubSubCategories (Level 3) */}
           {(() => {
@@ -837,38 +841,6 @@ export default function CategoryFormModal({
                   </label>
                 </div>
 
-                {/* Has Warning */}
-                <div>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="hasWarning"
-                      checked={formData.hasWarning}
-                      onChange={handleInputChange}
-                      className="mr-2"
-                      disabled={submitting}
-                    />
-                    <span className="text-sm font-medium text-neutral-700">
-                      Has Warning
-                    </span>
-                  </label>
-                </div>
-
-                {/* Group Category */}
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Group Category
-                  </label>
-                  <input
-                    type="text"
-                    name="groupCategory"
-                    value={formData.groupCategory}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    placeholder="Enter group category"
-                    disabled={submitting}
-                  />
-                </div>
               </div>
             )}
           </div>

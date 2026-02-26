@@ -960,7 +960,7 @@ export default function AdminSidebar({ onClose }: AdminSidebarProps) {
     if (path === "/admin") {
       return location.pathname === "/admin" || location.pathname === "/admin/";
     }
-    return location.pathname.startsWith(path);
+    return location.pathname === path || location.pathname.startsWith(path + "/");
   };
 
   const isSubmenuActive = (submenuItems?: SubMenuItem[]) => {

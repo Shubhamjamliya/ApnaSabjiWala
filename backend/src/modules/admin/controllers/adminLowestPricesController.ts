@@ -66,7 +66,7 @@ export const getLowestPricesProductById = async (req: Request, res: Response) =>
 // Create new lowest prices product
 export const createLowestPricesProduct = async (req: Request, res: Response) => {
     try {
-        const { product, order, isActive } = req.body;
+        const { product, headerCategoryId, order, isActive } = req.body;
 
         // Validate required fields
         if (!product) {
@@ -93,12 +93,22 @@ export const createLowestPricesProduct = async (req: Request, res: Response) => 
             });
         }
 
-        // Check if product already exists in lowest prices
-        const existing = await LowestPricesProduct.findOne({ product });
+        // Check if product already exists in lowest prices for this header
+        const query: any = { product };
+        if (headerCategoryId) {
+            query.headerCategoryId = headerCategoryId;
+        } else {
+            query.$or = [
+                { headerCategoryId: { $exists: false } },
+                { headerCategoryId: null }
+            ];
+        }
+        
+        const existing = await LowestPricesProduct.findOne(query);
         if (existing) {
             return res.status(400).json({
                 success: false,
-                message: "Product already exists in lowest prices section",
+                message: "Product already exists in lowest prices section for this header",
             });
         }
 
@@ -111,6 +121,7 @@ export const createLowestPricesProduct = async (req: Request, res: Response) => 
 
         const newLowestPricesProduct = new LowestPricesProduct({
             product,
+            headerCategoryId,
             order: productOrder,
             isActive: isActive !== undefined ? isActive : true,
         });
@@ -146,7 +157,7 @@ export const createLowestPricesProduct = async (req: Request, res: Response) => 
 export const updateLowestPricesProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { order, isActive } = req.body;
+        const { headerCategoryId, order, isActive } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
@@ -164,6 +175,7 @@ export const updateLowestPricesProduct = async (req: Request, res: Response) => 
         }
 
         // Update fields
+        if (headerCategoryId !== undefined) lowestPricesProduct.headerCategoryId = headerCategoryId;
         if (order !== undefined) lowestPricesProduct.order = order;
         if (isActive !== undefined) lowestPricesProduct.isActive = isActive;
 

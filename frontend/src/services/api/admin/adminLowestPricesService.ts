@@ -12,6 +12,7 @@ export interface LowestPricesProduct {
         status: string;
         publish: boolean;
     };
+    headerCategoryId?: string;
     order: number;
     isActive: boolean;
     createdAt: string;
@@ -20,6 +21,7 @@ export interface LowestPricesProduct {
 
 export interface LowestPricesProductFormData {
     product: string;
+    headerCategoryId?: string;
     order?: number;
     isActive: boolean;
 }

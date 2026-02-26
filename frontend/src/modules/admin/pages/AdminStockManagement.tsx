@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getProducts,
@@ -375,13 +375,7 @@ export default function AdminStockManagement() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => navigate("/admin/product/add")}
-                    className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-sm hover:shadow active:scale-95 text-sm"
-                  >
-                    <PlusIcon />
-                    <span>Add Product</span>
-                  </button>
+                  {/* Add Product button removed as requested */}
                 </div>
               </div>
 

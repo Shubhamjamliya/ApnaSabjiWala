@@ -88,12 +88,13 @@ export default function TomorrowVegBooking() {
   const mapSectionProduct = (p: any): Product => ({
     _id: p._id,
     name: p.name || p.productName,
-    image: p.mainImage || (p.productImages && p.productImages[0]) || "",
+    image: p.image || p.mainImage || (p.productImages && p.productImages[0]) || "",
     price: p.price,
-    originalPrice: p.price, // Or compareAtPrice if available
+    originalPrice: p.originalPrice || p.price,
     stock: p.stock || 0,
-    maxQuantity: 10 // Default
-  });
+    maxQuantity: 10,
+    unit: p.unit || p.pack
+  } as any);
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -188,8 +189,11 @@ export default function TomorrowVegBooking() {
       <div className="p-4 space-y-6">
         {/* Slots */}
         {!isBookingClosed && (
-          <section>
-            <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Select Morning Slot</h2>
+          <section className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100">
+            <h2 className="text-xs font-black text-emerald-800 mb-4 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
+              Select Morning Slot
+            </h2>
             <div className="grid grid-cols-2 gap-3">
               {slots.map((slot) => (
                 <button
@@ -197,15 +201,15 @@ export default function TomorrowVegBooking() {
                   disabled={!slot.available}
                   onClick={() => setSelectedSlot(slot._id)}
                   className={`
-                    p-3 rounded-xl border flex flex-col items-center justify-center transition-all
+                    p-3 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300
                     ${selectedSlot === slot._id
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-500 shadow-sm"
-                      : "border-gray-200 bg-white text-gray-600 hover:border-emerald-200"}
-                    ${!slot.available ? "opacity-50 cursor-not-allowed bg-gray-50" : ""}
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-md transform scale-[1.02]"
+                      : "border-gray-100 bg-white text-gray-600 hover:border-emerald-200"}
+                    ${!slot.available ? "opacity-40 cursor-not-allowed bg-gray-50 border-gray-100" : ""}
                     `}
                 >
-                  <span className="text-sm font-bold">{slot.timeRange}</span>
-                  <span className="text-[10px] mt-1 text-gray-400">
+                  <span className="text-sm font-black">{slot.timeRange}</span>
+                  <span className={`text-[10px] mt-1 font-bold ${slot.available ? "text-emerald-500" : "text-gray-400"}`}>
                     {slot.available ? "Available" : "Full"}
                   </span>
                 </button>
@@ -216,78 +220,108 @@ export default function TomorrowVegBooking() {
 
         {/* Dynamic Sections */}
         {sections.length === 0 ? (
-          <div className="text-center py-10 text-gray-400">
-            <p>No products available for next day delivery yet.</p>
+          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+            <div className="text-4xl mb-3">🥦</div>
+            <p className="text-sm font-bold text-gray-400">No products available for next day delivery yet.</p>
           </div>
         ) : (
           sections.map(section => {
-            const columnCount = Number(section.columns) || 2; // Default to 2 for mobile, Home.tsx uses 4 for desktop
-            const gridClass = {
-              2: "grid-cols-2",
-              3: "grid-cols-3",
-              4: "grid-cols-2 md:grid-cols-4", // Responsive for 4 columns
-              6: "grid-cols-2 md:grid-cols-3 lg:grid-cols-6", // Responsive for 6 columns
-              8: "grid-cols-2 md:grid-cols-4 lg:grid-cols-8" // Responsive for 8 columns
-            }[columnCount] || "grid-cols-2"; // Default to 2 columns on mobile
-
-            const isCompact = columnCount >= 4; // Use compact mode for 4 or more columns
-            const gapClass = isCompact ? "gap-2" : "gap-3 md:gap-4";
+            const columnCount = Number(section.columns) || 4; 
+            const gridClass = "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
+            const gapClass = "gap-3 md:gap-4 lg:gap-6";
 
             return (
-              <section key={section._id}>
-                <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">{section.title}</h2>
+              <section key={section._id} className="space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <h2 className="text-sm font-black text-gray-800 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-1 h-3 bg-emerald-400 rounded-full"></span>
+                    {section.title}
+                  </h2>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    {section.products?.length || 0} ITEMS
+                  </span>
+                </div>
+
                 <div className={`grid ${gridClass} ${gapClass}`}>
                   {section.products?.filter(Boolean).map(entry => {
                     const product = mapSectionProduct(entry);
-                    const unit = (entry as any).unit || (entry as any).pack;
+                    const qty = getQuantity(product._id);
+                    const unit = (product as any).unit;
 
                     return (
-                      <div key={product._id} className={`bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col ${isCompact ? 'text-xs' : ''}`}>
-                        <div className={`aspect-square bg-gray-50 rounded-lg mb-2 relative overflow-hidden ${isCompact ? 'h-20' : ''}`}>
+                      <div 
+                        key={product._id} 
+                        className="bg-white rounded-2xl border border-neutral-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full overflow-hidden group"
+                      >
+                        {/* Image Container */}
+                        <div className="aspect-square bg-neutral-50 relative overflow-hidden">
                           {product.image ? (
-                            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                            <img 
+                              src={product.image} 
+                              alt={product.name} 
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                            />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-2xl">📦</div>
+                            <div className="w-full h-full flex items-center justify-center text-4xl bg-neutral-100">📦</div>
+                          )}
+                          
+                          {/* Unit Badge */}
+                          {unit && (
+                            <div className="absolute bottom-2 left-2 z-10">
+                              <span className="text-[10px] font-black text-neutral-700 bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-sm border border-neutral-100">
+                                {unit}
+                              </span>
+                            </div>
                           )}
                         </div>
 
-                        {/* Unit/Size Display - Matches ProductCard style */}
-                        {unit && (
-                          <p className={`text-neutral-500 mb-1 ${isCompact ? 'text-[10px]' : 'text-xs'}`}>
-                            {unit}
-                          </p>
-                        )}
+                        {/* Content */}
+                        <div className="p-3 flex flex-col flex-1">
+                          <h3 className="font-bold text-neutral-800 text-xs md:text-sm line-clamp-2 leading-tight mb-2 min-h-[2.5rem]">
+                            {product.name}
+                          </h3>
 
-                        <h3 className={`font-medium text-gray-800 ${isCompact ? 'text-xs' : 'text-sm'} line-clamp-2 leading-tight mb-2 min-h-[2.5em]`}>{product.name}</h3>
-
-                        <div className="flex items-end justify-between mt-auto">
-                          <div>
-                            <span className={`block font-bold text-gray-900 ${isCompact ? 'text-sm' : 'text-lg'}`}>₹{product.price}</span>
-                          </div>
-
-                          {!isBookingClosed && (
-                            <div className="flex items-center gap-2 bg-emerald-50 rounded-lg p-1">
-                              {getQuantity(product._id) > 0 ? (
-                                <>
-                                  <button onClick={() => removeFromCart(product._id)} className={`flex items-center justify-center bg-white rounded shadow text-emerald-600 font-bold ${isCompact ? 'w-5 h-5 text-xs' : 'w-6 h-6'}`}>-</button>
-                                  <span className={`font-bold text-emerald-800 w-3 text-center ${isCompact ? 'text-xs' : 'text-sm'}`}>{getQuantity(product._id)}</span>
-                                  <button onClick={() => addToCart(product)} className={`flex items-center justify-center bg-emerald-600 rounded shadow text-white font-bold ${isCompact ? 'w-5 h-5 text-xs' : 'w-6 h-6'}`}>+</button>
-                                </>
-                              ) : (
-                                <button onClick={() => addToCart(product)} className={`bg-emerald-600 text-white font-bold rounded shadow-sm ${isCompact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-xs'}`}>ADD</button>
+                          <div className="mt-auto flex items-center justify-between">
+                            <div className="flex flex-col">
+                              <span className="text-sm md:text-base font-black text-neutral-900">₹{product.price}</span>
+                              {product.originalPrice > product.price && (
+                                <span className="text-[10px] text-neutral-400 line-through">₹{product.originalPrice}</span>
                               )}
                             </div>
-                          )}
+
+                            {!isBookingClosed && (
+                              <div className="flex items-center">
+                                {qty > 0 ? (
+                                  <div className="flex items-center gap-2 bg-emerald-600 rounded-full p-1 shadow-md">
+                                    <button 
+                                      onClick={() => removeFromCart(product._id)} 
+                                      className="w-6 h-6 flex items-center justify-center bg-white/20 text-white hover:bg-white/30 rounded-full transition-colors"
+                                    >
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14" /></svg>
+                                    </button>
+                                    <span className="text-xs font-black text-white w-4 text-center">{qty}</span>
+                                    <button 
+                                      onClick={() => addToCart(product)} 
+                                      className="w-6 h-6 flex items-center justify-center bg-white text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors shadow-sm"
+                                    >
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14" /></svg>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button 
+                                    onClick={() => addToCart(product)} 
+                                    className="bg-white border-2 border-emerald-500 text-emerald-600 font-black text-[10px] px-4 py-1.5 rounded-full hover:bg-emerald-500 hover:text-white transition-all duration-300 shadow-sm active:scale-95"
+                                  >
+                                    ADD
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
                   })}
-
-                  {(!section.products || section.products.length === 0) && (
-                    <div className="col-span-full text-center text-xs text-gray-400 py-4">
-                      No products in this section
-                    </div>
-                  )}
                 </div>
               </section>
             );
@@ -310,10 +344,18 @@ export default function TomorrowVegBooking() {
           <button
             onClick={handleBooking}
             disabled={isBookingClosed}
-            className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold text-sm shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
+            className={`w-full py-4 rounded-2xl font-black text-sm shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 ${
+              isBookingClosed 
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed" 
+              : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200"
+            }`}
           >
-            {isBookingClosed ? "Booking Closed" : "Place Order for Tomorrow"}
-            {!isBookingClosed && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>}
+            {isBookingClosed ? "BOOKING CLOSED" : "PLACE ORDER FOR TOMORROW"}
+            {!isBookingClosed && (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            )}
           </button>
         </div>
       )}

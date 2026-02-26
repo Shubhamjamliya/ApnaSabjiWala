@@ -9,6 +9,8 @@ export interface BestsellerCard {
         slug: string;
         image?: string;
     };
+    headerCategoryId?: string;
+    products?: any[];
     order: number;
     isActive: boolean;
     createdAt: string;
@@ -18,6 +20,8 @@ export interface BestsellerCard {
 export interface BestsellerCardFormData {
     name: string;
     category: string;
+    headerCategoryId?: string;
+    products?: string[];
     order?: number;
     isActive: boolean;
 }

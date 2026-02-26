@@ -48,6 +48,79 @@ const CameraIcon = () => (
   </svg>
 )
 
+// --- Compact Preview Component for List Items ---
+const CompactPromoPreview = ({ strip }: { strip: PromoStrip }) => {
+  return (
+    <div className="mt-4 mb-6 rounded-xl overflow-hidden border border-neutral-100 bg-neutral-50 shadow-inner">
+      <div
+        className="p-4 relative min-h-[160px]"
+        style={{
+          background: `linear-gradient(to bottom, #dcfce7, #f0fdf4, #ffffff)`
+        }}
+      >
+        <div className="flex gap-4">
+          {/* Left: Deals Preview */}
+          <div className="w-28 bg-green-600/10 rounded-lg p-2 flex flex-col items-center justify-between border border-green-200">
+            <div className="text-center">
+              <p className="text-green-800 font-black text-[10px] leading-tight uppercase">
+                {(strip.crazyDealsTitle || "CRAZY DEALS").split(' ').map((w, i) => <div key={i}>{w}</div>)}
+              </p>
+            </div>
+            <div className="my-1.5 text-center">
+              <div className="bg-neutral-800 text-white text-[7px] px-1 rounded line-through">₹999</div>
+              <div className="bg-green-500 text-white text-[10px] font-bold px-1.5 rounded -mt-0.5 shadow-sm">₹499</div>
+            </div>
+            <div className="w-full aspect-square bg-white/60 rounded-md flex items-center justify-center text-[24px] shadow-sm">
+              📦
+            </div>
+          </div>
+
+          {/* Right: Text & Shortcut Grid */}
+          <div className="flex-1 flex flex-col">
+            <div className="mb-3">
+              <h4
+                className="text-lg font-black text-white leading-none mb-1"
+                style={{
+                  fontFamily: '"Poppins", sans-serif',
+                  textShadow: `-1.5px -1.5px 0 #16a34a, 1.5px -1.5px 0 #16a34a, -1.5px 1.5px 0 #16a34a, 1.5px 1.5px 0 #16a34a`
+                }}
+              >
+                {strip.heading}
+              </h4>
+              <p
+                className="text-[10px] font-black text-white uppercase"
+                style={{
+                  fontFamily: '"Poppins", sans-serif',
+                  textShadow: `-1px -1px 0 #16a34a, 1px -1px 0 #16a34a, -1px 1px 0 #16a34a, 1px 1px 0 #16a34a`
+                }}
+              >
+                {strip.saleText}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              {strip.categoryCards.slice(0, 4).map((card, idx) => (
+                <div key={idx} className="bg-white rounded-lg p-1.5 shadow-sm border border-neutral-100 flex flex-col items-center justify-center aspect-square overflow-hidden">
+                  <div className="grid grid-cols-2 gap-1 w-full mb-1">
+                    {(card.images?.length ? card.images.slice(0, 4) : [null, null, null, null]).map((img, i) => (
+                      <div key={i} className="aspect-square bg-neutral-50 rounded-sm flex items-center justify-center overflow-hidden">
+                        {img ? <img src={img} className="w-full h-full object-cover" /> : <span className="text-[6px]">📦</span>}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-[6px] font-bold text-neutral-800 truncate w-full text-center">
+                    {card.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function AdminPromoStrip() {
   // --- Form state ---
   const [headerCategorySlug, setHeaderCategorySlug] = useState("");
@@ -57,10 +130,10 @@ export default function AdminPromoStrip() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [categoryCards, setCategoryCards] = useState<CategoryCard[]>([
-    { subCategoryId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 0, _id: undefined },
-    { subCategoryId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 1, _id: undefined },
-    { subCategoryId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 2, _id: undefined },
-    { subCategoryId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 3, _id: undefined },
+    { subCategoryId: "", productId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 0, _id: undefined },
+    { subCategoryId: "", productId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 1, _id: undefined },
+    { subCategoryId: "", productId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 2, _id: undefined },
+    { subCategoryId: "", productId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 3, _id: undefined },
   ]);
   const [featuredProducts, setFeaturedProducts] = useState<string[]>([]);
   const [crazyDealsTitle, setCrazyDealsTitle] = useState("CRAZY DEALS");
@@ -73,7 +146,15 @@ export default function AdminPromoStrip() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [cardProducts, setCardProducts] = useState<Product[]>([]);
   const [productSearch, setProductSearch] = useState("");
+  const [productSubCategoryId, setProductSubCategoryId] = useState("");
+  const [categoryProducts, setCategoryProducts] = useState<Product[]>([]);
+  const [subcategoryProducts, setSubcategoryProducts] = useState<Product[]>([]);
+  const [cardSearchIndex, setCardSearchIndex] = useState<number | null>(null);
+  const [cardSearchQuery, setCardSearchQuery] = useState("");
+  const [cardProductFilters, setCardProductFilters] = useState<string[]>(["", "", "", ""]); // Search query for each card
+  const [listSearchQuery, setListSearchQuery] = useState(""); // Search for the promo strips list
 
   // Persistent map for product names {id: name}
   const [productNames, setProductNames] = useState<Record<string, string>>({});
@@ -100,10 +181,24 @@ export default function AdminPromoStrip() {
   useEffect(() => {
     if (productCategoryId) {
       fetchSubcategories(productCategoryId);
+      fetchCategoryProducts(productCategoryId);
+      setProductSubCategoryId(""); // Reset subcat filter when main cat changes
     } else {
       setSubcategories([]);
+      setCategoryProducts([]);
+      setSubcategoryProducts([]);
+      setProductSubCategoryId("");
     }
   }, [productCategoryId]);
+
+  // Fetch subcategory products when subcat changes
+  useEffect(() => {
+    if (productSubCategoryId) {
+      fetchSubcategoryProducts(productSubCategoryId);
+    } else {
+      setSubcategoryProducts([]);
+    }
+  }, [productSubCategoryId]);
 
   // Fetch products for Crazy Deals search
   useEffect(() => {
@@ -112,10 +207,20 @@ export default function AdminPromoStrip() {
         fetchProducts(productSearch, setProducts);
       }, 300);
       return () => clearTimeout(timeoutId);
-    } else if (productSearch.length === 0) {
-      fetchProducts("", setProducts);
     }
   }, [productSearch]);
+
+  // Fetch products for card shortcuts search
+  useEffect(() => {
+    if (cardSearchQuery.length > 2) {
+      const timeoutId = setTimeout(() => {
+        fetchProducts(cardSearchQuery, setCardProducts);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setCardProducts([]);
+    }
+  }, [cardSearchQuery]);
 
   const fetchPromoStrips = async () => {
     try {
@@ -133,6 +238,11 @@ export default function AdminPromoStrip() {
     try {
       const data = await getHeaderCategoriesAdmin();
       setHeaderCategories(data);
+      // Auto-select HOME header if exists
+      const homeHeader = data.find(h => h.name?.toUpperCase() === "HOME");
+      if (homeHeader && !editingId && !headerCategorySlug) {
+        setHeaderCategorySlug(homeHeader.slug);
+      }
     } catch (err: any) {
       console.error("Failed to fetch header categories:", err);
     }
@@ -148,7 +258,6 @@ export default function AdminPromoStrip() {
       console.error("Failed to fetch categories:", err);
     }
   };
-
   const fetchSubcategories = async (catId: string) => {
     try {
       const response = await getSubcategories(catId);
@@ -160,9 +269,51 @@ export default function AdminPromoStrip() {
     }
   };
 
+  const fetchCategoryProducts = async (catId: string) => {
+    try {
+      const response = await getAdminProducts({ category: catId, limit: 100 });
+      if (response.success && response.data) {
+        const fetchedProducts = Array.isArray(response.data) ? response.data : [];
+        setCategoryProducts(fetchedProducts);
+
+        // Update name map
+        const newNames = { ...productNames };
+        fetchedProducts.forEach(p => {
+          newNames[p._id] = p.productName;
+        });
+        setProductNames(newNames);
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch category products:", err);
+    }
+  };
+
+  const fetchSubcategoryProducts = async (subId: string) => {
+    try {
+      const response = await getAdminProducts({ subcategory: subId, limit: 100 });
+      if (response.success && response.data) {
+        const fetchedProducts = Array.isArray(response.data) ? response.data : [];
+        setSubcategoryProducts(fetchedProducts);
+
+        // Update name map
+        const newNames = { ...productNames };
+        fetchedProducts.forEach(p => {
+          newNames[p._id] = p.productName;
+        });
+        setProductNames(newNames);
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch subcategory products:", err);
+    }
+  };
+
   const fetchProducts = async (search: string, setter: (products: Product[]) => void) => {
     try {
-      const response = await getAdminProducts({ search, limit: 10 });
+      const params: any = { search, limit: 20 };
+      if (productCategoryId) params.category = productCategoryId;
+      if (productSubCategoryId) params.subcategory = productSubCategoryId;
+
+      const response = await getAdminProducts(params);
       if (response.success && response.data) {
         const fetchedProducts = Array.isArray(response.data) ? response.data : [];
         setter(fetchedProducts);
@@ -189,10 +340,11 @@ export default function AdminPromoStrip() {
       return;
     }
 
-    // Validate 4 cards
-    const validCards = categoryCards.filter(c => c.subCategoryId);
-    if (validCards.length !== 4) {
-      setError("Please select exactly 4 subcategories for the shortcut boxes");
+    // Validate cards: a card is valid if it has a link OR images
+    const validCards = categoryCards.filter(c => c.subCategoryId || c.productId || (c.images && c.images.length > 0));
+    
+    if (validCards.length === 0) {
+      setError("Please add at least one box (link or images) to the shortcut section");
       return;
     }
 
@@ -248,18 +400,29 @@ export default function AdminPromoStrip() {
     setEndDate(strip.endDate.split("T")[0]);
 
     // Process cards
-    const cards = strip.categoryCards.map(c => ({
-      subCategoryId: typeof c.subCategoryId === 'string' ? c.subCategoryId : (c.subCategoryId as any)?._id || "",
-      title: c.title,
-      badge: c.badge,
-      images: Array.isArray(c.images) ? c.images : ((c as any).imageUrl ? [(c as any).imageUrl] : []),
-      discountPercentage: c.discountPercentage,
-      order: c.order,
-      _id: c._id
-    }));
+    const cards = strip.categoryCards.map(c => {
+      const subId = typeof c.subCategoryId === 'string' ? c.subCategoryId : (c.subCategoryId as any)?._id || "";
+      const prodId = typeof c.productId === 'string' ? c.productId : (c.productId as any)?._id || "";
+
+      if (prodId && typeof c.productId === 'object') {
+        const p = c.productId as any;
+        setProductNames(prev => ({ ...prev, [p._id]: p.productName }));
+      }
+
+      return {
+        subCategoryId: subId,
+        productId: prodId,
+        title: c.title,
+        badge: c.badge,
+        images: Array.isArray(c.images) ? c.images : ((c as any).imageUrl ? [(c as any).imageUrl] : []),
+        discountPercentage: c.discountPercentage,
+        order: c.order,
+        _id: c._id
+      };
+    });
 
     while (cards.length < 4) {
-      cards.push({ subCategoryId: "", title: "", badge: "", images: [], discountPercentage: 0, order: cards.length, _id: undefined });
+      cards.push({ subCategoryId: "", productId: "", title: "", badge: "", images: [], discountPercentage: 0, order: cards.length, _id: undefined });
     }
     setCategoryCards(cards.slice(0, 4));
 
@@ -300,15 +463,20 @@ export default function AdminPromoStrip() {
     setStartDate("");
     setEndDate("");
     setCategoryCards([
-      { subCategoryId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 0, _id: undefined },
-      { subCategoryId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 1, _id: undefined },
-      { subCategoryId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 2, _id: undefined },
-      { subCategoryId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 3, _id: undefined },
+      { subCategoryId: "", productId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 0, _id: undefined },
+      { subCategoryId: "", productId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 1, _id: undefined },
+      { subCategoryId: "", productId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 2, _id: undefined },
+      { subCategoryId: "", productId: "", title: "", badge: "", images: [], discountPercentage: 0, order: 3, _id: undefined },
     ]);
     setFeaturedProducts([]);
     setCrazyDealsTitle("CRAZY DEALS");
     setIsActive(true);
     setOrder(0);
+    setProductSubCategoryId("");
+    setSubcategoryProducts([]);
+    setProductSubCategoryId("");
+    setSubcategoryProducts([]);
+    setCardProductFilters(["", "", "", ""]);
     setEditingId(null);
   };
 
@@ -318,12 +486,12 @@ export default function AdminPromoStrip() {
 
     // Auto-fill images and title if subcategory is selected
     if (field === "subCategoryId" && value) {
+      updated[index].productId = ""; // Clear product if subcat selected
       const selectedSub = subcategories.find(s => s._id === value);
       if (selectedSub) {
         updated[index].title = selectedSub.subcategoryName || "";
-        updated[index].badge = "FLAT 50% OFF"; // Default badge to avoid validation error
+        updated[index].badge = "FLAT 50% OFF"; 
 
-        // Fetch 4 product images from this subcategory
         try {
           const response = await getAdminProducts({ subcategory: value, limit: 4 });
           if (response.success && response.data) {
@@ -334,18 +502,62 @@ export default function AdminPromoStrip() {
             updated[index].images = images;
           }
         } catch (err) {
-          console.error("Failed to fetch subcategory product images:", err);
+          console.error("Failed to fetch subcategory images:", err);
         }
+      }
+    }
+
+    // Auto-fill if product is selected
+    if (field === "productId" && value) {
+      updated[index].subCategoryId = ""; // Clear subcat
+      const selectedProd = categoryProducts.find(p => p._id === value) || cardProducts.find(p => p._id === value);
+      if (selectedProd) {
+        updated[index].title = selectedProd.productName || "";
+        updated[index].badge = "BEST DEAL";
+        
+        const mainImg = typeof selectedProd.mainImage === 'string' ? selectedProd.mainImage : (selectedProd.mainImage as any)?.url;
+        const galleryImgs = (selectedProd.galleryImages || []).map(img => typeof img === 'string' ? img : (img as any)?.url).filter(Boolean);
+        const allImgs = [mainImg, ...galleryImgs].filter(Boolean).slice(0, 4);
+        updated[index].images = allImgs;
       }
     }
 
     setCategoryCards(updated);
   };
 
+  const toggleProductImage = (cardIdx: number, p: Product) => {
+    const card = categoryCards[cardIdx];
+    const img = typeof p.mainImage === 'string' ? p.mainImage : (p.mainImage as any)?.url;
+    if (!img) return;
+
+    let newImgs = [...card.images];
+    const exists = newImgs.includes(img);
+
+    if (exists) {
+      newImgs = newImgs.filter(i => i !== img);
+    } else if (newImgs.length < 4) {
+      newImgs.push(img);
+    } else {
+      // If 4 already, replace the last one or just do nothing
+      return;
+    }
+
+    updateCardField(cardIdx, "images", newImgs);
+    
+    // Auto-link to the first product if destination is empty
+    if (!card.subCategoryId && !card.productId && newImgs.length === 1 && !exists) {
+      updateCardField(cardIdx, "productId", p._id);
+    }
+  };
+
   // Pagination logic
-  const totalPages = Math.ceil(promoStrips.length / rowsPerPage);
+  const filteredStrips = promoStrips.filter(s => 
+    s.heading.toLowerCase().includes(listSearchQuery.toLowerCase()) ||
+    s.headerCategorySlug.toLowerCase().includes(listSearchQuery.toLowerCase())
+  );
+  const totalPages = Math.ceil(filteredStrips.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const displayedStrips = promoStrips.slice(startIndex, startIndex + rowsPerPage);
+  const displayedStrips = filteredStrips.slice(startIndex, startIndex + rowsPerPage);
 
   return (
     <div className="flex flex-col min-h-screen bg-neutral-50 uppercase-none">
@@ -394,7 +606,6 @@ export default function AdminPromoStrip() {
                       required
                     >
                       <option value="">Choose placement...</option>
-                      <option value="all">Home Main</option>
                       {headerCategories.map(hc => (
                         <option key={hc._id} value={hc.slug}>{hc.name}</option>
                       ))}
@@ -465,21 +676,90 @@ export default function AdminPromoStrip() {
 
                 {/* 4. Shortcut Subcategories (Boxes) */}
                 <div className="space-y-4 pt-4 border-t border-slate-50">
-                  <label className="text-[10px] font-semibold text-slate-500 uppercase">4. Shortcut Boxes (Exactly 4)</label>
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">4. Shortcut Boxes (Up to 4)</label>
+                    <span className="text-[9px] font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded">MULTI-SELECT ACTIVE</span>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     {categoryCards.map((card, idx) => (
-                      <div key={idx} className="p-4 bg-neutral-50 rounded-xl border border-neutral-200 relative group">
-                        <span className="absolute -top-2 -left-2 w-6 h-6 bg-slate-800 text-white rounded-lg flex items-center justify-center text-[10px] font-bold">{idx + 1}</span>
+                      <div key={idx} className="p-4 bg-neutral-50 rounded-2xl border border-neutral-200 relative group transition-all hover:border-teal-200 hover:shadow-md">
+                        <span className="absolute -top-2 -left-2 w-7 h-7 bg-slate-900 text-white rounded-xl flex items-center justify-center text-[10px] font-black shadow-lg z-10">{idx + 1}</span>
 
                         <div className="space-y-3">
-                          <select
-                            value={typeof card.subCategoryId === 'string' ? card.subCategoryId : (card.subCategoryId as any)?._id || ""}
-                            onChange={(e) => updateCardField(idx, "subCategoryId", e.target.value)}
-                            className="w-full bg-white border border-neutral-200 py-1.5 px-3 rounded-lg text-xs font-semibold"
-                          >
-                            <option value="">Select Subcat</option>
-                            {subcategories.map(s => <option key={s._id} value={s._id}>{s.subcategoryName}</option>)}
-                          </select>
+                          {/* Destination Selection */}
+                          <div className="space-y-2">
+                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest pl-1">Link Destination</p>
+                             <div className="grid grid-cols-1 gap-2">
+                               {subcategories.length > 0 && (
+                                 <select
+                                   value={typeof card.subCategoryId === 'string' ? card.subCategoryId : (card.subCategoryId as any)?._id || ""}
+                                   onChange={(e) => updateCardField(idx, "subCategoryId", e.target.value)}
+                                   className="w-full bg-white border border-neutral-200 py-2 px-3 rounded-xl text-[10px] font-bold outline-none focus:ring-2 focus:ring-teal-500/10"
+                                 >
+                                   <option value="">Subcategory Link...</option>
+                                   {subcategories.map(s => <option key={s._id} value={s._id}>{s.name || s.subcategoryName}</option>)}
+                                 </select>
+                               )}
+
+                               <select
+                                 value={typeof card.productId === 'string' ? card.productId : (card.productId as any)?._id || ""}
+                                 onChange={(e) => updateCardField(idx, "productId", e.target.value)}
+                                 className="w-full bg-white border border-neutral-200 py-2 px-3 rounded-xl text-[10px] font-bold outline-none focus:ring-2 focus:ring-teal-500/10"
+                               >
+                                 <option value="">Specific Product Link...</option>
+                                 {categoryProducts.map(p => (
+                                   <option key={p._id} value={p._id}>{p.productName}</option>
+                                 ))}
+                               </select>
+                             </div>
+                          </div>
+
+                          {/* Image Multi-Selector */}
+                          {categoryProducts.length > 0 && (
+                            <div className="space-y-2 pt-2 border-t border-slate-100">
+                               <div className="flex items-center justify-between">
+                                  <p className="text-[8px] font-black text-teal-600 uppercase tracking-widest pl-1">Choose 4 Images</p>
+                                  <input 
+                                    placeholder="Filter products..."
+                                    value={cardProductFilters[idx]}
+                                    onChange={(e) => {
+                                      const next = [...cardProductFilters];
+                                      next[idx] = e.target.value;
+                                      setCardProductFilters(next);
+                                    }}
+                                    className="text-[7px] font-black bg-white border border-slate-100 rounded-lg px-2 py-1 outline-none focus:border-teal-300 w-24 shadow-sm"
+                                  />
+                               </div>
+                               <div className="grid grid-cols-4 gap-1 p-1 bg-white/50 rounded-xl border border-slate-100 max-h-28 overflow-y-auto custom-scrollbar">
+                                  {categoryProducts
+                                    .filter(p => p.productName.toLowerCase().includes(cardProductFilters[idx].toLowerCase()))
+                                    .map(p => {
+                                      const img = typeof p.mainImage === 'string' ? p.mainImage : (p.mainImage as any)?.url;
+                                      const isSelected = card.images.includes(img);
+                                      return (
+                                        <button
+                                          key={p._id}
+                                          type="button"
+                                          onClick={() => toggleProductImage(idx, p)}
+                                          title={p.productName}
+                                          className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                                            isSelected ? 'border-teal-500 ring-2 ring-teal-500/20 z-10 scale-95' : 'border-transparent opacity-50 hover:opacity-100'
+                                          }`}
+                                        >
+                                          {img ? (
+                                            <img src={img} className="w-full h-full object-cover" />
+                                          ) : (
+                                            <div className="w-full h-full bg-slate-200 flex items-center justify-center text-[8px]">📦</div>
+                                          )}
+                                          {isSelected && (
+                                             <div className="absolute inset-x-0 bottom-0 bg-teal-500 h-1.5" />
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                               </div>
+                            </div>
+                          )}
 
                           <div className="grid grid-cols-2 gap-2">
                             <input
@@ -553,20 +833,81 @@ export default function AdminPromoStrip() {
                   </div>
                 </div>
 
-                {/* 5. Crazy Deals */}
+                 {/* 5. Crazy Deals */}
                 <div className="space-y-4 pt-4 border-t border-slate-50">
                   <div className="flex justify-between items-center">
                     <label className="text-[10px] font-semibold text-slate-500 uppercase">5. Crazy Deals (Min 4)</label>
-                    <span className="text-[9px] font-bold bg-slate-900 text-white px-2 py-0.5 rounded uppercase">{featuredProducts.length} added</span>
+                    <div className="flex items-center gap-2">
+                       {featuredProducts.length > 0 && (
+                        <button 
+                          type="button" 
+                          onClick={() => setFeaturedProducts([])}
+                          className="text-[9px] font-bold text-rose-500 hover:text-rose-600 uppercase"
+                        >
+                          Clear All
+                        </button>
+                      )}
+                      <span className="text-[9px] font-bold bg-slate-900 text-white px-2 py-0.5 rounded uppercase">{featuredProducts.length} added</span>
+                    </div>
                   </div>
 
-                  <div className="relative">
+                  {/* Filter & Search Controls */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <select
+                      value={productSubCategoryId}
+                      onChange={(e) => setProductSubCategoryId(e.target.value)}
+                      disabled={!productCategoryId || subcategories.length === 0}
+                      className="px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg font-bold text-xs disabled:opacity-50"
+                    >
+                      <option value="">All Subcategories</option>
+                      {subcategories.map(s => (
+                        <option key={s._id} value={s._id}>{s.name || s.subcategoryName}</option>
+                      ))}
+                    </select>
+
                     <input
-                      placeholder="Add products to deals..."
+                      placeholder="Search more products..."
                       value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
-                      className="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg font-semibold text-sm"
+                      className="px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg font-bold text-xs"
                     />
+                  </div>
+
+                  {/* Quick Pick from Category/Subcategory */}
+                  {categoryProducts.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-[9px] font-bold text-neutral-400 uppercase">
+                        {productSubCategoryId ? "Products from Subcategory" : "All Products from Category"}
+                      </p>
+                      <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-2 bg-neutral-50 rounded-xl border border-neutral-100">
+                        {(productSubCategoryId ? subcategoryProducts : categoryProducts).map(p => {
+                          const isAdded = featuredProducts.includes(p._id);
+                          return (
+                            <button
+                              key={p._id}
+                              type="button"
+                              onClick={() => {
+                                if (!isAdded) {
+                                  setFeaturedProducts([...featuredProducts, p._id]);
+                                } else {
+                                  setFeaturedProducts(featuredProducts.filter(id => id !== p._id));
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all border ${
+                                isAdded 
+                                  ? "bg-teal-600 text-white border-teal-600 shadow-sm" 
+                                  : "bg-white text-neutral-600 border-neutral-200 hover:border-teal-500 hover:text-teal-600"
+                              }`}
+                            >
+                              {isAdded ? "✓ " : "+ "}{p.productName}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="relative">
                     {productSearch.length > 0 && products.length > 0 && (
                       <div className="absolute left-0 right-0 top-full mt-2 bg-white shadow-2xl border border-slate-100 rounded-3xl z-20 overflow-hidden">
                         <div className="max-h-60 overflow-y-auto">
@@ -651,124 +992,6 @@ export default function AdminPromoStrip() {
           {/* RIGHT: Preview & Campaigns List */}
           <div className="lg:col-span-7 space-y-8">
 
-            {/* Live Preview Card */}
-            <div className="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden">
-              <div className="bg-neutral-800 text-white px-6 py-3 flex justify-between items-center">
-                <h3 className="text-sm font-bold uppercase tracking-wider">Visual Preview (Mobile Look)</h3>
-                <span className="text-[10px] bg-teal-500 px-2 py-0.5 rounded text-white font-bold animate-pulse">LIVE PREVIEW</span>
-              </div>
-
-              <div className="p-4 bg-neutral-100 flex justify-center">
-                <div className="w-full max-w-[400px] border-[8px] border-neutral-900 rounded-[2.5rem] overflow-hidden shadow-2xl bg-white aspect-[9/19] relative">
-                  {/* Mock Phone Notch */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-neutral-900 rounded-b-2xl z-50"></div>
-
-                  {/* Mock App Content */}
-                  <div className="h-full overflow-y-auto scrollbar-hide pt-8">
-                    {/* Theme Background Mockup */}
-                    <div
-                      className="min-h-[200px] p-4 relative"
-                      style={{
-                        background: `linear-gradient(to bottom, #dcfce7, #f0fdf4, #ffffff)`
-                      }}
-                    >
-                      {/* Snowflake Simulation (Static for Preview) */}
-                      <div className="absolute inset-0 pointer-events-none opacity-20">
-                        <div className="absolute top-4 left-4 text-white">❄</div>
-                        <div className="absolute top-12 right-8 text-white">❄</div>
-                        <div className="absolute top-20 left-1/3 text-white text-xs">❄</div>
-                      </div>
-
-                      {/* Heading */}
-                      <div className="text-center relative z-10 mb-4">
-                        <h1
-                          className="text-2xl font-black text-white"
-                          style={{
-                            fontFamily: '"Poppins", sans-serif',
-                            textShadow: `-1.5px -1.5px 0 #16a34a, 1.5px -1.5px 0 #16a34a, -1.5px 1.5px 0 #16a34a, 1.5px 1.5px 0 #16a34a, 0px 4px 0px rgba(0,0,0,0.2)`
-                          }}
-                        >
-                          {heading || "CAMPAIGN TITLE"}
-                        </h1>
-                        <h2
-                          className="text-lg font-black text-white -mt-1"
-                          style={{
-                            fontFamily: '"Poppins", sans-serif',
-                            textShadow: `-1px -1px 0 #16a34a, 1px -1px 0 #16a34a, -1px 1px 0 #16a34a, 1px 1px 0 #16a34a, 0px 3px 0px rgba(0,0,0,0.2)`
-                          }}
-                        >
-                          {saleText || "SALE LIVE"}
-                        </h2>
-                        {startDate && endDate && (
-                          <p className="text-[8px] font-bold text-neutral-600 mt-1 uppercase">
-                            {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Content Row */}
-                      <div className="flex gap-2 relative z-10">
-                        {/* Crazy Deals Side */}
-                        <div className="w-24 bg-green-600/10 rounded-lg p-1.5 flex flex-col items-center justify-between border border-green-200">
-                          <div className="text-center">
-                            <p className="text-green-800 font-black text-[9px] leading-tight">
-                              {crazyDealsTitle.split(' ').map((w, i) => <div key={i}>{w}</div>)}
-                            </p>
-                          </div>
-
-                          <div className="my-2 text-center">
-                            <div className="bg-neutral-800 text-white text-[7px] px-1 rounded line-through">₹999</div>
-                            <div className="bg-green-500 text-white text-[9px] font-bold px-1 rounded -mt-0.5">₹499</div>
-                          </div>
-
-                          <div className="text-[7px] font-bold text-center leading-tight line-clamp-2">
-                            Preview Product
-                          </div>
-                          <div className="w-full aspect-square bg-white/50 rounded flex items-center justify-center text-[20px]">
-                            📦
-                          </div>
-                        </div>
-
-                        {/* Shortcut Cards */}
-                        <div className="flex-1 grid grid-cols-2 gap-1.5">
-                          {categoryCards.map((card, idx) => (
-                            <div key={idx} className="bg-white rounded-lg p-1 shadow-sm border border-neutral-100 flex flex-col items-center justify-between aspect-[4/5] overflow-hidden">
-                              <span className="text-[7px] font-bold bg-yellow-400 px-1 rounded-sm w-full text-center truncate">
-                                {card.badge || "50% OFF"}
-                              </span>
-                              <div className="text-[8px] font-bold text-neutral-800 text-center line-clamp-1 w-full px-0.5">
-                                {card.title || "Category"}
-                              </div>
-                              <div className="grid grid-cols-2 gap-0.5 w-full">
-                                {(card.images?.length ? card.images.slice(0, 4) : [null, null, null, null]).map((img, i) => (
-                                  <div key={i} className="aspect-square bg-neutral-50 rounded-sm flex items-center justify-center overflow-hidden">
-                                    {img ? <img src={img} className="w-full h-full object-cover" /> : <span className="text-[10px]">📦</span>}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Rest of the Fake App Page */}
-                    <div className="p-4 space-y-4">
-                      <div className="h-4 bg-neutral-100 rounded-full w-2/3"></div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="aspect-video bg-neutral-50 rounded-xl"></div>
-                        <div className="aspect-video bg-neutral-50 rounded-xl"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="p-4 bg-neutral-50 border-t border-neutral-200 text-center">
-                <p className="text-xs text-neutral-500 font-medium italic">
-                  * This is a simulated preview. Actual animations and themes will vary based on user device and category tab.
-                </p>
-              </div>
-            </div>
 
             {/* List Header */}
             <div className="bg-white p-6 rounded-lg border border-neutral-200 shadow-sm flex items-center justify-between">
@@ -827,16 +1050,21 @@ export default function AdminPromoStrip() {
                         </button>
                         <button
                           onClick={() => handleDelete(strip._id, strip.headerCategorySlug)}
-                          className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all ${strip.headerCategorySlug === 'all'
-                            ? "bg-neutral-100 text-neutral-300 cursor-not-allowed"
-                            : "bg-neutral-50 text-neutral-400 hover:bg-rose-50 hover:text-rose-500"
-                            }`}
-                          title={strip.headerCategorySlug === 'all' ? "Cannot delete default HOME campaign" : "Delete Campaign"}
+                          className="w-9 h-9 flex items-center justify-center bg-neutral-50 text-neutral-400 hover:bg-rose-50 hover:text-rose-500 rounded-lg transition-all"
+                          title="Delete Campaign"
                         >
                           <TrashIcon />
                         </button>
                       </div>
                     </div>
+
+                    <div className="px-1 text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                      <div className="h-[1px] flex-1 bg-neutral-100"></div>
+                      <span>Visual Preview</span>
+                      <div className="h-[1px] flex-1 bg-neutral-100"></div>
+                    </div>
+
+                    <CompactPromoPreview strip={strip} />
 
                     <div className="grid grid-cols-3 gap-4 pb-8 border-b border-neutral-50 mb-6">
                       <div className="bg-neutral-50/50 p-4 rounded-xl border border-neutral-50">

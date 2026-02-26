@@ -8,7 +8,8 @@ export interface IPromoStrip extends Document {
   startDate: Date; // Sale start date
   endDate: Date; // Sale end date
   categoryCards: Array<{
-    subCategoryId: mongoose.Types.ObjectId; // Reference to SubCategory
+    subCategoryId?: mongoose.Types.ObjectId; // Reference to SubCategory (Optional)
+    productId?: mongoose.Types.ObjectId; // Reference to Product (Optional)
     title: string; // Custom title for the card
     badge: string; // e.g., "Up to 55% OFF"
     images: string[]; // 4 product images
@@ -66,7 +67,12 @@ const PromoStripSchema = new Schema<IPromoStrip>(
         subCategoryId: {
           type: Schema.Types.ObjectId,
           ref: "SubCategory",
-          required: true,
+          required: false,
+        },
+        productId: {
+          type: Schema.Types.ObjectId,
+          ref: "Product",
+          required: false,
         },
         title: {
           type: String,

@@ -3,6 +3,8 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IBestsellerCard extends Document {
     name: string;
     category: mongoose.Types.ObjectId;
+    headerCategoryId?: mongoose.Types.ObjectId;
+    products?: mongoose.Types.ObjectId[];
     order: number;
     isActive: boolean;
     createdAt: Date;
@@ -22,6 +24,17 @@ const BestsellerCardSchema = new Schema<IBestsellerCard>(
             ref: "Category",
             required: [true, "Category is required"],
         },
+        headerCategoryId: {
+            type: Schema.Types.ObjectId,
+            ref: "HeaderCategory",
+            required: false,
+        },
+        products: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Product",
+            },
+        ],
         order: {
             type: Number,
             required: [true, "Display order is required"],

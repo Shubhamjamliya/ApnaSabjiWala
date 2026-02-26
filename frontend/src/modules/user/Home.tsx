@@ -7,6 +7,7 @@ import NextDayBookingCard from "./components/NextDayBookingCard";
 import LowestPricesEver from "./components/LowestPricesEver";
 import CategoryTileSection from "./components/CategoryTileSection";
 import FeaturedThisWeek from "./components/FeaturedThisWeek";
+import BestsellerCards from "./components/BestsellerCards";
 import ProductCard from "./components/ProductCard";
 import { getHomeContent } from "../../services/api/customerHomeService";
 import { getHeaderCategoriesPublic } from "../../services/api/headerCategoryService";
@@ -39,6 +40,7 @@ export default function Home() {
     promoBanners: [],
     trending: [],
     cookingIdeas: [],
+    bestsellerCards: [],
   });
 
   const [products, setProducts] = useState<any[]>([]);
@@ -256,12 +258,15 @@ export default function Home() {
       {/* LOWEST PRICES EVER Section */}
       <LowestPricesEver activeTab={activeTab} products={homeData.lowestPrices} />
 
+      {/* BESTSELLER CARDS (2x2 Grid) */}
+      <BestsellerCards cards={homeData.bestsellerCards} />
+
       {/* Main content */}
       <div
         className="bg-emerald-50/30 -mt-2 pt-1 space-y-5 md:space-y-8 md:pt-4">
 
         {/* Featured This Week Section */}
-        <FeaturedThisWeek />
+        {/* <FeaturedThisWeek /> */}
 
         {/* Dynamic Home Sections - Render sections created by admin (For ALL tabs) */}
         {homeData.homeSections && homeData.homeSections.length > 0 && (
@@ -327,14 +332,22 @@ export default function Home() {
               Bestsellers
             </h2>
             <div className="px-4 md:px-6 lg:px-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+              <div 
+                className="flex gap-3 md:gap-4 overflow-x-auto scrollbar-hide pb-2"
+                style={{ scrollSnapType: 'x mandatory' }}
+              >
                 {homeData.bestsellers.map((product: any) => (
-                  <ProductCard
-                    key={product.id || product._id}
-                    product={product}
-                    categoryStyle={true}
-                    showBadge={true}
-                  />
+                  <div 
+                    key={product.id || product._id} 
+                    className="flex-shrink-0 w-[140px] md:w-[180px]"
+                    style={{ scrollSnapAlign: 'start' }}
+                  >
+                    <ProductCard
+                      product={product}
+                      categoryStyle={true}
+                      showBadge={true}
+                    />
+                  </div>
                 ))}
               </div>
             </div>

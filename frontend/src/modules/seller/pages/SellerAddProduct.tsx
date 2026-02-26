@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { uploadImage, uploadImages } from "../../../services/api/uploadService";
 import {
@@ -58,6 +58,7 @@ export default function SellerAddProduct() {
     galleryImageUrls: [] as string[],
     isShopByStoreOnly: "No",
     shopId: "",
+    nextDayEnabled: "No",
   });
 
   const [variations, setVariations] = useState<ProductVariation[]>([]);
@@ -183,6 +184,7 @@ export default function SellerAddProduct() {
               galleryImageUrls: product.galleryImageUrls || [],
               isShopByStoreOnly: (product as any).isShopByStoreOnly ? "Yes" : "No",
               shopId: (product as any).shopId?._id || (product as any).shopId || "",
+              nextDayEnabled: product.nextDay?.enabled ? "Yes" : "No",
             });
             setVariations(product.variations);
             if (product.mainImageUrl || product.mainImage) {
@@ -464,6 +466,9 @@ export default function SellerAddProduct() {
         variationType: formData.variationType || undefined,
         isShopByStoreOnly: formData.isShopByStoreOnly === "Yes",
         shopId: formData.isShopByStoreOnly === "Yes" && formData.shopId ? formData.shopId : undefined,
+        nextDay: {
+          enabled: formData.nextDayEnabled === "Yes"
+        }
       };
 
       // Create or Update product via API
@@ -508,6 +513,7 @@ export default function SellerAddProduct() {
               galleryImageUrls: [],
               isShopByStoreOnly: "No",
               shopId: "",
+              nextDayEnabled: "No",
             });
             setVariations([]);
             setMainImageFile(null);
@@ -669,7 +675,7 @@ export default function SellerAddProduct() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Make Product Popular?
+                    Make Product Popular? (Bestseller)
                   </label>
                   <select
                     name="popular"
@@ -682,7 +688,7 @@ export default function SellerAddProduct() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Insert to Deal of the day?
+                    Insert to Deal of the day? (Crazy Deals)
                   </label>
                   <select
                     name="dealOfDay"
@@ -725,6 +731,19 @@ export default function SellerAddProduct() {
                   <p className="text-xs text-red-500 mt-1">
                     This will help for search
                   </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Available for Next Day Delivery?
+                  </label>
+                  <select
+                    name="nextDayEnabled"
+                    value={formData.nextDayEnabled}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white">
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </select>
                 </div>
               </div>
               <div>

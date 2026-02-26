@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     getLowestPricesProducts,
     createLowestPricesProduct,
@@ -15,6 +15,7 @@ import {
     type Category,
     type SubCategory
 } from "../../../services/api/admin/adminProductService";
+import { getHeaderCategoriesAdmin, type HeaderCategory } from "../../../services/api/headerCategoryService";
 
 export default function AdminLowestPrices() {
     // Form state
@@ -23,8 +24,11 @@ export default function AdminLowestPrices() {
     const [isActive, setIsActive] = useState(true);
 
     // Filter state
+    const [headerCategories, setHeaderCategories] = useState<HeaderCategory[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
+
+    const [selectedHeader, setSelectedHeader] = useState<string>("");
     const [selectedCategory, setSelectedCategory] = useState<string>("");
     const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
 
@@ -44,6 +48,12 @@ export default function AdminLowestPrices() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
 
+    // Check if HOME header is selected
+    const isHomeHeader = useMemo(() => {
+        const header = headerCategories.find(h => h._id === selectedHeader);
+        return header?.name?.toUpperCase() === "HOME";
+    }, [selectedHeader, headerCategories]);
+
     // Fetch initial data
     useEffect(() => {
         fetchLowestPricesProducts();
@@ -52,14 +62,31 @@ export default function AdminLowestPrices() {
 
     const fetchInitialFilters = async () => {
         try {
-            const catRes = await getCategories({ status: "Active" });
+            const [catRes, headerRes] = await Promise.all([
+                getCategories({ status: "Active" }),
+                getHeaderCategoriesAdmin()
+            ]);
+
             if (catRes.success) {
                 setCategories(catRes.data);
             }
+            if (Array.isArray(headerRes)) {
+                setHeaderCategories(headerRes);
+                // Try to find the "HOME" header category and select it by default
+                const homeHeader = headerRes.find(h => h.name?.toUpperCase() === "HOME");
+                if (homeHeader) {
+                    setSelectedHeader(homeHeader._id);
+                } else {
+                    setSelectedHeader("");
+                }
+            }
         } catch (err) {
-            console.error("Error fetching categories:", err);
+            console.error("Error fetching filters:", err);
         }
     };
+
+    // Categories are now unfiltered so any product can be added to any header section
+    const currentCategories = categories;
 
     useEffect(() => {
         if (selectedCategory) {
@@ -69,7 +96,7 @@ export default function AdminLowestPrices() {
             setSelectedSubcategory("");
         }
         fetchAvailableProducts();
-    }, [selectedCategory, selectedSubcategory]);
+    }, [selectedHeader, selectedCategory, selectedSubcategory]);
 
     const fetchSubcategories = async (categoryId: string) => {
         try {
@@ -115,12 +142,16 @@ export default function AdminLowestPrices() {
 
     // Filter products based on search term and exclude already added products
     const filteredProducts = availableProducts.filter((product) => {
-        // Get IDs of products already in lowest prices
+        // Get IDs of products already in lowest prices FOR THIS SPECIFIC HEADER
         const existingProductIds = lowestPricesProducts
+            .filter((lp) => {
+                const lpHeaderId = lp.headerCategoryId ? (typeof lp.headerCategoryId === "string" ? lp.headerCategoryId : (lp.headerCategoryId as any)._id) : "";
+                return lpHeaderId === selectedHeader;
+            })
             .map((lp) => (typeof lp.product === "string" ? lp.product : lp.product?._id))
             .filter((id): id is string => !!id);
 
-        // Exclude already added products (unless we're editing that specific one)
+        // Exclude already added products for this header (unless we're editing that specific one)
         if (existingProductIds.includes(product._id) && editingId === null) {
             return false;
         }
@@ -165,6 +196,7 @@ export default function AdminLowestPrices() {
             if (editingId) {
                 const formData: LowestPricesProductFormData = {
                     product: selectedProductIds[0],
+                    headerCategoryId: selectedHeader || undefined,
                     order: order !== undefined ? order : undefined,
                     isActive,
                 };
@@ -184,6 +216,7 @@ export default function AdminLowestPrices() {
                 for (const productId of selectedProductIds) {
                     const formData: LowestPricesProductFormData = {
                         product: productId,
+                        headerCategoryId: selectedHeader || undefined,
                         order: order !== undefined ? order : undefined,
                         isActive,
                     };
@@ -229,6 +262,10 @@ export default function AdminLowestPrices() {
             if (subId) setSelectedSubcategory(subId);
         }
 
+        if (lowestPricesProduct.headerCategoryId) {
+            setSelectedHeader(lowestPricesProduct.headerCategoryId);
+        }
+
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
@@ -264,11 +301,19 @@ export default function AdminLowestPrices() {
         setSelectedSubcategory("");
     };
 
+    // Filter the lowest prices list by the selected header so the table only shows relevant products
+    const filteredLowestPricesProducts = useMemo(() => {
+        return lowestPricesProducts.filter((lp) => {
+            const lpHeaderId = lp.headerCategoryId ? (typeof lp.headerCategoryId === "string" ? lp.headerCategoryId : (lp.headerCategoryId as any)._id) : "";
+            return lpHeaderId === selectedHeader;
+        });
+    }, [lowestPricesProducts, selectedHeader]);
+
     // Pagination
-    const totalPages = Math.ceil(lowestPricesProducts.length / rowsPerPage);
+    const totalPages = Math.ceil(filteredLowestPricesProducts.length / rowsPerPage) || 1;
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    const displayedProducts = lowestPricesProducts.slice(startIndex, endIndex);
+    const displayedProducts = filteredLowestPricesProducts.slice(startIndex, endIndex);
 
     return (
         <div className="flex flex-col h-full bg-gray-50">
@@ -313,10 +358,31 @@ export default function AdminLowestPrices() {
                         </h2>
 
                         <div className="space-y-4 flex-1 overflow-y-auto pr-2 scrollbar-thin">
+                            {/* Header Category Filter */}
+                            <div>
+                                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                                    Step 1: Header Category
+                                </label>
+                                <select
+                                    value={selectedHeader}
+                                    onChange={(e) => {
+                                        setSelectedHeader(e.target.value);
+                                        setSelectedCategory("");
+                                        setSelectedSubcategory("");
+                                    }}
+                                    className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 outline-none text-sm"
+                                >
+                                    <option value="">Choose Header...</option>
+                                    {headerCategories.map(h => (
+                                        <option key={h._id} value={h._id}>{h.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             {/* Category Filter */}
                             <div>
                                 <label className="block text-sm font-medium text-neutral-700 mb-1">
-                                    Filter by Category
+                                    Step 2: Filter by Category
                                 </label>
                                 <select
                                     value={selectedCategory}
@@ -327,7 +393,7 @@ export default function AdminLowestPrices() {
                                     className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 outline-none text-sm"
                                 >
                                     <option value="">All Categories</option>
-                                    {categories.map(cat => (
+                                    {currentCategories.map(cat => (
                                         <option key={cat._id} value={cat._id}>{cat.name}</option>
                                     ))}
                                 </select>
@@ -337,7 +403,7 @@ export default function AdminLowestPrices() {
                             {subcategories.length > 0 && (
                                 <div>
                                     <label className="block text-sm font-medium text-neutral-700 mb-1">
-                                        Filter by Subcategory
+                                        Step 3: Filter by Subcategory
                                     </label>
                                     <select
                                         value={selectedSubcategory}
@@ -355,7 +421,7 @@ export default function AdminLowestPrices() {
                             {/* Product Search and Select */}
                             <div>
                                 <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                    Select Products <span className="text-red-500">*</span>
+                                    Step 4: Select Products <span className="text-red-500">*</span>
                                 </label>
                                 {!editingId ? (
                                     <>
@@ -379,8 +445,8 @@ export default function AdminLowestPrices() {
                                                         key={product._id}
                                                         onClick={() => toggleProductSelection(product._id)}
                                                         className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-neutral-50 border-b border-neutral-50 last:border-b-0 ${selectedProductIds.includes(product._id)
-                                                                ? "bg-teal-50"
-                                                                : ""
+                                                            ? "bg-teal-50"
+                                                            : ""
                                                             }`}
                                                     >
                                                         <input
@@ -466,8 +532,8 @@ export default function AdminLowestPrices() {
                                 onClick={handleSubmit}
                                 disabled={loading || selectedProductIds.length === 0}
                                 className={`w-full px-4 py-2 rounded font-medium transition-colors ${loading || selectedProductIds.length === 0
-                                        ? "bg-gray-400 cursor-not-allowed text-white"
-                                        : "bg-teal-600 hover:bg-teal-700 text-white"
+                                    ? "bg-gray-400 cursor-not-allowed text-white"
+                                    : "bg-teal-600 hover:bg-teal-700 text-white"
                                     }`}
                             >
                                 {loading
@@ -509,7 +575,7 @@ export default function AdminLowestPrices() {
                                 <span className="text-sm text-neutral-600">entries</span>
                             </div>
                             <div className="text-sm text-neutral-500">
-                                Total: {lowestPricesProducts.length} items
+                                Total: {filteredLowestPricesProducts.length} items
                             </div>
                         </div>
 
@@ -570,8 +636,8 @@ export default function AdminLowestPrices() {
                                                     <td className="p-4 text-center">
                                                         <span
                                                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${item.isActive
-                                                                    ? "bg-green-100 text-green-700"
-                                                                    : "bg-neutral-100 text-neutral-500"
+                                                                ? "bg-green-100 text-green-700"
+                                                                : "bg-neutral-100 text-neutral-500"
                                                                 }`}
                                                         >
                                                             {item.isActive ? "Active" : "Inactive"}
@@ -630,15 +696,15 @@ export default function AdminLowestPrices() {
                         {/* Pagination */}
                         <div className="p-4 border-t border-neutral-100 flex justify-between items-center bg-neutral-50 rounded-b-lg">
                             <div className="text-[11px] text-neutral-500 font-medium">
-                                Showing {startIndex + 1} to {Math.min(endIndex, lowestPricesProducts.length)} of {lowestPricesProducts.length} entries
+                                Showing {filteredLowestPricesProducts.length > 0 ? startIndex + 1 : 0} to {Math.min(endIndex, filteredLowestPricesProducts.length)} of {filteredLowestPricesProducts.length} entries
                             </div>
                             <div className="flex gap-1">
                                 <button
                                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                                     disabled={currentPage === 1}
                                     className={`px-3 py-1 rounded text-xs font-bold transition-colors border-none ${currentPage === 1
-                                            ? "bg-neutral-100 text-neutral-400 cursor-not-allowed"
-                                            : "bg-white text-teal-600 hover:bg-teal-50 shadow-sm"
+                                        ? "bg-neutral-100 text-neutral-400 cursor-not-allowed"
+                                        : "bg-white text-teal-600 hover:bg-teal-50 shadow-sm"
                                         }`}
                                 >
                                     Prev
@@ -648,8 +714,8 @@ export default function AdminLowestPrices() {
                                         key={i}
                                         onClick={() => setCurrentPage(i + 1)}
                                         className={`w-7 h-7 rounded text-xs font-bold transition-colors border-none ${currentPage === i + 1
-                                                ? "bg-teal-600 text-white shadow-md"
-                                                : "bg-white text-neutral-600 hover:bg-neutral-50 shadow-sm"
+                                            ? "bg-teal-600 text-white shadow-md"
+                                            : "bg-white text-neutral-600 hover:bg-neutral-50 shadow-sm"
                                             }`}
                                     >
                                         {i + 1}
@@ -661,8 +727,8 @@ export default function AdminLowestPrices() {
                                     }
                                     disabled={currentPage === totalPages}
                                     className={`px-3 py-1 rounded text-xs font-bold transition-colors border-none ${currentPage === totalPages
-                                            ? "bg-neutral-100 text-neutral-400 cursor-not-allowed"
-                                            : "bg-white text-teal-600 hover:bg-teal-50 shadow-sm"
+                                        ? "bg-neutral-100 text-neutral-400 cursor-not-allowed"
+                                        : "bg-white text-teal-600 hover:bg-teal-50 shadow-sm"
                                         }`}
                                 >
                                     Next

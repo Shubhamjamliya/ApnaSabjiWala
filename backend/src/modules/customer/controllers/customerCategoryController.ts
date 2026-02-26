@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Category from "../../../models/Category";
 import SubCategory from "../../../models/SubCategory";
 import Product from "../../../models/Product";
+import HeaderCategory from "../../../models/HeaderCategory";
 import mongoose from "mongoose";
 import { cache } from "../../../utils/cache";
 
@@ -160,6 +161,17 @@ export const getCategoryById = async (req: Request, res: Response) => {
         _id: id,
         status: "Active",
       }).lean();
+
+      // If not found as a category, check if it's a HeaderCategory
+      if (!category) {
+        const headerCat = await HeaderCategory.findById(id).lean();
+        if (headerCat && headerCat.relatedCategory) {
+          category = await Category.findOne({
+            _id: headerCat.relatedCategory,
+            status: "Active"
+          }).lean();
+        }
+      }
     }
 
     // If not found by ID, try by slug (case-insensitive, only active categories)

@@ -125,11 +125,10 @@ const ProductCard = memo(({
                       e.stopPropagation();
                       onAddToCart(product, e.currentTarget);
                     }}
-                    className={`bg-white/95 backdrop-blur-sm text-[10px] font-semibold px-2 py-1 rounded shadow-md transition-colors ${
-                      product.isAvailable === false
+                    className={`bg-white/95 backdrop-blur-sm text-[10px] font-semibold px-2 py-1 rounded shadow-md transition-colors ${product.isAvailable === false
                       ? 'text-neutral-400 border-2 border-neutral-300 cursor-not-allowed'
                       : 'text-green-600 border-2 border-green-600 hover:bg-white'
-                    }`}
+                      }`}
                   >
                     {product.isAvailable === false ? 'Out of Range' : 'ADD'}
                   </motion.button>
@@ -173,11 +172,10 @@ const ProductCard = memo(({
                         e.stopPropagation();
                         onUpdateQuantity(product.id, inCartQty + 1);
                       }}
-                      className={`w-4 h-4 flex items-center justify-center font-bold rounded transition-colors p-0 leading-none ${
-                        product.isAvailable === false
+                      className={`w-4 h-4 flex items-center justify-center font-bold rounded transition-colors p-0 leading-none ${product.isAvailable === false
                         ? 'text-neutral-300 cursor-not-allowed'
                         : 'text-white hover:bg-green-700'
-                      }`}
+                        }`}
                       style={{ lineHeight: 1, fontSize: '14px' }}
                     >
                       <span className="relative top-[-1px]">+</span>
@@ -330,7 +328,7 @@ export default function LowestPricesEver({ activeTab = 'all', products: adminPro
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    // Use admin-selected products if provided, otherwise fallback to fetching
+    // Use admin-selected products if provided
     if (adminProducts && adminProducts.length > 0) {
       const mappedProducts = adminProducts.map((p: any) => {
         // Get product name and remove any description-like suffixes
@@ -356,36 +354,7 @@ export default function LowestPricesEver({ activeTab = 'all', products: adminPro
       });
       setProducts(mappedProducts);
     } else {
-      // Fallback: fetch products if admin hasn't configured any
-      const fetchDiscountedProducts = async () => {
-        try {
-          const response = await getProducts({ limit: 50 });
-          if (response.success && response.data) {
-            const mappedProducts = (response.data as any[]).map(p => {
-              let productName = p.productName || p.name || '';
-              productName = productName.replace(/\s*-\s*(Fresh|Quality|Assured|Premium|Best|Top|Hygienic|Carefully|Selected).*$/i, '').trim();
-
-              let packValue = p.variations?.[0]?.title || p.pack || 'Standard';
-              if (packValue && packValue.includes(' - ')) {
-                packValue = packValue.split(' - ')[0].trim();
-              }
-
-              return {
-                ...p,
-                id: p._id || p.id,
-                name: productName,
-                imageUrl: p.mainImage || p.imageUrl,
-                mrp: p.mrp || p.price,
-                pack: packValue
-              };
-            });
-            setProducts(mappedProducts);
-          }
-        } catch (err) {
-          console.error("Failed to fetch products for LowestPricesEver", err);
-        }
-      };
-      fetchDiscountedProducts();
+        setProducts([]);
     }
   }, [adminProducts]);
 
@@ -393,31 +362,15 @@ export default function LowestPricesEver({ activeTab = 'all', products: adminPro
   // If using admin-selected products, use them directly (already filtered and ordered)
   // Otherwise, filter by activeTab and discount
   const getFilteredProducts = () => {
-    // If admin has selected products, use them directly (already ordered)
+    // We strictly trust the backend (adminProducts) to provide the correct 
+    // filtered list of products for the currently active tab. 
+    // Note: The backend already handles the fallback to HOME items if nothing is explicitly set.
     if (adminProducts && adminProducts.length > 0) {
-      return products.slice(0, 20); // Show up to 20 admin-selected products
+      return products.slice(0, 20); 
     }
-
-    // Fallback: filter by activeTab and discount
-    let filtered = products;
-
-    if (activeTab !== 'all') {
-      if (activeTab === 'grocery') {
-        filtered = products.filter((p) =>
-          ['snacks', 'atta-rice', 'dairy-breakfast', 'masala-oil', 'biscuits-bakery', 'cold-drinks', 'fruits-veg'].includes(p.categoryId)
-        );
-      } else {
-        filtered = products.filter((p) => p.categoryId === activeTab);
-      }
-    }
-
-    return filtered
-      .filter((product) => {
-        if (!product.mrp) return false;
-        const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100);
-        return discount > 0;
-      })
-      .slice(0, 10); // Show top 10 discounted products
+    
+    // Fallback if network fails completely or no products are configured anywhere
+    return [];
   };
 
   const discountedProducts = getFilteredProducts();
@@ -433,6 +386,8 @@ export default function LowestPricesEver({ activeTab = 'all', products: adminPro
   const handleUpdateQuantity = useCallback((productId: string, quantity: number) => {
     updateQuantity(productId, quantity);
   }, [updateQuantity]);
+
+  if (!discountedProducts || discountedProducts.length === 0) return null;
 
   return (
     <div

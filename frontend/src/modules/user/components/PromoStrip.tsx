@@ -166,16 +166,20 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
                 .map((card: any) => {
                   const subCategory = typeof card.subCategoryId === 'object' ? card.subCategoryId : null;
                   const categoryId = card.subCategoryId?._id || card.subCategoryId;
+                  const product = typeof card.productId === 'object' ? card.productId : null;
+                  const productId = card.productId?._id || card.productId;
 
                   return {
-                    id: card._id || categoryId,
+                    id: card._id || categoryId || productId,
                     badge: card.badge || `Save ${card.discountPercentage || 0}%`,
-                    title: card.title || subCategory?.subcategoryName || subCategory?.name || "",
+                    title: card.title || product?.productName || subCategory?.subcategoryName || subCategory?.name || "",
                     categoryId: categoryId,
+                    productId: productId,
                     subcategoryImages: card.images || [], // Explicitly map backend images
-                    slug: subCategory?.slug || categoryId, // Redirect to the linked subcategory
-                    imageUrl: subCategory?.image || subCategory?.subcategoryImage,
+                    slug: product ? `product/${productId}` : (subCategory?.slug || categoryId), // Use product path or category path
+                    imageUrl: product?.mainImage || subCategory?.image || subCategory?.subcategoryImage,
                     bgColor: "bg-white",
+                    type: product ? 'product' : 'category'
                   };
                 });
             }
@@ -853,16 +857,16 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
 
           {/* Category Cards Grid - Right */}
           <div className="flex-1 grid grid-cols-2 gap-2">
-            {categoryCards.map((card) => {
+            {categoryCards.map((card, index) => {
               // Use subcategory images from the map if available, otherwise check card.subcategoryImages, then fallback to emoji icons
               const subcategoryImages = subcategoryImagesMap[card.id] || card.subcategoryImages || [];
               const hasSubcategoryImages = subcategoryImages.length > 0;
               const categoryIcons = getCategoryIcons(card.categoryId || "");
 
               return (
-                <div key={card.id} className="promo-card">
+                <div key={`${card.id || 'promo-card'}-${index}`} className="promo-card">
                   <Link
-                    to={card.slug || card.categoryId ? `/category/${card.slug || card.categoryId}` : "#"}
+                    to={card.type === 'product' ? `/product/${card.productId}` : (card.slug || card.categoryId ? `/category/${card.slug || card.categoryId}` : "#")}
                     className="group rounded-lg transition-all duration-300 hover:shadow-md active:scale-[0.98] h-full flex flex-col overflow-hidden relative"
                     style={{
                       minHeight: "90px",

@@ -66,10 +66,10 @@ export const createPromoStrip = asyncHandler(async (req: Request, res: Response)
   // Validate category cards (subcategories)
   if (categoryCards && Array.isArray(categoryCards)) {
     for (const card of categoryCards) {
-      if (!card.subCategoryId) {
+      if (!card.subCategoryId && !card.productId) {
         return res.status(400).json({
           success: false,
-          message: "SubCategory ID is required for each shortcut card",
+          message: "Either SubCategory ID or Product ID is required for each shortcut card",
         });
       }
       // Assuming we don't strictly need to check SubCategory existence here for performance, 
@@ -77,28 +77,35 @@ export const createPromoStrip = asyncHandler(async (req: Request, res: Response)
     }
   }
 
+  // Sanitize empty strings to null to prevent Cast to ObjectId errors
+  const sanitizedProductCategoryId = productCategoryId === "" ? null : productCategoryId;
+  const sanitizedCards = (categoryCards || []).map((card: any) => ({
+    ...card,
+    subCategoryId: card.subCategoryId === "" ? null : card.subCategoryId,
+    productId: card.productId === "" ? null : card.productId,
+  }));
+  const sanitizedFeaturedProducts = (featuredProducts || []).filter((id: string) => id !== "");
+
   // Validate featured products
-  if (featuredProducts && Array.isArray(featuredProducts)) {
-    for (const productId of featuredProducts) {
-      const product = await Product.findById(productId);
-      if (!product) {
-        return res.status(404).json({
-          success: false,
-          message: `Product with ID "${productId}" not found`,
-        });
-      }
+  for (const productId of sanitizedFeaturedProducts) {
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: `Product with ID "${productId}" not found`,
+      });
     }
   }
 
   const promoStrip = await PromoStrip.create({
     headerCategorySlug: headerCategorySlug.toLowerCase(),
-    productCategoryId,
+    productCategoryId: sanitizedProductCategoryId,
     heading,
     saleText,
     startDate: start,
     endDate: end,
-    categoryCards: categoryCards || [],
-    featuredProducts: featuredProducts || [],
+    categoryCards: sanitizedCards,
+    featuredProducts: sanitizedFeaturedProducts,
     isActive,
     order,
   });
@@ -106,6 +113,7 @@ export const createPromoStrip = asyncHandler(async (req: Request, res: Response)
   const populated = await PromoStrip.findById(promoStrip._id)
     .populate("productCategoryId", "name slug")
     .populate("categoryCards.subCategoryId", "name image")
+    .populate("categoryCards.productId", "productName mainImage")
     .populate("featuredProducts", "productName mainImage price mrp");
 
   // Invalidate cache for this header category slug
@@ -145,45 +153,9 @@ export const getAllPromoStrips = asyncHandler(async (req: Request, res: Response
   const promoStrips = await PromoStrip.find(query)
     .populate("productCategoryId", "name slug")
     .populate("categoryCards.subCategoryId", "name image")
+    .populate("categoryCards.productId", "productName mainImage")
     .populate("featuredProducts", "productName mainImage price mrp")
     .sort(sort);
-
-  // Ensure HOME (all) always exists by default
-  const homeStripExists = await PromoStrip.findOne({ headerCategorySlug: "all" });
-  if (!homeStripExists) {
-    // Fetch some default subcategories and products to seed
-    const defaultCats = await Category.find({ parentId: null }).limit(4).lean();
-    const defaultProducts = await Product.find({ status: "Active" }).limit(4).lean();
-
-    const newHomeStrip = await PromoStrip.create({
-      headerCategorySlug: "all",
-      heading: "HOUSEFULL SALE",
-      saleText: "FLAT 50% OFF",
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
-      isActive: true,
-      order: 0,
-      categoryCards: defaultCats.map((c, i) => ({
-        subCategoryId: c._id,
-        title: (c as any).name,
-        badge: "MIN 50% OFF",
-        discountPercentage: 50,
-        order: i,
-        images: (c as any).image ? [(c as any).image] : []
-      })),
-      featuredProducts: defaultProducts.map(p => p._id),
-      crazyDealsTitle: "CRAZY DEALS"
-    });
-
-    const populatedHome = await PromoStrip.findById(newHomeStrip._id)
-      .populate("productCategoryId", "name slug")
-      .populate("categoryCards.subCategoryId", "name image")
-      .populate("featuredProducts", "productName mainImage price mrp");
-
-    if (populatedHome) {
-      promoStrips.unshift(populatedHome as any);
-    }
-  }
 
   return res.status(200).json({
     success: true,
@@ -201,6 +173,7 @@ export const getPromoStripById = asyncHandler(async (req: Request, res: Response
   const promoStrip = await PromoStrip.findById(id)
     .populate("productCategoryId", "name slug")
     .populate("categoryCards.subCategoryId", "name image")
+    .populate("categoryCards.productId", "productName mainImage")
     .populate("featuredProducts", "productName mainImage price mrp");
 
   if (!promoStrip) {
@@ -271,19 +244,29 @@ export const updatePromoStrip = asyncHandler(async (req: Request, res: Response)
     if (endDate) promoStrip.endDate = end;
   }
 
-  // Validate category cards if provided
-  if (categoryCards && Array.isArray(categoryCards)) {
-    for (const card of categoryCards) {
-      if (card.subCategoryId) {
-        // Validation could be added here if needed, but subCategoryId is correctly mapped
-      }
-    }
-    promoStrip.categoryCards = categoryCards;
+  if (heading !== undefined) promoStrip.heading = heading;
+  if (saleText !== undefined) promoStrip.saleText = saleText;
+  if (isActive !== undefined) promoStrip.isActive = isActive;
+  if (order !== undefined) promoStrip.order = order;
+  
+  // Sanitize empty string to null for productCategoryId
+  if (productCategoryId !== undefined) {
+    promoStrip.productCategoryId = productCategoryId === "" ? null : (productCategoryId as any);
   }
 
-  // Validate featured products if provided
+  // Sanitize empty strings in categoryCards if provided
+  if (categoryCards && Array.isArray(categoryCards)) {
+    (promoStrip as any).categoryCards = categoryCards.map((card: any) => ({
+      ...card,
+      subCategoryId: card.subCategoryId === "" ? null : card.subCategoryId,
+      productId: card.productId === "" ? null : card.productId,
+    }));
+  }
+
+  // Sanitize and validate featured products if provided
   if (featuredProducts && Array.isArray(featuredProducts)) {
-    for (const productId of featuredProducts) {
+    const sanitizedFeaturedProducts = featuredProducts.filter((id: string) => id !== "");
+    for (const productId of sanitizedFeaturedProducts) {
       const product = await Product.findById(productId);
       if (!product) {
         return res.status(404).json({
@@ -292,20 +275,15 @@ export const updatePromoStrip = asyncHandler(async (req: Request, res: Response)
         });
       }
     }
-    promoStrip.featuredProducts = featuredProducts;
+    promoStrip.featuredProducts = sanitizedFeaturedProducts as any;
   }
-
-  if (heading !== undefined) promoStrip.heading = heading;
-  if (saleText !== undefined) promoStrip.saleText = saleText;
-  if (isActive !== undefined) promoStrip.isActive = isActive;
-  if (order !== undefined) promoStrip.order = order;
-  if (productCategoryId !== undefined) promoStrip.productCategoryId = productCategoryId;
 
   await promoStrip.save();
 
   const populated = await PromoStrip.findById(promoStrip._id)
     .populate("productCategoryId", "name slug")
     .populate("categoryCards.subCategoryId", "name image")
+    .populate("categoryCards.productId", "productName mainImage")
     .populate("featuredProducts", "productName mainImage price mrp");
 
   // Invalidate cache for this header category slug
@@ -332,13 +310,7 @@ export const deletePromoStrip = asyncHandler(async (req: Request, res: Response)
     });
   }
 
-  // Prevent deletion of system default HOME strip
-  if (promoStrip.headerCategorySlug === 'all') {
-    return res.status(403).json({
-      success: false,
-      message: "The HOME system campaign cannot be deleted. You can only deactivate or edit it.",
-    });
-  }
+  // No longer blocking deletion of "all" strip as user has full control now.
 
   await PromoStrip.findByIdAndDelete(id);
 

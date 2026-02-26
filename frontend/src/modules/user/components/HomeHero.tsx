@@ -39,18 +39,27 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
       try {
         const cats = await getHeaderCategoriesPublic();
         if (cats && cats.length > 0) {
-          const mapped = cats.map(c => ({
-            id: c.slug,
-            label: c.name,
-            icon: c.image ? (
-              <img src={c.image} alt={c.name} className="w-full h-full object-contain" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center p-2">
-                {getIconByName(c.iconName || '')}
-              </div>
-            )
-          }));
-          setTabs([HOME_TAB, ...mapped]);
+          const mapped = cats.map(c => {
+            if (c.slug === 'all' && !c.image) {
+              return {
+                id: c.slug,
+                label: c.name,
+                icon: HOME_TAB.icon
+              };
+            }
+            return {
+              id: c.slug,
+              label: c.name,
+              icon: c.image ? (
+                <img src={c.image} alt={c.name} className="w-full h-full object-contain" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center p-2">
+                  {getIconByName(c.iconName || '')}
+                </div>
+              )
+            };
+          });
+          setTabs(mapped);
         }
       } catch (error) {
         console.error('Failed to fetch header categories', error);

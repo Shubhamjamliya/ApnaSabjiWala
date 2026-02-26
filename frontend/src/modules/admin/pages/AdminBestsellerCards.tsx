@@ -8,8 +8,11 @@ import {
     type BestsellerCardFormData,
 } from "../../../services/api/admin/adminBestsellerCardService";
 import { getCategories, type Category } from "../../../services/api/categoryService";
+import { getHeaderCategoriesAdmin, type HeaderCategory } from "../../../services/api/headerCategoryService";
+import { getProducts, type Product } from "../../../services/api/productService";
+import { useMemo } from "react";
 
-const MAX_ACTIVE_CARDS = 6;
+const MAX_ACTIVE_CARDS = 12;
 
 export default function AdminBestsellerCards() {
     // Form state
@@ -17,10 +20,15 @@ export default function AdminBestsellerCards() {
     const [selectedCategory, setSelectedCategory] = useState<string>("");
     const [order, setOrder] = useState<number | undefined>(undefined);
     const [isActive, setIsActive] = useState(true);
+    const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+    const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
+    const [loadingProducts, setLoadingProducts] = useState(false);
 
     // Data state
     const [cards, setCards] = useState<BestsellerCard[]>([]);
+    const [headerCategories, setHeaderCategories] = useState<HeaderCategory[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [selectedHeader, setSelectedHeader] = useState<string>("");
 
     // UI state
     const [loading, setLoading] = useState(false);
@@ -36,8 +44,29 @@ export default function AdminBestsellerCards() {
     // Fetch initial data
     useEffect(() => {
         fetchCards();
-        fetchCategories();
+        fetchInitialData();
     }, []);
+
+    const fetchInitialData = async () => {
+        try {
+            const [catRes, headerRes] = await Promise.all([
+                getCategories(),
+                getHeaderCategoriesAdmin()
+            ]);
+
+            if (catRes.success) {
+                setCategories(catRes.data);
+            }
+            if (Array.isArray(headerRes)) {
+                setHeaderCategories(headerRes);
+                // Auto-select HOME header if exists
+                const homeHeader = headerRes.find(h => h.name?.toUpperCase() === "HOME");
+                if (homeHeader) setSelectedHeader(homeHeader._id);
+            }
+        } catch (err) {
+            console.error("Error fetching filters:", err);
+        }
+    };
 
     const fetchCards = async () => {
         try {
@@ -105,6 +134,8 @@ export default function AdminBestsellerCards() {
         const formData: BestsellerCardFormData = {
             name: name.trim(),
             category: selectedCategory,
+            headerCategoryId: selectedHeader || undefined,
+            products: selectedProductIds.length > 0 ? selectedProductIds : undefined,
             order: order !== undefined ? order : undefined,
             isActive,
         };
@@ -138,13 +169,80 @@ export default function AdminBestsellerCards() {
         }
     };
 
+    // Filter categories based on selected header
+    const filteredCategoriesForSelection = useMemo(() => {
+        if (!selectedHeader) return categories;
+        const header = headerCategories.find(h => h._id === selectedHeader);
+        if (!header) return categories;
+
+        // Find categories linked to this header (either by headerCategoryId or relatedCategory)
+        return categories.filter(cat =>
+            cat.headerCategoryId === selectedHeader ||
+            (typeof cat.headerCategoryId === 'object' && cat.headerCategoryId?._id === selectedHeader) ||
+            cat._id === header.relatedCategory
+        );
+    }, [selectedHeader, categories, headerCategories]);
+
+    // Fetch products when category changes
+    useEffect(() => {
+        if (selectedCategory) {
+            fetchCategoryProducts(selectedCategory);
+        } else {
+            setAvailableProducts([]);
+        }
+    }, [selectedCategory]);
+
+    const fetchCategoryProducts = async (categoryId: string) => {
+        try {
+            setLoadingProducts(true);
+            const response = await getProducts({ category: categoryId, limit: 100 });
+            if (response.success) {
+                setAvailableProducts(response.data);
+            }
+        } catch (err) {
+            console.error("Error fetching category products:", err);
+        } finally {
+            setLoadingProducts(false);
+        }
+    };
+
+    const toggleProductSelection = (productId: string) => {
+        setSelectedProductIds(prev => {
+            if (prev.includes(productId)) {
+                return prev.filter(id => id !== productId);
+            }
+            if (prev.length >= 4) {
+                setError("You can select up to 4 products for a bestseller card");
+                return prev;
+            }
+            return [...prev, productId];
+        });
+    };
+
     const handleEdit = (card: BestsellerCard) => {
         setName(card.name);
         setSelectedCategory(
             typeof card.category === "string" ? card.category : card.category?._id || ""
         );
+        // Try to pre-select header if category is found
+        const catId = typeof card.category === "string" ? card.category : card.category?._id;
+        if (catId) {
+            const cat = categories.find(c => c._id === catId);
+            if (cat) {
+                const hId = typeof cat.headerCategoryId === 'string'
+                    ? cat.headerCategoryId
+                    : cat.headerCategoryId?._id;
+                if (hId) setSelectedHeader(hId);
+                else if (card.headerCategoryId) setSelectedHeader(card.headerCategoryId);
+            } else if (card.headerCategoryId) {
+                setSelectedHeader(card.headerCategoryId);
+            }
+        } else if (card.headerCategoryId) {
+            setSelectedHeader(card.headerCategoryId);
+        }
         setOrder(card.order);
         setIsActive(card.isActive);
+        setSelectedProductIds(card.products?.map(p => typeof p === 'string' ? p : p._id) || []);
         setEditingId(card._id);
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
@@ -175,6 +273,7 @@ export default function AdminBestsellerCards() {
         setSelectedCategory("");
         setOrder(undefined);
         setIsActive(true);
+        setSelectedProductIds([]);
         setEditingId(null);
     };
 
@@ -250,6 +349,26 @@ export default function AdminBestsellerCards() {
                                 />
                             </div>
 
+                            {/* Header Category Filter */}
+                            <div>
+                                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                    Header Category
+                                </label>
+                                <select
+                                    value={selectedHeader}
+                                    onChange={(e) => {
+                                        setSelectedHeader(e.target.value);
+                                        setSelectedCategory("");
+                                    }}
+                                    className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                                >
+                                    <option value="">Select Header</option>
+                                    {headerCategories.map(h => (
+                                        <option key={h._id} value={h._id}>{h.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             {/* Category */}
                             <div>
                                 <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -261,16 +380,66 @@ export default function AdminBestsellerCards() {
                                     className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
                                 >
                                     <option value="">Select a category</option>
-                                    {categories.map((cat) => (
+                                    {filteredCategoriesForSelection.map((cat) => (
                                         <option key={cat._id} value={cat._id}>
-                                            {cat.name}
+                                            {cat.name} {cat.parentId ? `(Sub of ${cat.parentId})` : '(Root)'}
                                         </option>
                                     ))}
                                 </select>
                                 <p className="text-xs text-neutral-500 mt-1">
-                                    4 product images will be automatically fetched from this category
+                                    Pick up to 4 products below or leave unselected to auto-fetch the most popular ones
                                 </p>
                             </div>
+
+                            {/* Product Picker */}
+                            {selectedCategory && (
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                        Select Products ({selectedProductIds.length}/4)
+                                    </label>
+                                    <div className="border border-neutral-200 rounded-lg max-h-60 overflow-y-auto p-2 bg-neutral-50">
+                                        {loadingProducts ? (
+                                            <div className="text-center py-4 text-xs text-neutral-500">Loading products...</div>
+                                        ) : availableProducts.length === 0 ? (
+                                            <div className="text-center py-4 text-xs text-neutral-500">No products found in this category</div>
+                                        ) : (
+                                            <div className="space-y-1">
+                                                {availableProducts.map(product => (
+                                                    <div
+                                                        key={product._id}
+                                                        onClick={() => toggleProductSelection(product._id)}
+                                                        className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${selectedProductIds.includes(product._id)
+                                                            ? "bg-teal-50 border border-teal-200"
+                                                            : "bg-white border border-transparent hover:bg-neutral-100"
+                                                            }`}
+                                                    >
+                                                        <div className="w-8 h-8 rounded bg-gray-100 overflow-hidden flex-shrink-0">
+                                                            {(product.mainImage || product.mainImageUrl) && (
+                                                                <img
+                                                                    src={product.mainImage || product.mainImageUrl}
+                                                                    alt=""
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-xs font-medium text-neutral-800 truncate">{product.productName}</div>
+                                                            <div className="text-[10px] text-neutral-500">₹{product.price}</div>
+                                                        </div>
+                                                        {selectedProductIds.includes(product._id) && (
+                                                            <div className="text-teal-600">
+                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                                                </svg>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Order */}
                             <div>
@@ -314,8 +483,8 @@ export default function AdminBestsellerCards() {
                                 onClick={handleSubmit}
                                 disabled={loading}
                                 className={`w-full px-4 py-2 rounded font-medium transition-colors ${loading
-                                        ? "bg-gray-400 cursor-not-allowed text-white"
-                                        : "bg-teal-600 hover:bg-teal-700 text-white"
+                                    ? "bg-gray-400 cursor-not-allowed text-white"
+                                    : "bg-teal-600 hover:bg-teal-700 text-white"
                                     }`}
                             >
                                 {loading
@@ -405,8 +574,8 @@ export default function AdminBestsellerCards() {
                                                 <td className="p-4">
                                                     <span
                                                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${card.isActive
-                                                                ? "bg-green-100 text-green-800"
-                                                                : "bg-gray-100 text-gray-800"
+                                                            ? "bg-green-100 text-green-800"
+                                                            : "bg-gray-100 text-gray-800"
                                                             }`}
                                                     >
                                                         {card.isActive ? "Active" : "Inactive"}
@@ -473,8 +642,8 @@ export default function AdminBestsellerCards() {
                                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                                         disabled={currentPage === 1}
                                         className={`px-3 py-1.5 rounded text-sm border ${currentPage === 1
-                                                ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
-                                                : "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-300"
+                                            ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
+                                            : "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-300"
                                             }`}
                                     >
                                         Previous
@@ -485,8 +654,8 @@ export default function AdminBestsellerCards() {
                                         }
                                         disabled={currentPage === totalPages}
                                         className={`px-3 py-1.5 rounded text-sm border ${currentPage === totalPages
-                                                ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
-                                                : "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-300"
+                                            ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
+                                            : "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-300"
                                             }`}
                                     >
                                         Next

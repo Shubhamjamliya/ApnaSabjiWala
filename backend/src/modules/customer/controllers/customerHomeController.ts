@@ -7,6 +7,8 @@ import Seller from "../../../models/Seller";
 import HeaderCategory from "../../../models/HeaderCategory";
 import HomeSection from "../../../models/HomeSection";
 import PromoStrip from "../../../models/PromoStrip";
+import BestsellerCard from "../../../models/BestsellerCard";
+import LowestPricesProduct from "../../../models/LowestPricesProduct";
 import mongoose from "mongoose";
 import { findSellersWithinRange } from "../../../utils/locationHelper";
 
@@ -25,7 +27,7 @@ async function fetchSectionData(
         status: "Active",
         publish: true,
       })
-        .select("productName mainImage price mrp discount rating reviewsCount pack seller")
+        .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller")
         .lean();
 
       // Sort according to the order in the products array
@@ -47,8 +49,9 @@ async function fetchSectionData(
           image: p.mainImage,
           mainImage: p.mainImage,
           price: p.price,
-          mrp: p.mrp || p.price,
-          discount: p.discount || (p.mrp && p.price ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0),
+          compareAtPrice: p.compareAtPrice,
+          mrp: p.compareAtPrice || p.price,
+          discount: p.discount || (p.compareAtPrice && p.price ? Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100) : 0),
           rating: p.rating || 0,
           reviewsCount: p.reviewsCount || 0,
           pack: p.pack || "",
@@ -104,7 +107,7 @@ async function fetchSectionData(
       const products = await Product.find(query)
         .sort({ createdAt: -1 })
         .limit(limit || 8)
-        .select("productName mainImage price mrp discount rating reviewsCount pack seller")
+        .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller")
         .lean();
 
       return products.map((p: any) => {
@@ -120,8 +123,9 @@ async function fetchSectionData(
           image: p.mainImage,
           mainImage: p.mainImage,
           price: p.price,
-          mrp: p.mrp || p.price,
-          discount: p.discount || (p.mrp && p.price ? Math.round(((p.mrp - p.price) / p.mrp) * 100) : 0),
+          compareAtPrice: p.compareAtPrice,
+          mrp: p.compareAtPrice || p.price,
+          discount: p.discount || (p.compareAtPrice && p.price ? Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100) : 0),
           rating: p.rating || 0,
           reviewsCount: p.reviewsCount || 0,
           pack: p.pack || "",
@@ -176,15 +180,45 @@ export const getHomeContent = async (req: Request, res: Response) => {
 
     // 2. Header Category Identification
     let headerCatId: any = null;
+    let effectiveHeaderSlug: string = (headerCategorySlug as string) || "all";
+
     if (headerCategorySlug && headerCategorySlug !== "all") {
-      const headerCat = await HeaderCategory.findOne({ slug: headerCategorySlug }).select("_id");
-      if (headerCat) headerCatId = headerCat._id;
+      const headerCat = await HeaderCategory.findOne({ slug: headerCategorySlug }).select("_id slug");
+      if (headerCat) {
+        headerCatId = headerCat._id;
+        effectiveHeaderSlug = headerCat.slug;
+      }
+    } else if (!headerCategorySlug || headerCategorySlug === "all") {
+       // For the main Home tab, try to find the "HOME" header category to fetch its assigned content
+       const homeHeader = await HeaderCategory.findOne({ name: { $regex: /home/i } }).select("_id slug");
+       if (homeHeader) {
+         headerCatId = homeHeader._id;
+         // Use the real slug from DB so PromoStrip etc. can find it
+         effectiveHeaderSlug = homeHeader.slug;
+       }
     }
 
-    // 3. Fetch Root Categories (Hierarchy Backbone) - Filtered by Header Category if applicable
+    // 3. Fetch Categories for the selected tab
+    let connectedCategoryId: string | null = null;
+    let headerCatObj: any = null;
+    if (headerCatId) {
+      headerCatObj = await HeaderCategory.findById(headerCatId).lean();
+      if (headerCatObj && headerCatObj.relatedCategory) {
+        connectedCategoryId = headerCatObj.relatedCategory;
+      }
+    }
+
     const categoryQuery: any = { status: "Active", parentId: null };
     if (headerCatId) {
-      categoryQuery.headerCategoryId = headerCatId;
+      if (connectedCategoryId) {
+        // If header is connected to a specific category, we look for that category or others linked to this header
+        categoryQuery.$or = [
+          { _id: connectedCategoryId },
+          { headerCategoryId: headerCatId }
+        ];
+      } else {
+        categoryQuery.headerCategoryId = headerCatId;
+      }
     }
 
     const allCategoriesRaw = await Category.find(categoryQuery)
@@ -193,36 +227,53 @@ export const getHomeContent = async (req: Request, res: Response) => {
       .lean();
 
     const allCategories = allCategoriesRaw.map((c: any) => ({
-      ...c,
       id: c._id.toString(),
       categoryId: c._id.toString(),
-      type: "category"
+      name: c.name,
+      image: c.image || "",
+      icon: c.icon || "",
+      color: c.color || "#FDE68A",
+      slug: c.slug || c._id.toString(),
+      type: "category",
     }));
 
-    // 4. Fetch Subcategories for the specific tab (Simple Navigation)
+    // 4. Fetch Subcategories for the specific tab
     let subcategories: any[] = [];
-    if (headerCatId && allCategoriesRaw.length > 0) {
-      const catIds = allCategoriesRaw.map(c => c._id);
-      const subs = await SubCategory.find({ category: { $in: catIds } })
-        .sort({ order: 1 })
-        .limit(20)
-        .lean();
+    if (headerCatId) {
+      // Collect IDs of categories to fetch subcategories for
+      const catIdsToFetch = allCategoriesRaw.map(c => c._id);
 
-      subcategories = subs.map(s => ({
-        id: s._id.toString(),
-        subcategoryId: s._id.toString(),
-        categoryId: s.category?.toString() || "",
-        name: s.name,
-        image: s.image || "",
-        type: "subcategory"
-      }));
+      // If we have a connected category, ensure its ID is included
+      if (connectedCategoryId && !catIdsToFetch.some(id => id.toString() === connectedCategoryId)) {
+        catIdsToFetch.push(new mongoose.Types.ObjectId(connectedCategoryId));
+      }
+
+      if (catIdsToFetch.length > 0) {
+        const subs = await SubCategory.find({ category: { $in: catIdsToFetch } })
+          .select("name image category")
+          .sort({ order: 1 })
+          .lean();
+
+        subcategories = subs.map((s: any) => ({
+          id: s._id.toString(),
+          name: s.name,
+          image: s.image,
+          type: "subcategory",
+          categoryId: s.category?.toString(),
+        }));
+      }
     }
+
+    const isMainHome = !headerCategorySlug || 
+                       headerCategorySlug === "all" || 
+                       (effectiveHeaderSlug && effectiveHeaderSlug.toLowerCase().includes("home"));
 
     const baseProductQuery: any = {
       status: "Active",
       publish: true,
       ...(nearbySellerIds.length > 0 ? { seller: { $in: nearbySellerIds } } : {}),
-      ...(headerCatId ? { headerCategoryId: headerCatId } : {})
+      // Only restrict base query by header if we are NOT on the main HOME tab
+      ...(!isMainHome && headerCatId ? { headerCategoryId: headerCatId } : {})
     };
 
     // -> Bestsellers (Popular Products)
@@ -231,7 +282,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       popular: true,
     })
       .limit(12)
-      .select("productName mainImage price mrp discount rating reviewsCount pack seller category")
+      .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category")
       .lean();
 
     const formattedBestsellers = bestsellers.map((p: any) => ({
@@ -239,28 +290,84 @@ export const getHomeContent = async (req: Request, res: Response) => {
       id: p._id.toString(),
       name: p.productName,
       imageUrl: p.mainImage,
-      mrp: p.mrp || p.price,
+      mrp: p.compareAtPrice || p.price,
       categoryId: p.category?.toString()
     }));
 
-    // -> Lowest Prices (Highest Discount Products)
-    const lowestPrices = await Product.find({
-      ...baseProductQuery,
-      discount: { $gt: 0 },
-    })
-      .sort({ discount: -1 })
+    // -> Lowest Prices Ever (Manual admin selection filtered by header)
+    const lpQuery: any = { isActive: true };
+
+    if (headerCatId) {
+      if (isMainHome) {
+        // For main Home, show both items explicitly assigned to 'HOME' header 
+        // AND items with no header assigned (for backward compatibility)
+        lpQuery.$or = [
+          { headerCategoryId: headerCatId },
+          { headerCategoryId: { $exists: false } },
+          { headerCategoryId: null }
+        ];
+      } else {
+        lpQuery.headerCategoryId = headerCatId;
+      }
+    } else {
+      lpQuery.$or = [
+        { headerCategoryId: { $exists: false } },
+        { headerCategoryId: null }
+      ];
+    }
+
+    let lpDocs = await LowestPricesProduct.find(lpQuery)
+      .sort({ order: 1 })
+      .populate({
+        path: "product",
+        select: "productName mainImage price compareAtPrice discount rating reviewsCount pack seller category",
+      })
       .limit(12)
-      .select("productName mainImage price mrp discount rating reviewsCount pack seller category")
       .lean();
 
-    const formattedLowestPrices = lowestPrices.map((p: any) => ({
-      ...p,
-      id: p._id.toString(),
-      name: p.productName,
-      imageUrl: p.mainImage,
-      mrp: p.mrp || p.price,
-      categoryId: p.category?.toString()
-    }));
+    // If no explicit products were assigned for this specific header, lpDocs remains as fetched above.
+
+    let formattedLowestPrices = lpDocs.map((item: any) => {
+      const p = item.product;
+      if (!p) return null;
+      return {
+        ...p,
+        id: p._id.toString(),
+        name: p.productName,
+        imageUrl: p.mainImage,
+        mrp: p.compareAtPrice || p.price,
+        categoryId: p.category?.toString()
+      };
+    }).filter(Boolean);
+
+    // If manual selection is empty, fallback to automated discount-based products for this header
+    if (formattedLowestPrices.length === 0) {
+      const lowestPrices = await Product.find({
+        ...baseProductQuery,
+        $or: [
+          { discount: { $gt: 0 } },
+          {
+            $and: [
+              { compareAtPrice: { $exists: true } },
+              { $expr: { $gt: ["$compareAtPrice", "$price"] } }
+            ]
+          }
+        ]
+      })
+        .sort({ discount: -1 })
+        .limit(12)
+        .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category")
+        .lean();
+
+      formattedLowestPrices = lowestPrices.map((p: any) => ({
+        ...p,
+        id: p._id.toString(),
+        name: p.productName,
+        imageUrl: p.mainImage,
+        mrp: p.compareAtPrice || p.price,
+        categoryId: p.category?.toString()
+      }));
+    }
 
     // -> Trending/Deal of the Day
     const trending = await Product.find({
@@ -268,7 +375,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       dealOfDay: true,
     })
       .limit(12)
-      .select("productName mainImage price mrp discount rating reviewsCount pack seller category")
+      .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category")
       .lean();
 
     const formattedTrending = trending.map((p: any) => ({
@@ -276,12 +383,13 @@ export const getHomeContent = async (req: Request, res: Response) => {
       id: p._id.toString(),
       name: p.productName,
       imageUrl: p.mainImage,
-      mrp: p.mrp || p.price,
+      mrp: p.compareAtPrice || p.price,
       categoryId: p.category?.toString()
     }));
 
     // -> Shop by Store (Curated Shops + Nearby Sellers Fallback)
-    let formattedShops: any[] = [];
+    let rawShops: any[] = [];
+    let shopType: "shop" | "seller" = "shop";
 
     // 1. First, try to fetch curated Shop documents (Marketing collections)
     const shopQuery: any = { isActive: true };
@@ -289,73 +397,81 @@ export const getHomeContent = async (req: Request, res: Response) => {
       shopQuery.headerCategoryId = headerCatId;
     }
 
-    const curatedShops = await Shop.find(shopQuery)
+    rawShops = await Shop.find(shopQuery)
       .sort({ order: 1 })
       .limit(12)
-      .select("name image description storeId")
       .lean();
 
-    if (curatedShops.length > 0) {
-      formattedShops = curatedShops.map((s: any) => ({
-        id: s._id.toString(),
-        name: s.name,
-        title: s.name,
-        image: s.image || "",
-        imageUrl: s.image || "",
-        description: s.description || "",
-        type: "shop",
-        categoryId: s.storeId || s._id.toString()
-      }));
-    }
     // 2. If no curated shops, fallback to nearby sellers if location is available
-    else if (nearbySellerIds.length > 0) {
-      const sellersRaw = await Seller.find({
+    if (rawShops.length === 0 && nearbySellerIds.length > 0) {
+      rawShops = await Seller.find({
         status: "Approved",
         _id: { $in: nearbySellerIds }
       })
         .limit(12)
-        .select("storeName logo storeDescription city")
         .lean();
-
-      formattedShops = sellersRaw.map((s: any) => ({
-        id: s._id.toString(),
-        name: s.storeName,
-        title: s.storeName,
-        image: s.logo || "",
-        imageUrl: s.logo || "",
-        description: s.storeDescription || s.city || "",
-        type: "seller",
-        categoryId: s._id.toString()
-      }));
+      shopType = "seller";
     }
-    // 3. Final fallback: If no curated shops and no location, show global approved sellers
-    else if (!headerCategorySlug || headerCategorySlug === "all") {
-      const globalSellers = await Seller.find({ status: "Approved" })
+    
+    // 3. Final fallback: If still no shops, show global approved sellers
+    if (rawShops.length === 0) {
+      rawShops = await Seller.find({ status: "Approved" })
         .limit(12)
-        .select("storeName logo storeDescription city")
+        .sort({ createdAt: -1 })
         .lean();
-
-      formattedShops = globalSellers.map((s: any) => ({
-        id: s._id.toString(),
-        name: s.storeName,
-        title: s.storeName,
-        image: s.logo || "",
-        imageUrl: s.logo || "",
-        description: s.storeDescription || s.city || "",
-        type: "seller",
-        categoryId: s._id.toString()
-      }));
+      shopType = "seller";
     }
+
+    const formattedShops = await Promise.all(
+      rawShops.map(async (s: any) => {
+        let productImages: string[] = [];
+        
+        if (shopType === "shop") {
+          // Fetch images for products linked to this curated shop
+          if (s.products && s.products.length > 0) {
+            const pData = await Product.find({ _id: { $in: s.products.slice(0, 4) } })
+              .select("mainImage")
+              .lean();
+            productImages = pData.map((p: any) => p.mainImage);
+          }
+        } else {
+          // Fetch top products for this seller to show in the 2x2 grid
+          const pData = await Product.find({ seller: s._id, status: "Active" })
+            .limit(4)
+            .select("mainImage")
+            .sort({ rating: -1 })
+            .lean();
+          productImages = pData.map((p: any) => p.mainImage);
+        }
+
+        return {
+          id: s._id.toString(),
+          name: shopType === "shop" ? s.name : s.storeName,
+          title: shopType === "shop" ? s.name : s.storeName,
+          image: shopType === "shop" ? (s.image || "") : (s.logo || ""),
+          imageUrl: shopType === "shop" ? (s.image || "") : (s.logo || ""),
+          description: shopType === "shop" ? (s.description || "") : (s.storeDescription || s.city || ""),
+          type: shopType,
+          categoryId: shopType === "shop" ? (s.storeId || s._id.toString()) : s._id.toString(),
+          productImages
+        };
+      })
+    );
 
     // -> Promo Strip (Real Data from Database)
     let promoStrip: any = null;
-    const dbPromoStrip = await PromoStrip.findOne({
-      headerCategorySlug: headerCategorySlug === "all" ? "all" : headerCategorySlug,
-      isActive: true,
-      startDate: { $lte: new Date() },
-      endDate: { $gte: new Date() },
-    })
-      .populate("categoryCards.subCategoryId", "name image icon subcategoryName")
+    let dbPromoStrip = null;
+    
+    // 1. Try to find a strip specifically for this header category
+    if (effectiveHeaderSlug && effectiveHeaderSlug !== "all") {
+      dbPromoStrip = await PromoStrip.findOne({
+        headerCategorySlug: effectiveHeaderSlug,
+        isActive: true,
+        startDate: { $lte: new Date() },
+        endDate: { $gte: new Date() },
+      })
+      .populate("categoryCards.subCategoryId", "name image icon subcategoryName slug")
+      .populate("categoryCards.productId", "productName mainImage price mrp")
       .populate("productCategoryId", "name icon image color slug")
       .populate({
         path: "featuredProducts",
@@ -363,6 +479,26 @@ export const getHomeContent = async (req: Request, res: Response) => {
       })
       .sort({ order: 1 })
       .lean();
+    }
+
+    // 2. If no specific strip found (or if we are on 'all' tab), fallback to 'all' strip
+    if (!dbPromoStrip) {
+      dbPromoStrip = await PromoStrip.findOne({
+        headerCategorySlug: "all",
+        isActive: true,
+        startDate: { $lte: new Date() },
+        endDate: { $gte: new Date() },
+      })
+      .populate("categoryCards.subCategoryId", "name image icon subcategoryName slug")
+      .populate("categoryCards.productId", "productName mainImage price mrp")
+      .populate("productCategoryId", "name icon image color slug")
+      .populate({
+        path: "featuredProducts",
+        select: "productName mainImage price mrp discount rating reviewsCount pack seller category",
+      })
+      .sort({ order: 1 })
+      .lean();
+    }
 
     if (dbPromoStrip) {
       promoStrip = {
@@ -382,25 +518,6 @@ export const getHomeContent = async (req: Request, res: Response) => {
           mrp: p.mrp || p.price,
           categoryId: p.category?.toString(),
         })),
-      };
-    } else {
-      // Fallback: Default mock data if no PromoStrip exists in DB
-      promoStrip = {
-        isActive: true,
-        heading: headerCategorySlug === "fruits-veg" ? "FRESH HARVEST" : "HOUSEFULL SALE",
-        saleText: "FLAT 50% OFF",
-        crazyDealsTitle: "CRAZY DEALS",
-        startDate: new Date(),
-        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        categoryCards: allCategories.slice(0, 4).map((c, i) => ({
-          id: c.id,
-          categoryId: c.id,
-          title: c.name,
-          badge: `Min ${30 + i * 5}% OFF`,
-          discountPercentage: 30 + i * 5,
-          order: i
-        })),
-        featuredProducts: formattedTrending.slice(0, 5)
       };
     }
 
@@ -444,6 +561,87 @@ export const getHomeContent = async (req: Request, res: Response) => {
       })
     );
 
+    // -> Bestseller Cards (2x2 Grid Cards)
+    const bestsellerQuery: any = { isActive: true };
+    if (headerCatId) {
+      if (isMainHome) {
+        // For main Home, show both items explicitly assigned to 'HOME' header 
+        // AND items with no header assigned (for backward compatibility)
+        bestsellerQuery.$or = [
+          { headerCategoryId: headerCatId },
+          { headerCategoryId: { $exists: false } },
+          { headerCategoryId: null }
+        ];
+      } else {
+        bestsellerQuery.headerCategoryId = headerCatId;
+      }
+    } else {
+      bestsellerQuery.$or = [
+        { headerCategoryId: { $exists: false } },
+        { headerCategoryId: null }
+      ];
+    }
+
+    let bestsellerCardsRaw = await BestsellerCard.find(bestsellerQuery)
+      .sort({ order: 1 })
+      .limit(10)
+      .populate("category", "name slug")
+      .lean();
+
+    // If no explicit bestseller cards were assigned for this specific header, bestsellerCardsRaw remains as fetched above.
+
+    const bestsellerCards = await Promise.all(
+      bestsellerCardsRaw.map(async (card: any) => {
+        let products = [];
+
+        // 1. Check for manual products first
+        if (card.products && card.products.length > 0) {
+          products = await Product.find({
+            _id: { $in: card.products },
+            status: "Active",
+            publish: true,
+          })
+            .select("mainImage productName")
+            .lean();
+
+          // Sort products according to the order in the card.products array
+          const productMap = new Map(products.map((p: any) => [p._id.toString(), p]));
+          products = card.products
+            .map((productId: any) => productMap.get(productId.toString()))
+            .filter(Boolean);
+        }
+
+        // 2. Fallback: Fetch top 4 products for this category if no manual products or less than 4
+        if (products.length < 4) {
+          const remainingLimit = 4 - products.length;
+          const existingIds = products.map((p: any) => p._id);
+
+          const autoProductsFiltered = await Product.find({
+            category: card.category?._id,
+            _id: { $nin: existingIds },
+            status: "Active",
+            publish: true,
+            ...(nearbySellerIds.length > 0 ? { seller: { $in: nearbySellerIds } } : {}),
+          })
+            .sort({ popular: -1, rating: -1 })
+            .limit(remainingLimit)
+            .select("mainImage productName")
+            .lean();
+
+          products = [...products, ...autoProductsFiltered];
+        }
+
+        return {
+          id: card._id.toString(),
+          name: card.name,
+          categoryName: card.category?.name,
+          categorySlug: card.category?.slug,
+          categoryId: card.category?._id?.toString(),
+          productImages: products.map((p: any) => p.mainImage),
+        };
+      })
+    );
+
     res.status(200).json({
       success: true,
       data: {
@@ -457,6 +655,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
         cookingIdeas: [],
         promoCards: [],
         promoStrip: promoStrip,
+        bestsellerCards: bestsellerCards,
         promoBanners: []
       },
     });

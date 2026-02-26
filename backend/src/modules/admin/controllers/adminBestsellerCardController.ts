@@ -2,13 +2,14 @@ import { Request, Response } from "express";
 import BestsellerCard from "../../../models/BestsellerCard";
 import mongoose from "mongoose";
 
-const MAX_ACTIVE_CARDS = 6;
+const MAX_ACTIVE_CARDS = 12;
 
 // Get all bestseller cards
 export const getBestsellerCards = async (_req: Request, res: Response) => {
     try {
         const cards = await BestsellerCard.find()
             .populate("category", "name slug image")
+            .populate("products", "productName mainImage price")
             .sort({ order: 1 })
             .lean();
 
@@ -42,6 +43,7 @@ export const getBestsellerCardById = async (req: Request, res: Response) => {
 
         const card = await BestsellerCard.findById(id)
             .populate("category", "name slug image")
+            .populate("products", "productName mainImage price")
             .lean();
 
         if (!card) {
@@ -67,7 +69,7 @@ export const getBestsellerCardById = async (req: Request, res: Response) => {
 // Create new bestseller card
 export const createBestsellerCard = async (req: Request, res: Response) => {
     try {
-        const { name, category, order, isActive } = req.body;
+        const { name, category, headerCategoryId, products, order, isActive } = req.body;
 
         // Validate required fields
         if (!name || !category) {
@@ -107,6 +109,8 @@ export const createBestsellerCard = async (req: Request, res: Response) => {
         const newCard = new BestsellerCard({
             name,
             category,
+            headerCategoryId,
+            products,
             order: cardOrder,
             isActive: willBeActive,
         });
@@ -135,7 +139,7 @@ export const createBestsellerCard = async (req: Request, res: Response) => {
 export const updateBestsellerCard = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, category, order, isActive } = req.body;
+        const { name, category, headerCategoryId, products, order, isActive } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
@@ -176,6 +180,8 @@ export const updateBestsellerCard = async (req: Request, res: Response) => {
         // Update fields
         if (name !== undefined) card.name = name;
         if (category !== undefined) card.category = category;
+        if (headerCategoryId !== undefined) card.headerCategoryId = headerCategoryId;
+        if (products !== undefined) card.products = products;
         if (order !== undefined) card.order = order;
         if (isActive !== undefined) card.isActive = isActive;
 

@@ -65,6 +65,11 @@ export interface Product {
   // Shop by Store fields
   isShopByStoreOnly?: boolean;
   shopId?: string | any;
+  nextDay?: {
+    enabled: boolean;
+    price?: number;
+    stock?: number;
+  };
 }
 
 export interface CreateProductData {
@@ -96,6 +101,11 @@ export interface CreateProductData {
   variationType?: string;
   isShopByStoreOnly?: boolean;
   shopId?: string;
+  nextDay?: {
+    enabled: boolean;
+    price?: number;
+    stock?: number;
+  };
 }
 
 export interface Shop {
