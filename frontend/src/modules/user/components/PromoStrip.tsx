@@ -17,6 +17,8 @@ interface PromoCard {
   slug?: string;
   bgColor?: string;
   subcategoryImages?: string[]; // Array of subcategory image URLs
+  type?: 'subcategory' | 'product';
+  productId?: string;
 }
 
 // Icon mappings for each category

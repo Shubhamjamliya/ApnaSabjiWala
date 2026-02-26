@@ -38,18 +38,26 @@ export const getNextDaySlots = async (_req: Request, res: Response) => {
     const nextDay = new Date(tomorrow);
     nextDay.setDate(tomorrow.getDate() + 1);
 
-    const slots = await DeliverySlot.find({
+    let slots = await DeliverySlot.find({
       date: { $gte: tomorrow, $lt: nextDay },
       isActive: true,
     }).sort({ startTime: 1 });
 
+    // Fallback: If no slots created by admin for tomorrow, provide default morning slots
+    if (slots.length === 0) {
+      slots = [
+        { _id: 'default-1', startTime: '07:00 AM', endTime: '09:00 AM', maxCapacity: 20, bookedCount: 0 } as any,
+        { _id: 'default-2', startTime: '09:00 AM', endTime: '11:00 AM', maxCapacity: 20, bookedCount: 0 } as any
+      ];
+    }
+
     // Transform to show availability
     const availableSlots = slots.map((slot) => ({
       _id: slot._id,
-      timeRange: `${slot.startTime} - ${slot.endTime}`,
-      available: slot.bookedCount < slot.maxCapacity,
-      maxCapacity: slot.maxCapacity,
-      bookedCount: slot.bookedCount,
+      timeRange: slot.timeRange || `${slot.startTime} - ${slot.endTime}`,
+      available: (slot.bookedCount || 0) < (slot.maxCapacity || 20),
+      maxCapacity: slot.maxCapacity || 20,
+      bookedCount: slot.bookedCount || 0,
     }));
 
     return res.json({

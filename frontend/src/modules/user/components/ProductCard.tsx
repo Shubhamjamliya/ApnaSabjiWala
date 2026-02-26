@@ -25,6 +25,10 @@ interface ProductCardProps {
   optionsCount?: number;
   compact?: boolean;
   categoryStyle?: boolean;
+  overrideQuantity?: number;
+  onAdd?: (product: Product) => void;
+  onDecrease?: (product: Product) => void;
+  onIncrease?: (product: Product) => void;
 }
 
 export default function ProductCard({
@@ -40,6 +44,10 @@ export default function ProductCard({
   optionsCount = 2,
   compact = false,
   categoryStyle = false,
+  overrideQuantity,
+  onAdd,
+  onDecrease,
+  onIncrease,
 }: ProductCardProps) {
   const navigate = useNavigate();
   const { cart, addToCart, updateQuantity } = useCart();
@@ -189,6 +197,10 @@ export default function ProductCard({
     isOperationPendingRef.current = true;
 
     try {
+      if (onIncrease) {
+        onIncrease(product);
+        return;
+      }
       if (inCartQty > 0) {
         await updateQuantity(((product as any).id || product._id) as string, inCartQty + 1);
       } else {
@@ -197,6 +209,28 @@ export default function ProductCard({
     } finally {
       // Reset the flag after the operation truly completes
       isOperationPendingRef.current = false;
+    }
+  };
+
+  const currentQty = overrideQuantity !== undefined ? overrideQuantity : inCartQty;
+
+  const handleCustomAdd = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (onAdd) {
+       onAdd(product);
+    } else {
+       handleAdd(e);
+    }
+  };
+
+  const handleCustomDecrease = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (onDecrease) {
+      onDecrease(product);
+    } else {
+      handleDecrease(e);
     }
   };
 
@@ -304,7 +338,7 @@ export default function ProductCard({
 
         {categoryStyle && (
           <div className="px-2.5 pt-1.5 pb-0">
-            {inCartQty === 0 ? (
+            {currentQty === 0 ? (
               <div className="flex flex-col items-center w-full">
                 <div className="flex justify-center w-full">
                   <Button
@@ -312,10 +346,7 @@ export default function ProductCard({
                     variant="outline"
                     size="sm"
                     disabled={product.isAvailable === false}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAdd(e);
-                    }}
+                    onClick={handleCustomAdd}
                     className={`w-full border rounded-full font-semibold text-xs h-7 px-3 flex items-center justify-center uppercase tracking-wide ${
                       product.isAvailable === false
                       ? 'border-neutral-300 text-neutral-400 bg-neutral-50 cursor-not-allowed'
@@ -331,17 +362,14 @@ export default function ProductCard({
                 <Button
                   variant="default"
                   size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDecrease(e);
-                  }}
+                  onClick={handleCustomDecrease}
                   className="w-5 h-5 p-0 bg-transparent text-green-600 hover:bg-green-50 shadow-none"
                   aria-label="Decrease quantity"
                 >
                   −
                 </Button>
                 <span className="text-xs font-bold text-green-600 min-w-[1rem] text-center">
-                  {inCartQty}
+                  {currentQty}
                 </span>
                 <Button
                   variant="default"
@@ -477,14 +505,14 @@ export default function ProductCard({
       {!categoryStyle && (
         <div className={`${compact ? 'px-3 pb-3' : 'px-4 pb-4'}`}>
           <div className="mt-auto">
-            {inCartQty === 0 ? (
+            {currentQty === 0 ? (
               <div>
                 <Button
                   ref={addButtonRef}
                   variant="outline"
                   size="sm"
                   disabled={product.isAvailable === false}
-                  onClick={handleAdd}
+                  onClick={handleCustomAdd}
                   className={`w-full border h-8 text-xs font-semibold uppercase tracking-wide ${
                     product.isAvailable === false
                     ? 'border-neutral-300 text-neutral-400 bg-neutral-50 cursor-not-allowed'
@@ -501,14 +529,14 @@ export default function ProductCard({
                 <Button
                   variant="default"
                   size="icon"
-                  onClick={handleDecrease}
+                  onClick={handleCustomDecrease}
                   className="w-6 h-6 p-0 bg-transparent text-green-600 hover:bg-green-50 shadow-none"
                   aria-label="Decrease quantity"
                 >
                   −
                 </Button>
                 <span className="text-xs font-bold text-green-600 min-w-[1.5rem] text-center">
-                  {inCartQty}
+                  {currentQty}
                 </span>
                 <Button
                   variant="default"

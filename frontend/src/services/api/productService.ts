@@ -56,6 +56,9 @@ export interface Product {
   variationType?: string;
   createdAt?: string;
   updatedAt?: string;
+  // Common root-level fields for displays
+  price?: number;
+  mrp?: number;
   // Fallback for old fields if any legacy code uses them
   sellerId?: string;
   categoryId?: string;

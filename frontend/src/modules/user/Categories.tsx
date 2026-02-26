@@ -1,34 +1,33 @@
 import { useEffect, useState } from "react";
-import { getHomeContent } from "../../services/api/customerHomeService";
-import { useLocation } from "../../hooks/useLocation";
+import { getCategories } from "../../services/api/categoryService";
 import CategoryTileSection from "./components/CategoryTileSection";
-import ProductCard from "./components/ProductCard";
 
 export default function Categories() {
-  const { location } = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [homeData, setHomeData] = useState<any>({
-    homeSections: [],
-  });
+  const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await getHomeContent(
-          undefined,
-          location?.latitude,
-          location?.longitude
-        );
+        const response = await getCategories();
         if (response.success && response.data) {
-          setHomeData(response.data);
+          // Map to match the tile expected format
+          const mappedCategories = response.data.map(c => ({
+            id: c._id,
+            name: c.name,
+            image: c.image || "",
+            slug: (c as any).slug || c._id,
+            type: "category"
+          }));
+          setCategories(mappedCategories);
         } else {
           setError("Failed to load categories. Please try again.");
         }
       } catch (error) {
-        console.error("Failed to fetch home content:", error);
+        console.error("Failed to fetch categories:", error);
         setError("Network error. Please check your connection.");
       } finally {
         setLoading(false);
@@ -36,13 +35,13 @@ export default function Categories() {
     };
 
     fetchData();
-  }, [location?.latitude, location?.longitude]);
+  }, []);
 
-  if (loading && !homeData.categories?.length) {
+  if (loading && !categories?.length) {
     return null; // Let global IconLoader handle it
   }
 
-  if (error && !homeData.categories?.length) {
+  if (error && !categories?.length) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center bg-white">
         <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-4">
@@ -63,6 +62,7 @@ export default function Categories() {
   }
 
 
+
   return (
     <div className="pb-4 md:pb-8 bg-white min-h-screen">
       {/* Page Header */}
@@ -71,11 +71,11 @@ export default function Categories() {
       </div>
 
       <div className="bg-neutral-50 pt-1 md:pt-4">
-        {homeData.categories && homeData.categories.length > 0 ? (
+        {categories && categories.length > 0 ? (
           <div className="px-4 md:px-6 lg:px-8">
             <CategoryTileSection
               title=""
-              tiles={homeData.categories}
+              tiles={categories}
               columns={4}
               showProductCount={false}
             />

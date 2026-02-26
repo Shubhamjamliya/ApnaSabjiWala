@@ -120,7 +120,7 @@ export const getSubcategories = asyncHandler(
     // Verify parent category exists - Try slug if ID is not valid, otherwise Try Category, then HeaderCategory, then SubCategory
     let parentCategory: any = null;
     let isHeaderCategory = false;
-    let connectedCategoryId: string | null = null;
+    let connectedCategoryId: string | null | undefined = null;
 
     if (mongoose.Types.ObjectId.isValid(id)) {
       parentCategory = await Category.findById(id);

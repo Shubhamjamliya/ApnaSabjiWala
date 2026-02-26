@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useLoading } from "../../context/LoadingContext";
 import { useToast } from "../../context/ToastContext";
 import api from "../../services/api/config";
+import ProductCard from "./components/ProductCard";
 
 interface Slot {
   _id: string;
@@ -85,16 +86,22 @@ export default function TomorrowVegBooking() {
   };
 
   // Helper to standardise section products to our Product interface
-  const mapSectionProduct = (p: any): Product => ({
+  const mapSectionProduct = (p: any): any => ({
+    ...p,
     _id: p._id,
+    id: p._id,
     name: p.name || p.productName,
-    image: p.image || p.mainImage || (p.productImages && p.productImages[0]) || "",
+    productName: p.name || p.productName,
+    imageUrl: p.image || p.mainImage || (p.productImages && p.productImages[0]) || "",
+    mainImage: p.image || p.mainImage || (p.productImages && p.productImages[0]) || "",
     price: p.price,
+    mrp: p.originalPrice || p.price,
     originalPrice: p.originalPrice || p.price,
     stock: p.stock || 0,
     maxQuantity: 10,
-    unit: p.unit || p.pack
-  } as any);
+    unit: p.unit || p.pack,
+    pack: p.unit || p.pack
+  });
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -194,24 +201,27 @@ export default function TomorrowVegBooking() {
               <span className="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
               Select Morning Slot
             </h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {slots.map((slot) => (
                 <button
                   key={slot._id}
                   disabled={!slot.available}
                   onClick={() => setSelectedSlot(slot._id)}
                   className={`
-                    p-3 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300
+                    p-4 rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-300
                     ${selectedSlot === slot._id
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-md transform scale-[1.02]"
-                      : "border-gray-100 bg-white text-gray-600 hover:border-emerald-200"}
-                    ${!slot.available ? "opacity-40 cursor-not-allowed bg-gray-50 border-gray-100" : ""}
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-800 shadow-lg transform scale-[1.03] z-10"
+                      : "border-slate-100 bg-white text-slate-600 hover:border-emerald-200 hover:shadow-md"}
+                    ${!slot.available ? "opacity-40 cursor-not-allowed bg-slate-50 border-slate-100" : ""}
                     `}
                 >
-                  <span className="text-sm font-black">{slot.timeRange}</span>
-                  <span className={`text-[10px] mt-1 font-bold ${slot.available ? "text-emerald-500" : "text-gray-400"}`}>
-                    {slot.available ? "Available" : "Full"}
-                  </span>
+                  <span className="text-sm font-black tracking-tight">{slot.timeRange}</span>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${slot.available ? "bg-emerald-500 animate-pulse" : "bg-slate-300"}`}></span>
+                    <span className={`text-[9px] font-black uppercase tracking-wider ${slot.available ? "text-emerald-600" : "text-slate-400"}`}>
+                      {slot.available ? "Available" : "Full"}
+                    </span>
+                  </div>
                 </button>
               ))}
             </div>
@@ -242,84 +252,22 @@ export default function TomorrowVegBooking() {
                   </span>
                 </div>
 
-                <div className={`grid ${gridClass} ${gapClass}`}>
+                <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4 lg:gap-6">
                   {section.products?.filter(Boolean).map(entry => {
                     const product = mapSectionProduct(entry);
-                    const qty = getQuantity(product._id);
-                    const unit = (product as any).unit;
-
+                    
                     return (
-                      <div 
-                        key={product._id} 
-                        className="bg-white rounded-2xl border border-neutral-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full overflow-hidden group"
-                      >
-                        {/* Image Container */}
-                        <div className="aspect-square bg-neutral-50 relative overflow-hidden">
-                          {product.image ? (
-                            <img 
-                              src={product.image} 
-                              alt={product.name} 
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-4xl bg-neutral-100">📦</div>
-                          )}
-                          
-                          {/* Unit Badge */}
-                          {unit && (
-                            <div className="absolute bottom-2 left-2 z-10">
-                              <span className="text-[10px] font-black text-neutral-700 bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-sm border border-neutral-100">
-                                {unit}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Content */}
-                        <div className="p-3 flex flex-col flex-1">
-                          <h3 className="font-bold text-neutral-800 text-xs md:text-sm line-clamp-2 leading-tight mb-2 min-h-[2.5rem]">
-                            {product.name}
-                          </h3>
-
-                          <div className="mt-auto flex items-center justify-between">
-                            <div className="flex flex-col">
-                              <span className="text-sm md:text-base font-black text-neutral-900">₹{product.price}</span>
-                              {product.originalPrice > product.price && (
-                                <span className="text-[10px] text-neutral-400 line-through">₹{product.originalPrice}</span>
-                              )}
-                            </div>
-
-                            {!isBookingClosed && (
-                              <div className="flex items-center">
-                                {qty > 0 ? (
-                                  <div className="flex items-center gap-2 bg-emerald-600 rounded-full p-1 shadow-md">
-                                    <button 
-                                      onClick={() => removeFromCart(product._id)} 
-                                      className="w-6 h-6 flex items-center justify-center bg-white/20 text-white hover:bg-white/30 rounded-full transition-colors"
-                                    >
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14" /></svg>
-                                    </button>
-                                    <span className="text-xs font-black text-white w-4 text-center">{qty}</span>
-                                    <button 
-                                      onClick={() => addToCart(product)} 
-                                      className="w-6 h-6 flex items-center justify-center bg-white text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors shadow-sm"
-                                    >
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14" /></svg>
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <button 
-                                    onClick={() => addToCart(product)} 
-                                    className="bg-white border-2 border-emerald-500 text-emerald-600 font-black text-[10px] px-4 py-1.5 rounded-full hover:bg-emerald-500 hover:text-white transition-all duration-300 shadow-sm active:scale-95"
-                                  >
-                                    ADD
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                      <ProductCard 
+                        key={product._id}
+                        product={product as any}
+                        categoryStyle={true}
+                        showBadge={true}
+                        showRating={true}
+                        overrideQuantity={getQuantity(product._id)}
+                        onAdd={(p) => addToCart(p as any)}
+                        onIncrease={(p) => addToCart(p as any)}
+                        onDecrease={(p) => removeFromCart(p._id)}
+                      />
                     );
                   })}
                 </div>
