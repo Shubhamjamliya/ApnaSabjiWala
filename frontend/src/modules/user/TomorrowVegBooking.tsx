@@ -266,7 +266,7 @@ export default function TomorrowVegBooking() {
                         overrideQuantity={getQuantity(product._id)}
                         onAdd={(p) => addToCart(p as any)}
                         onIncrease={(p) => addToCart(p as any)}
-                        onDecrease={(p) => removeFromCart(p._id)}
+                        onDecrease={(p) => removeFromCart(p._id || p.id)}
                       />
                     );
                   })}
