@@ -141,7 +141,7 @@ export default function AdminHeaderCategory() {
       try {
         await deleteHeaderCategory(id);
         alert('Header Category deleted successfully!');
-        fetchCategories();
+        fetchData();
       } catch (error) {
         console.error(error);
         alert('Failed to delete category');

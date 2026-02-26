@@ -39,8 +39,8 @@ export function serveAssetsPlugin(): Plugin {
 
             const contentType = mimeTypes[ext] || 'application/octet-stream';
             res.setHeader('Content-Type', contentType);
-            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-            
+            res.setHeader('Cache-Control', 'no-cache');
+
             const file = readFileSync(fullPath);
             res.end(file);
             return;

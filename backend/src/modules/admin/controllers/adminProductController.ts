@@ -1146,6 +1146,25 @@ export const approveProductRequest = asyncHandler(
       });
     }
 
+    // Push Notification to Seller
+    try {
+      const { sendNotification } = await import("../../../services/notificationService");
+      await sendNotification(
+        "Seller",
+        product.seller._id.toString(),
+        status === "Active" ? "Product Approved!" : "Product Rejected",
+        status === "Active"
+          ? `Your product "${product.productName}" is now live!`
+          : `Your product "${product.productName}" was rejected.${rejectionReason ? ' Reason: ' + rejectionReason : ''}`,
+        {
+          type: "Info",
+          idempotencyKey: `product_status_${product._id}_${status}`
+        }
+      );
+    } catch (pushErr) {
+      console.error("Error sending product status push:", pushErr);
+    }
+
     return res.status(200).json({
       success: true,
       message: `Product ${status === "Active" ? "approved" : "rejected"

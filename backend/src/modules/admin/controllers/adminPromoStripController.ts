@@ -148,6 +148,43 @@ export const getAllPromoStrips = asyncHandler(async (req: Request, res: Response
     .populate("featuredProducts", "productName mainImage price mrp")
     .sort(sort);
 
+  // Ensure HOME (all) always exists by default
+  const homeStripExists = await PromoStrip.findOne({ headerCategorySlug: "all" });
+  if (!homeStripExists) {
+    // Fetch some default subcategories and products to seed
+    const defaultCats = await Category.find({ parentId: null }).limit(4).lean();
+    const defaultProducts = await Product.find({ status: "Active" }).limit(4).lean();
+
+    const newHomeStrip = await PromoStrip.create({
+      headerCategorySlug: "all",
+      heading: "HOUSEFULL SALE",
+      saleText: "FLAT 50% OFF",
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+      isActive: true,
+      order: 0,
+      categoryCards: defaultCats.map((c, i) => ({
+        subCategoryId: c._id,
+        title: (c as any).name,
+        badge: "MIN 50% OFF",
+        discountPercentage: 50,
+        order: i,
+        images: (c as any).image ? [(c as any).image] : []
+      })),
+      featuredProducts: defaultProducts.map(p => p._id),
+      crazyDealsTitle: "CRAZY DEALS"
+    });
+
+    const populatedHome = await PromoStrip.findById(newHomeStrip._id)
+      .populate("productCategoryId", "name slug")
+      .populate("categoryCards.subCategoryId", "name image")
+      .populate("featuredProducts", "productName mainImage price mrp");
+
+    if (populatedHome) {
+      promoStrips.unshift(populatedHome as any);
+    }
+  }
+
   return res.status(200).json({
     success: true,
     message: "PromoStrips fetched successfully",
@@ -287,13 +324,23 @@ export const updatePromoStrip = asyncHandler(async (req: Request, res: Response)
 export const deletePromoStrip = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  const promoStrip = await PromoStrip.findByIdAndDelete(id);
+  const promoStrip = await PromoStrip.findById(id);
   if (!promoStrip) {
     return res.status(404).json({
       success: false,
       message: "PromoStrip not found",
     });
   }
+
+  // Prevent deletion of system default HOME strip
+  if (promoStrip.headerCategorySlug === 'all') {
+    return res.status(403).json({
+      success: false,
+      message: "The HOME system campaign cannot be deleted. You can only deactivate or edit it.",
+    });
+  }
+
+  await PromoStrip.findByIdAndDelete(id);
 
   // Invalidate cache for this header category slug
   cache.delete(`promoStrip-${promoStrip.headerCategorySlug.toLowerCase()}`);

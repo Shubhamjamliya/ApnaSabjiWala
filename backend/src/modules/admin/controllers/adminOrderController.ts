@@ -171,11 +171,25 @@ export const updateOrderStatus = asyncHandler(
 
 
     // Trigger notification if status is "Processed" (Confirmed) or if paymentStatus changed to "Paid"
+    const io: SocketIOServer = req.app.get("io");
     if (status === "Processed" || order.paymentStatus === "Paid") {
-      const io: SocketIOServer = req.app.get("io");
       if (io) {
         notifySellersOfOrderUpdate(io, order, "STATUS_UPDATE");
       }
+    }
+
+    // Push notification to Customer
+    try {
+      const { sendOrderStatusNotification } = await import("../../../services/notificationService");
+      await sendOrderStatusNotification(
+        order.orderNumber,
+        order._id.toString(),
+        order.customer._id.toString(),
+        status,
+        order.total
+      );
+    } catch (pushErr) {
+      console.error("Error sending push notification to customer:", pushErr);
     }
 
     // Distribute commissions if order is delivered

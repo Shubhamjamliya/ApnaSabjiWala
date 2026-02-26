@@ -143,6 +143,20 @@ export const processCustomerWalletTransaction = async (
 
   await customer.save();
 
+  // Send push notification for credits
+  if (type === "credit") {
+    try {
+      const { sendNotification } = await import("./notificationService");
+      await sendNotification("Customer", customerId, "Cashback Received!", `₹${amount} added to your wallet!`, {
+        type: "Payment",
+        idempotencyKey: `wallet_credit_${customerId}_${Date.now()}_${amount}`,
+        data: { type: "WALLET" }
+      });
+    } catch (pushErr) {
+      console.error("Error sending wallet push:", pushErr);
+    }
+  }
+
   return {
     customer,
     transaction: {

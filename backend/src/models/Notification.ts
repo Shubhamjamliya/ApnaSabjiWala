@@ -37,6 +37,12 @@ export interface INotification extends Document {
   // Created By
   createdBy?: mongoose.Types.ObjectId;
 
+  // Data (for push notifications)
+  data?: Record<string, any>;
+
+  // Idempotency Key
+  idempotencyKey?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -119,6 +125,18 @@ const NotificationSchema = new Schema<INotification>(
       type: Schema.Types.ObjectId,
       ref: "Admin",
     },
+
+    // Data (for push notifications)
+    data: {
+      type: Schema.Types.Map,
+      of: String,
+    },
+
+    // Idempotency Key (to prevent duplicates)
+    idempotencyKey: {
+      type: String,
+      index: true,
+    },
   },
   {
     timestamps: true,
@@ -129,6 +147,7 @@ const NotificationSchema = new Schema<INotification>(
 NotificationSchema.index({ recipientType: 1, recipientId: 1, isRead: 1 });
 NotificationSchema.index({ createdAt: -1 });
 NotificationSchema.index({ expiresAt: 1 });
+NotificationSchema.index({ idempotencyKey: 1 }, { unique: true, sparse: true });
 
 const Notification = mongoose.model<INotification>(
   "Notification",

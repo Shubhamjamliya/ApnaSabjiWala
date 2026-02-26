@@ -7,13 +7,26 @@ import {
     type LowestPricesProduct,
     type LowestPricesProductFormData,
 } from "../../../services/api/admin/adminLowestPricesService";
-import { getProducts, type Product } from "../../../services/api/admin/adminProductService";
+import {
+    getProducts,
+    getCategories,
+    getSubCategories,
+    type Product,
+    type Category,
+    type SubCategory
+} from "../../../services/api/admin/adminProductService";
 
 export default function AdminLowestPrices() {
     // Form state
-    const [selectedProduct, setSelectedProduct] = useState<string>("");
+    const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
     const [order, setOrder] = useState<number | undefined>(undefined);
     const [isActive, setIsActive] = useState(true);
+
+    // Filter state
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string>("");
+    const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
 
     // Data state
     const [lowestPricesProducts, setLowestPricesProducts] = useState<LowestPricesProduct[]>([]);
@@ -34,8 +47,40 @@ export default function AdminLowestPrices() {
     // Fetch initial data
     useEffect(() => {
         fetchLowestPricesProducts();
-        fetchAvailableProducts();
+        fetchInitialFilters();
     }, []);
+
+    const fetchInitialFilters = async () => {
+        try {
+            const catRes = await getCategories({ status: "Active" });
+            if (catRes.success) {
+                setCategories(catRes.data);
+            }
+        } catch (err) {
+            console.error("Error fetching categories:", err);
+        }
+    };
+
+    useEffect(() => {
+        if (selectedCategory) {
+            fetchSubcategories(selectedCategory);
+        } else {
+            setSubcategories([]);
+            setSelectedSubcategory("");
+        }
+        fetchAvailableProducts();
+    }, [selectedCategory, selectedSubcategory]);
+
+    const fetchSubcategories = async (categoryId: string) => {
+        try {
+            const subRes = await getSubCategories({ category: categoryId });
+            if (subRes.success) {
+                setSubcategories(subRes.data);
+            }
+        } catch (err) {
+            console.error("Error fetching subcategories:", err);
+        }
+    };
 
     const fetchLowestPricesProducts = async () => {
         try {
@@ -54,7 +99,11 @@ export default function AdminLowestPrices() {
 
     const fetchAvailableProducts = async () => {
         try {
-            const response = await getProducts({ limit: 1000, status: "Active" });
+            const params: any = { limit: 1000, status: "Active" };
+            if (selectedCategory) params.category = selectedCategory;
+            if (selectedSubcategory) params.subcategory = selectedSubcategory;
+
+            const response = await getProducts(params);
             if (response.success && response.data) {
                 const productList = Array.isArray(response.data) ? response.data : [];
                 setAvailableProducts(productList);
@@ -71,8 +120,8 @@ export default function AdminLowestPrices() {
             .map((lp) => (typeof lp.product === "string" ? lp.product : lp.product?._id))
             .filter((id): id is string => !!id);
 
-        // Exclude already added products
-        if (existingProductIds.includes(product._id)) {
+        // Exclude already added products (unless we're editing that specific one)
+        if (existingProductIds.includes(product._id) && editingId === null) {
             return false;
         }
 
@@ -88,26 +137,37 @@ export default function AdminLowestPrices() {
         return true;
     });
 
+    const toggleProductSelection = (productId: string) => {
+        if (editingId) {
+            setSelectedProductIds([productId]);
+            return;
+        }
+        setSelectedProductIds(prev =>
+            prev.includes(productId)
+                ? prev.filter(id => id !== productId)
+                : [...prev, productId]
+        );
+    };
+
     const handleSubmit = async () => {
         setError("");
         setSuccess("");
 
         // Validation
-        if (!selectedProduct) {
-            setError("Please select a product");
+        if (selectedProductIds.length === 0) {
+            setError("Please select at least one product");
             return;
         }
-
-        const formData: LowestPricesProductFormData = {
-            product: selectedProduct,
-            order: order !== undefined ? order : undefined,
-            isActive,
-        };
 
         try {
             setLoading(true);
 
             if (editingId) {
+                const formData: LowestPricesProductFormData = {
+                    product: selectedProductIds[0],
+                    order: order !== undefined ? order : undefined,
+                    isActive,
+                };
                 const response = await updateLowestPricesProduct(editingId, formData);
                 if (response.success) {
                     setSuccess("Product updated successfully!");
@@ -117,18 +177,35 @@ export default function AdminLowestPrices() {
                     setError(response.message || "Failed to update product");
                 }
             } else {
-                const response = await createLowestPricesProduct(formData);
-                if (response.success) {
-                    setSuccess("Product added successfully!");
+                // Bulk Add
+                let successCount = 0;
+                let failCount = 0;
+
+                for (const productId of selectedProductIds) {
+                    const formData: LowestPricesProductFormData = {
+                        product: productId,
+                        order: order !== undefined ? order : undefined,
+                        isActive,
+                    };
+                    const response = await createLowestPricesProduct(formData);
+                    if (response.success) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                }
+
+                if (successCount > 0) {
+                    setSuccess(`${successCount} product(s) added successfully!${failCount > 0 ? ` (${failCount} failed)` : ""}`);
                     resetForm();
                     fetchLowestPricesProducts();
-                    fetchAvailableProducts(); // Refresh to update filtered list
+                    fetchAvailableProducts();
                 } else {
-                    setError(response.message || "Failed to add product");
+                    setError("Failed to add products");
                 }
             }
         } catch (err: any) {
-            setError(err.response?.data?.message || "Failed to save product");
+            setError(err.response?.data?.message || "Failed to save products");
         } finally {
             setLoading(false);
         }
@@ -138,10 +215,20 @@ export default function AdminLowestPrices() {
         const productId = typeof lowestPricesProduct.product === "string"
             ? lowestPricesProduct.product
             : lowestPricesProduct.product?._id || "";
-        setSelectedProduct(productId);
+        setSelectedProductIds([productId]);
         setOrder(lowestPricesProduct.order);
         setIsActive(lowestPricesProduct.isActive);
         setEditingId(lowestPricesProduct._id);
+
+        // Try to find the category/subcategory for this product to set the filters
+        const product = availableProducts.find(p => p._id === productId);
+        if (product) {
+            const catId = typeof product.category === 'string' ? product.category : product.category?._id;
+            const subId = typeof product.subcategory === 'string' ? product.subcategory : product.subcategory?._id;
+            if (catId) setSelectedCategory(catId);
+            if (subId) setSelectedSubcategory(subId);
+        }
+
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
@@ -168,11 +255,13 @@ export default function AdminLowestPrices() {
     };
 
     const resetForm = () => {
-        setSelectedProduct("");
+        setSelectedProductIds([]);
         setOrder(undefined);
         setIsActive(true);
         setEditingId(null);
         setProductSearchTerm("");
+        setSelectedCategory("");
+        setSelectedSubcategory("");
     };
 
     // Pagination
@@ -218,16 +307,55 @@ export default function AdminLowestPrices() {
             <div className="flex-1 px-6 pb-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
                     {/* Left Sidebar: Add/Edit Form */}
-                    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6 flex flex-col">
+                    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6 flex flex-col max-h-[calc(100vh-200px)]">
                         <h2 className="text-lg font-semibold text-neutral-800 mb-4">
-                            {editingId ? "Edit Product" : "Add Product"}
+                            {editingId ? "Edit Product" : "Add Products"}
                         </h2>
 
-                        <div className="space-y-4 flex-1 overflow-y-auto">
+                        <div className="space-y-4 flex-1 overflow-y-auto pr-2 scrollbar-thin">
+                            {/* Category Filter */}
+                            <div>
+                                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                                    Filter by Category
+                                </label>
+                                <select
+                                    value={selectedCategory}
+                                    onChange={(e) => {
+                                        setSelectedCategory(e.target.value);
+                                        setSelectedSubcategory("");
+                                    }}
+                                    className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 outline-none text-sm"
+                                >
+                                    <option value="">All Categories</option>
+                                    {categories.map(cat => (
+                                        <option key={cat._id} value={cat._id}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Subcategory Filter */}
+                            {subcategories.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                                        Filter by Subcategory
+                                    </label>
+                                    <select
+                                        value={selectedSubcategory}
+                                        onChange={(e) => setSelectedSubcategory(e.target.value)}
+                                        className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 outline-none text-sm"
+                                    >
+                                        <option value="">All Subcategories</option>
+                                        {subcategories.map(sub => (
+                                            <option key={sub._id} value={sub._id}>{sub.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
                             {/* Product Search and Select */}
                             <div>
                                 <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                    Product <span className="text-red-500">*</span>
+                                    Select Products <span className="text-red-500">*</span>
                                 </label>
                                 {!editingId ? (
                                     <>
@@ -236,57 +364,62 @@ export default function AdminLowestPrices() {
                                             placeholder="Search products..."
                                             value={productSearchTerm}
                                             onChange={(e) => setProductSearchTerm(e.target.value)}
-                                            className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none mb-2"
+                                            className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 outline-none mb-2 text-sm"
                                         />
-                                        <div className="border border-neutral-300 rounded max-h-48 overflow-y-auto bg-white">
+                                        <div className="border border-neutral-300 rounded h-64 overflow-y-auto bg-white scrollbar-thin">
                                             {filteredProducts.length === 0 ? (
                                                 <p className="text-sm text-neutral-400 p-3 text-center">
                                                     {productSearchTerm
                                                         ? "No products found"
-                                                        : "No available products"}
+                                                        : "No available products in this category"}
                                                 </p>
                                             ) : (
-                                                filteredProducts.slice(0, 20).map((product) => (
-                                                    <button
+                                                filteredProducts.map((product) => (
+                                                    <div
                                                         key={product._id}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setSelectedProduct(product._id);
-                                                            setProductSearchTerm("");
-                                                        }}
-                                                        className={`w-full text-left px-3 py-2 hover:bg-neutral-50 transition-colors border-b border-neutral-100 last:border-b-0 ${
-                                                            selectedProduct === product._id
-                                                                ? "bg-teal-50 border-teal-200"
+                                                        onClick={() => toggleProductSelection(product._id)}
+                                                        className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-neutral-50 border-b border-neutral-50 last:border-b-0 ${selectedProductIds.includes(product._id)
+                                                                ? "bg-teal-50"
                                                                 : ""
-                                                        }`}
+                                                            }`}
                                                     >
-                                                        <div className="text-sm font-medium text-neutral-900">
-                                                            {product.productName}
-                                                        </div>
-                                                        {product.price && (
-                                                            <div className="text-xs text-neutral-500">
-                                                                ₹{product.price.toLocaleString("en-IN")}
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedProductIds.includes(product._id)}
+                                                            readOnly
+                                                            className="h-4 w-4 text-teal-600 rounded cursor-pointer"
+                                                        />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-sm font-medium text-neutral-900 truncate">
+                                                                {product.productName}
                                                             </div>
-                                                        )}
-                                                    </button>
+                                                            <div className="text-xs text-neutral-500">
+                                                                {product.price ? `₹${product.price}` : "No price"} • {product.stock} in stock
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 ))
                                             )}
                                         </div>
-                                        {selectedProduct && (
-                                            <p className="text-xs text-teal-600 mt-1">
-                                                Selected:{" "}
-                                                {
-                                                    availableProducts.find(
-                                                        (p) => p._id === selectedProduct
-                                                    )?.productName
-                                                }
-                                            </p>
-                                        )}
+                                        <div className="mt-2 text-xs text-neutral-500 flex justify-between">
+                                            <span>{selectedProductIds.length} products selected</span>
+                                            {selectedProductIds.length > 0 && (
+                                                <button
+                                                    onClick={() => setSelectedProductIds([])}
+                                                    className="text-red-500 hover:underline px-0 py-0 bg-transparent border-none shadow-none"
+                                                >
+                                                    Clear selection
+                                                </button>
+                                            )}
+                                        </div>
                                     </>
                                 ) : (
-                                    <div className="px-3 py-2 border border-neutral-300 rounded bg-neutral-50 text-sm">
-                                        {availableProducts.find((p) => p._id === selectedProduct)
-                                            ?.productName || "Product not found"}
+                                    <div className="px-3 py-2 border border-neutral-300 rounded bg-neutral-50 text-sm flex justify-between items-center">
+                                        <span>
+                                            {availableProducts.find((p) => p._id === selectedProductIds[0])
+                                                ?.productName || "Product not found"}
+                                        </span>
+                                        <span className="text-xs bg-teal-100 text-teal-800 px-2 py-0.5 rounded">Editing</span>
                                     </div>
                                 )}
                             </div>
@@ -304,10 +437,10 @@ export default function AdminLowestPrices() {
                                     }
                                     placeholder="Auto-assign"
                                     min="0"
-                                    className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                                    className="w-full px-3 py-2 border border-neutral-300 rounded bg-white focus:ring-2 focus:ring-teal-500 outline-none text-sm"
                                 />
                                 <p className="text-xs text-neutral-500 mt-1">
-                                    Leave empty to auto-assign at the end
+                                    Leave empty to auto-assign
                                 </p>
                             </div>
 
@@ -321,7 +454,7 @@ export default function AdminLowestPrices() {
                                         className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
                                     />
                                     <span className="ml-2 text-sm font-medium text-neutral-700">
-                                        Active (Show on home page)
+                                        Active
                                     </span>
                                 </label>
                             </div>
@@ -331,23 +464,22 @@ export default function AdminLowestPrices() {
                         <div className="mt-6 space-y-2">
                             <button
                                 onClick={handleSubmit}
-                                disabled={loading}
-                                className={`w-full px-4 py-2 rounded font-medium transition-colors ${
-                                    loading
+                                disabled={loading || selectedProductIds.length === 0}
+                                className={`w-full px-4 py-2 rounded font-medium transition-colors ${loading || selectedProductIds.length === 0
                                         ? "bg-gray-400 cursor-not-allowed text-white"
                                         : "bg-teal-600 hover:bg-teal-700 text-white"
-                                }`}
+                                    }`}
                             >
                                 {loading
                                     ? "Saving..."
                                     : editingId
-                                    ? "Update Product"
-                                    : "Add Product"}
+                                        ? "Update Product"
+                                        : `Add ${selectedProductIds.length || ""} Product(s)`}
                             </button>
                             {editingId && (
                                 <button
                                     onClick={resetForm}
-                                    className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded font-medium transition-colors"
+                                    className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded font-medium transition-colors border-none"
                                 >
                                     Cancel
                                 </button>
@@ -356,13 +488,13 @@ export default function AdminLowestPrices() {
                     </div>
 
                     {/* Right Section: View Products Table */}
-                    <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col">
+                    <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-neutral-200 flex flex-col h-[calc(100vh-200px)]">
                         <div className="bg-teal-600 text-white px-6 py-4 rounded-t-lg">
-                            <h2 className="text-lg font-semibold">View Products</h2>
+                            <h2 className="text-lg font-semibold">Current Lowest Price Products</h2>
                         </div>
 
                         {/* Controls */}
-                        <div className="p-4 border-b border-neutral-100">
+                        <div className="p-4 border-b border-neutral-100 flex justify-between items-center shadow-sm">
                             <div className="flex items-center gap-2">
                                 <span className="text-sm text-neutral-600">Show</span>
                                 <input
@@ -372,22 +504,25 @@ export default function AdminLowestPrices() {
                                         setRowsPerPage(Number(e.target.value));
                                         setCurrentPage(1);
                                     }}
-                                    className="w-16 px-2 py-1.5 border border-neutral-300 rounded text-sm focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                                    className="w-16 px-2 py-1 border border-neutral-300 rounded text-sm focus:ring-1 focus:ring-teal-500 focus:outline-none"
                                 />
                                 <span className="text-sm text-neutral-600">entries</span>
+                            </div>
+                            <div className="text-sm text-neutral-500">
+                                Total: {lowestPricesProducts.length} items
                             </div>
                         </div>
 
                         {/* Table */}
-                        <div className="overflow-x-auto flex-1">
+                        <div className="overflow-x-auto flex-1 scrollbar-thin">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-neutral-50 text-xs font-bold text-neutral-800 border-b border-neutral-200">
+                                    <tr className="bg-neutral-50 text-xs font-bold text-neutral-800 border-b border-neutral-200 sticky top-0 z-10">
                                         <th className="p-4">Order</th>
                                         <th className="p-4">Product Name</th>
                                         <th className="p-4">Price</th>
-                                        <th className="p-4">Status</th>
-                                        <th className="p-4">Action</th>
+                                        <th className="p-4 text-center">Status</th>
+                                        <th className="p-4 text-right">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -406,7 +541,7 @@ export default function AdminLowestPrices() {
                                                 colSpan={5}
                                                 className="p-8 text-center text-neutral-400"
                                             >
-                                                No products found. Add your first product!
+                                                No products found. Use the sidebar to add products!
                                             </td>
                                         </tr>
                                     ) : (
@@ -421,30 +556,32 @@ export default function AdminLowestPrices() {
                                                     className="hover:bg-neutral-50 transition-colors text-sm text-neutral-700 border-b border-neutral-200"
                                                 >
                                                     <td className="p-4">{item.order}</td>
-                                                    <td className="p-4 font-medium">
-                                                        {product?.productName || "Product not found"}
-                                                    </td>
                                                     <td className="p-4">
+                                                        <div className="font-medium text-neutral-900">
+                                                            {product?.productName || "Product not found"}
+                                                        </div>
+                                                        <div className="text-[10px] text-neutral-400">ID: {item._id}</div>
+                                                    </td>
+                                                    <td className="p-4 font-semibold text-teal-700">
                                                         {product?.price
                                                             ? `₹${product.price.toLocaleString("en-IN")}`
                                                             : "N/A"}
                                                     </td>
-                                                    <td className="p-4">
+                                                    <td className="p-4 text-center">
                                                         <span
-                                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                                item.isActive
-                                                                    ? "bg-green-100 text-green-800"
-                                                                    : "bg-gray-100 text-gray-800"
-                                                            }`}
+                                                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${item.isActive
+                                                                    ? "bg-green-100 text-green-700"
+                                                                    : "bg-neutral-100 text-neutral-500"
+                                                                }`}
                                                         >
                                                             {item.isActive ? "Active" : "Inactive"}
                                                         </span>
                                                     </td>
-                                                    <td className="p-4">
-                                                        <div className="flex items-center gap-2">
+                                                    <td className="p-4 text-right">
+                                                        <div className="flex justify-end gap-2">
                                                             <button
                                                                 onClick={() => handleEdit(item)}
-                                                                className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                                                                className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded transition-all border-none shadow-none"
                                                                 title="Edit"
                                                             >
                                                                 <svg
@@ -463,7 +600,7 @@ export default function AdminLowestPrices() {
                                                             </button>
                                                             <button
                                                                 onClick={() => handleDelete(item._id)}
-                                                                className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                                                                className="p-1.5 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded transition-all border-none shadow-none"
                                                                 title="Delete"
                                                             >
                                                                 <svg
@@ -491,45 +628,50 @@ export default function AdminLowestPrices() {
                         </div>
 
                         {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="p-4 border-t border-neutral-100 flex justify-between items-center">
-                                <div className="text-sm text-neutral-600">
-                                    Showing {startIndex + 1} to{" "}
-                                    {Math.min(endIndex, lowestPricesProducts.length)} of{" "}
-                                    {lowestPricesProducts.length} entries
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                        disabled={currentPage === 1}
-                                        className={`px-3 py-1.5 rounded text-sm border ${
-                                            currentPage === 1
-                                                ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
-                                                : "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-300"
-                                        }`}
-                                    >
-                                        Previous
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            setCurrentPage((p) => Math.min(totalPages, p + 1))
-                                        }
-                                        disabled={currentPage === totalPages}
-                                        className={`px-3 py-1.5 rounded text-sm border ${
-                                            currentPage === totalPages
-                                                ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
-                                                : "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-300"
-                                        }`}
-                                    >
-                                        Next
-                                    </button>
-                                </div>
+                        <div className="p-4 border-t border-neutral-100 flex justify-between items-center bg-neutral-50 rounded-b-lg">
+                            <div className="text-[11px] text-neutral-500 font-medium">
+                                Showing {startIndex + 1} to {Math.min(endIndex, lowestPricesProducts.length)} of {lowestPricesProducts.length} entries
                             </div>
-                        )}
+                            <div className="flex gap-1">
+                                <button
+                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className={`px-3 py-1 rounded text-xs font-bold transition-colors border-none ${currentPage === 1
+                                            ? "bg-neutral-100 text-neutral-400 cursor-not-allowed"
+                                            : "bg-white text-teal-600 hover:bg-teal-50 shadow-sm"
+                                        }`}
+                                >
+                                    Prev
+                                </button>
+                                {[...Array(totalPages)].map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                        className={`w-7 h-7 rounded text-xs font-bold transition-colors border-none ${currentPage === i + 1
+                                                ? "bg-teal-600 text-white shadow-md"
+                                                : "bg-white text-neutral-600 hover:bg-neutral-50 shadow-sm"
+                                            }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                )).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))}
+                                <button
+                                    onClick={() =>
+                                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                                    }
+                                    disabled={currentPage === totalPages}
+                                    className={`px-3 py-1 rounded text-xs font-bold transition-colors border-none ${currentPage === totalPages
+                                            ? "bg-neutral-100 text-neutral-400 cursor-not-allowed"
+                                            : "bg-white text-teal-600 hover:bg-teal-50 shadow-sm"
+                                        }`}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     );
 }
-

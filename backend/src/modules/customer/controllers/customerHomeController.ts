@@ -6,11 +6,8 @@ import Shop from "../../../models/Shop";
 import Seller from "../../../models/Seller";
 import HeaderCategory from "../../../models/HeaderCategory";
 import HomeSection from "../../../models/HomeSection";
-import BestsellerCard from "../../../models/BestsellerCard";
-import LowestPricesProduct from "../../../models/LowestPricesProduct";
 import PromoStrip from "../../../models/PromoStrip";
 import mongoose from "mongoose";
-import { cache } from "../../../utils/cache";
 import { findSellersWithinRange } from "../../../utils/locationHelper";
 
 // Helper function to fetch data for a home section based on its configuration
@@ -32,7 +29,7 @@ async function fetchSectionData(
         .lean();
 
       // Sort according to the order in the products array
-      const productMap = new Map(manualProducts.map(p => [p._id.toString(), p]));
+      const productMap = new Map(manualProducts.map((p: any) => [p._id.toString(), p]));
       const sortedProducts = products
         .map((id: any) => productMap.get(id.toString()))
         .filter(Boolean);
@@ -237,7 +234,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       .select("productName mainImage price mrp discount rating reviewsCount pack seller category")
       .lean();
 
-    const formattedBestsellers = bestsellers.map(p => ({
+    const formattedBestsellers = bestsellers.map((p: any) => ({
       ...p,
       id: p._id.toString(),
       name: p.productName,
@@ -256,7 +253,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       .select("productName mainImage price mrp discount rating reviewsCount pack seller category")
       .lean();
 
-    const formattedLowestPrices = lowestPrices.map(p => ({
+    const formattedLowestPrices = lowestPrices.map((p: any) => ({
       ...p,
       id: p._id.toString(),
       name: p.productName,
@@ -274,7 +271,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       .select("productName mainImage price mrp discount rating reviewsCount pack seller category")
       .lean();
 
-    const formattedTrending = trending.map(p => ({
+    const formattedTrending = trending.map((p: any) => ({
       ...p,
       id: p._id.toString(),
       name: p.productName,
@@ -283,10 +280,36 @@ export const getHomeContent = async (req: Request, res: Response) => {
       categoryId: p.category?.toString()
     }));
 
-    // -> Shop by Store (Nearby Sellers)
+    // -> Shop by Store (Curated Shops + Nearby Sellers Fallback)
     let formattedShops: any[] = [];
-    if (nearbySellerIds.length > 0) {
-      const sellers = await Shop.find({
+
+    // 1. First, try to fetch curated Shop documents (Marketing collections)
+    const shopQuery: any = { isActive: true };
+    if (headerCatId) {
+      shopQuery.headerCategoryId = headerCatId;
+    }
+
+    const curatedShops = await Shop.find(shopQuery)
+      .sort({ order: 1 })
+      .limit(12)
+      .select("name image description storeId")
+      .lean();
+
+    if (curatedShops.length > 0) {
+      formattedShops = curatedShops.map((s: any) => ({
+        id: s._id.toString(),
+        name: s.name,
+        title: s.name,
+        image: s.image || "",
+        imageUrl: s.image || "",
+        description: s.description || "",
+        type: "shop",
+        categoryId: s.storeId || s._id.toString()
+      }));
+    }
+    // 2. If no curated shops, fallback to nearby sellers if location is available
+    else if (nearbySellerIds.length > 0) {
+      const sellersRaw = await Seller.find({
         status: "Approved",
         _id: { $in: nearbySellerIds }
       })
@@ -294,58 +317,92 @@ export const getHomeContent = async (req: Request, res: Response) => {
         .select("storeName logo storeDescription city")
         .lean();
 
-      // If no 'Shop' documents found (using legacy Seller model), try find in Sellers
-      if (sellers.length === 0) {
-        const sellersRaw = await Seller.find({
-          status: "Approved",
-          _id: { $in: nearbySellerIds }
-        })
-          .limit(12)
-          .select("storeName logo storeDescription city")
-          .lean();
+      formattedShops = sellersRaw.map((s: any) => ({
+        id: s._id.toString(),
+        name: s.storeName,
+        title: s.storeName,
+        image: s.logo || "",
+        imageUrl: s.logo || "",
+        description: s.storeDescription || s.city || "",
+        type: "seller",
+        categoryId: s._id.toString()
+      }));
+    }
+    // 3. Final fallback: If no curated shops and no location, show global approved sellers
+    else if (!headerCategorySlug || headerCategorySlug === "all") {
+      const globalSellers = await Seller.find({ status: "Approved" })
+        .limit(12)
+        .select("storeName logo storeDescription city")
+        .lean();
 
-        formattedShops = sellersRaw.map((s: any) => ({
-          id: s._id.toString(),
-          name: s.storeName,
-          title: s.storeName,
-          image: s.logo || "",
-          imageUrl: s.logo || "",
-          description: s.storeDescription || s.city || "",
-          type: "seller",
-          categoryId: s._id.toString()
-        }));
-      } else {
-        formattedShops = sellers.map((s: any) => ({
-          id: s._id.toString(),
-          name: s.storeName || (s as any).name,
-          title: s.storeName || (s as any).name,
-          image: s.logo || (s as any).image || "",
-          imageUrl: s.logo || (s as any).image || "",
-          description: s.storeDescription || (s as any).description || "",
-          type: "seller",
-          categoryId: s._id.toString()
-        }));
-      }
+      formattedShops = globalSellers.map((s: any) => ({
+        id: s._id.toString(),
+        name: s.storeName,
+        title: s.storeName,
+        image: s.logo || "",
+        imageUrl: s.logo || "",
+        description: s.storeDescription || s.city || "",
+        type: "seller",
+        categoryId: s._id.toString()
+      }));
     }
 
-    // -> Promo Strip (Dynamic Construction)
-    const promoStrip = {
+    // -> Promo Strip (Real Data from Database)
+    let promoStrip: any = null;
+    const dbPromoStrip = await PromoStrip.findOne({
+      headerCategorySlug: headerCategorySlug === "all" ? "all" : headerCategorySlug,
       isActive: true,
-      heading: headerCategorySlug === "fruits-veg" ? "FRESH HARVEST" : "HOUSEFULL SALE",
-      saleText: "FLAT 50% OFF",
-      crazyDealsTitle: "CRAZY DEALS",
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      categoryCards: allCategories.slice(0, 4).map((c, i) => ({
-        id: c.id,
-        categoryId: c.id,
-        title: c.name,
-        badge: `Min ${30 + i * 5}% OFF`,
-        discountPercentage: 30 + i * 5,
-        order: i
-      })),
-      featuredProducts: formattedTrending.slice(0, 5)
-    };
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() },
+    })
+      .populate("categoryCards.subCategoryId", "name image icon subcategoryName")
+      .populate("productCategoryId", "name icon image color slug")
+      .populate({
+        path: "featuredProducts",
+        select: "productName mainImage price mrp discount rating reviewsCount pack seller category",
+      })
+      .sort({ order: 1 })
+      .lean();
+
+    if (dbPromoStrip) {
+      promoStrip = {
+        ...dbPromoStrip,
+        categoryCards: dbPromoStrip.categoryCards.map((card: any) => ({
+          ...card,
+          id: card._id,
+          categoryId: card.subCategoryId?._id || card.subCategoryId,
+          title: card.title || card.subCategoryId?.subcategoryName || card.subCategoryId?.name || "Offer",
+          badge: card.badge || `Save ${card.discountPercentage || 0}%`,
+        })),
+        featuredProducts: dbPromoStrip.featuredProducts.map((p: any) => ({
+          ...p,
+          id: p._id.toString(),
+          name: p.productName,
+          imageUrl: p.mainImage,
+          mrp: p.mrp || p.price,
+          categoryId: p.category?.toString(),
+        })),
+      };
+    } else {
+      // Fallback: Default mock data if no PromoStrip exists in DB
+      promoStrip = {
+        isActive: true,
+        heading: headerCategorySlug === "fruits-veg" ? "FRESH HARVEST" : "HOUSEFULL SALE",
+        saleText: "FLAT 50% OFF",
+        crazyDealsTitle: "CRAZY DEALS",
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        categoryCards: allCategories.slice(0, 4).map((c, i) => ({
+          id: c.id,
+          categoryId: c.id,
+          title: c.name,
+          badge: `Min ${30 + i * 5}% OFF`,
+          discountPercentage: 30 + i * 5,
+          order: i
+        })),
+        featuredProducts: formattedTrending.slice(0, 5)
+      };
+    }
 
     // 3. Fetch Simplified Home Sections (Title + Manual Products)
     const homeSectionQuery: any = { isActive: true };

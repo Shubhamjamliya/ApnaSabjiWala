@@ -46,3 +46,4 @@ Thumbs.db
 
 # Firebase credentials (development only - do not commit)
 config/firebase-service-account.json
+src/config/apnasabjiwala-4ceaa-firebase-adminsdk-fbsvc-71e6495fe8.json

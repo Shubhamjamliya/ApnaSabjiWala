@@ -17,6 +17,9 @@ export default function CategoryPage() {
 
   const [category, setCategory] = useState<ApiCategory | null>(null);
   const [subcategories, setSubcategories] = useState<ApiCategory[]>([]);
+  const hasRealSubcategories = useMemo(() => {
+    return subcategories.filter(s => s._id !== 'all' && s.id !== 'all').length > 0;
+  }, [subcategories]);
   const [selectedSubcategory, setSelectedSubcategory] = useState("all");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
@@ -287,79 +290,82 @@ export default function CategoryPage() {
     setIsFiltersOpen(false);
   };
 
+
   return (
     <div className="flex bg-white h-screen overflow-hidden">
-      {/* Left Sidebar */}
-      <div className="w-24 bg-white border-r border-neutral-100 overflow-y-auto scrollbar-hide flex-shrink-0 py-2">
-        <div className="space-y-1">
-          {subcategories.map((subcat) => {
-            const isSelected =
-              selectedSubcategory === (subcat.id || subcat._id);
-            return (
-              <button
-                key={subcat.id || subcat._id}
-                type="button"
-                onClick={() => {
-                  console.log("Clicked subcategory:", subcat.id || subcat._id);
-                  setSelectedSubcategory(subcat.id || subcat._id);
-                }}
-                className={`w-full flex flex-col items-center justify-center py-2 relative transition-all duration-200 group ${isSelected ? "bg-green-50" : "hover:bg-neutral-50"
-                  }`}
-                style={{
-                  minHeight: "80px",
-                }}>
-                {/* Active Indicator - curved blob on left */}
-                {isSelected && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-green-600 rounded-r-full"></div>
-                )}
-
-                {/* Image Container */}
-                <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl mb-1.5 flex-shrink-0 overflow-hidden transition-all duration-200 shadow-sm ${isSelected
-                      ? "ring-2 ring-green-600 ring-offset-2 bg-white"
-                      : "bg-neutral-50 border border-neutral-100 group-hover:shadow-md"
-                    }`}>
-                  {subcat.image ? (
-                    <img
-                      src={subcat.image}
-                      alt={subcat.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = "none";
-                        const parent = target.parentElement;
-                        if (parent) {
-                          parent.textContent =
-                            subcat.icon || subcat.name?.charAt(0) || "📦";
-                        }
-                      }}
-                    />
-                  ) : (
-                    <span className="text-2xl">{subcat.icon || "📦"}</span>
-                  )}
-                </div>
-
-                {/* Text Label */}
-                <span
-                  className={`text-[10px] text-center leading-tight px-1 transition-colors ${isSelected
-                      ? "font-bold text-green-700"
-                      : "text-neutral-500 group-hover:text-neutral-900"
+      {/* Left Sidebar - Only show if has real subcategories */}
+      {hasRealSubcategories && (
+        <div className="w-24 bg-white border-r border-neutral-100 overflow-y-auto scrollbar-hide flex-shrink-0 py-2">
+          <div className="space-y-1">
+            {subcategories.map((subcat) => {
+              const isSelected =
+                selectedSubcategory === (subcat.id || subcat._id);
+              return (
+                <button
+                  key={subcat.id || subcat._id}
+                  type="button"
+                  onClick={() => {
+                    console.log("Clicked subcategory:", subcat.id || subcat._id);
+                    setSelectedSubcategory(subcat.id || subcat._id);
+                  }}
+                  className={`w-full flex flex-col items-center justify-center py-2 relative transition-all duration-200 group ${isSelected ? "bg-green-50" : "hover:bg-neutral-50"
                     }`}
                   style={{
-                    wordBreak: "break-word",
-                    maxWidth: "100%",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden"
+                    minHeight: "80px",
                   }}>
-                  {subcat.name}
-                </span>
-              </button>
-            );
-          })}
+                  {/* Active Indicator - curved blob on left */}
+                  {isSelected && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-green-600 rounded-r-full"></div>
+                  )}
+
+                  {/* Image Container */}
+                  <div
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl mb-1.5 flex-shrink-0 overflow-hidden transition-all duration-200 shadow-sm ${isSelected
+                      ? "ring-2 ring-green-600 ring-offset-2 bg-white"
+                      : "bg-neutral-50 border border-neutral-100 group-hover:shadow-md"
+                      }`}>
+                    {subcat.image ? (
+                      <img
+                        src={subcat.image}
+                        alt={subcat.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.textContent =
+                              subcat.icon || subcat.name?.charAt(0) || "📦";
+                          }
+                        }}
+                      />
+                    ) : (
+                      <span className="text-2xl">{subcat.icon || "📦"}</span>
+                    )}
+                  </div>
+
+                  {/* Text Label */}
+                  <span
+                    className={`text-[10px] text-center leading-tight px-1 transition-colors ${isSelected
+                      ? "font-bold text-green-700"
+                      : "text-neutral-500 group-hover:text-neutral-900"
+                      }`}
+                    style={{
+                      wordBreak: "break-word",
+                      maxWidth: "100%",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden"
+                    }}>
+                    {subcat.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden bg-white">
@@ -454,8 +460,8 @@ export default function CategoryPage() {
                     key={subId}
                     onClick={() => setSelectedSubcategory(subId)}
                     className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors flex-shrink-0 whitespace-nowrap ${isSelected
-                        ? "bg-white border border-neutral-300 text-neutral-900"
-                        : "bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+                      ? "bg-white border border-neutral-300 text-neutral-900"
+                      : "bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50"
                       }`}>
                     <span className="text-sm flex-shrink-0">
                       {subcat.image ? (
@@ -572,16 +578,16 @@ export default function CategoryPage() {
                     <button
                       onClick={() => setSelectedFilterCategory("Type")}
                       className={`w-full px-3 py-3 text-left text-sm font-medium transition-colors ${selectedFilterCategory === "Type"
-                          ? "bg-green-50 text-green-700"
-                          : "text-neutral-600 hover:bg-neutral-100"
+                        ? "bg-green-50 text-green-700"
+                        : "text-neutral-600 hover:bg-neutral-100"
                         }`}>
                       Type
                     </button>
                     <button
                       onClick={() => setSelectedFilterCategory("Properties")}
                       className={`w-full px-3 py-3 text-left text-sm font-medium transition-colors ${selectedFilterCategory === "Properties"
-                          ? "bg-green-50 text-green-700"
-                          : "text-neutral-600 hover:bg-neutral-100"
+                        ? "bg-green-50 text-green-700"
+                        : "text-neutral-600 hover:bg-neutral-100"
                         }`}>
                       Properties
                     </button>
@@ -643,8 +649,8 @@ export default function CategoryPage() {
                   <button
                     onClick={handleApplyFilters}
                     className={`flex-1 px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${selectedFilters.length > 0
-                        ? "bg-green-600 text-white hover:bg-green-700"
-                        : "bg-neutral-300 text-neutral-500 cursor-not-allowed"
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-neutral-300 text-neutral-500 cursor-not-allowed"
                       }`}
                     disabled={selectedFilters.length === 0}>
                     Apply

@@ -105,17 +105,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     const role = user?.userType?.toLowerCase() || "customer";
+    const currentToken = token; // Capture token before clearing
+
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
     removeAuthToken(role);
 
     // Remove FCM token on logout
-    import("../services/pushNotificationService").then(({ removeFCMToken }) => {
-      removeFCMToken().catch((error) => {
-        console.error("Failed to remove FCM token:", error);
+    if (currentToken) {
+      import("../services/pushNotificationService").then(({ removeFCMToken }) => {
+        removeFCMToken(currentToken).catch((error) => {
+          console.error("Failed to remove FCM token:", error);
+        });
       });
-    });
+    }
   };
 
   const updateUser = (userData: User) => {

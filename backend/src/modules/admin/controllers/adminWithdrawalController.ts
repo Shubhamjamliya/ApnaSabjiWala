@@ -74,6 +74,23 @@ export const approveWithdrawal = async (req: Request, res: Response) => {
         request.processedAt = new Date();
         await request.save();
 
+        // Notify User of Approval
+        try {
+            const { sendNotification } = await import('../../../services/notificationService');
+            await sendNotification(
+                request.userType === 'SELLER' ? 'Seller' : 'Delivery',
+                request.userId.toString(),
+                'Withdrawal Approved',
+                `Your withdrawal of ₹${request.amount} has been approved and is being processed.`,
+                {
+                    type: "Payment",
+                    idempotencyKey: `withdraw_approve_${request._id}`
+                }
+            );
+        } catch (pushErr) {
+            console.error('Error sending withdrawal approval push:', pushErr);
+        }
+
         return res.status(200).json({
             success: true,
             message: 'Withdrawal request approved successfully',
@@ -117,6 +134,23 @@ export const rejectWithdrawal = async (req: Request, res: Response) => {
         request.processedAt = new Date();
         if (remarks) request.remarks = remarks;
         await request.save();
+
+        // Notify User of Rejection
+        try {
+            const { sendNotification } = await import('../../../services/notificationService');
+            await sendNotification(
+                request.userType === 'SELLER' ? 'Seller' : 'Delivery',
+                request.userId.toString(),
+                'Withdrawal Rejected',
+                `Your withdrawal of ₹${request.amount} was rejected.${remarks ? ' Reason: ' + remarks : ''}`,
+                {
+                    type: "Payment",
+                    idempotencyKey: `withdraw_reject_${request._id}`
+                }
+            );
+        } catch (pushErr) {
+            console.error('Error sending withdrawal rejection push:', pushErr);
+        }
 
         return res.status(200).json({
             success: true,
@@ -189,6 +223,24 @@ export const completeWithdrawal = async (req: Request, res: Response) => {
         request.processedBy = new mongoose.Types.ObjectId(adminId);
         request.processedAt = new Date();
         await request.save({ session });
+
+        // Notify User of Completion
+        try {
+            const { sendNotification } = await import('../../../services/notificationService');
+            await sendNotification(
+                request.userType === 'SELLER' ? 'Seller' : 'Delivery',
+                request.userId.toString(),
+                'Withdrawal Completed',
+                `Your withdrawal of ₹${request.amount} has been processed. Trans Ref: ${transactionReference}`,
+                {
+                    type: "Payment",
+                    priority: "High",
+                    idempotencyKey: `withdraw_complete_${request._id}`
+                }
+            );
+        } catch (pushErr) {
+            console.error('Error sending withdrawal completion push:', pushErr);
+        }
 
         await session.commitTransaction();
 

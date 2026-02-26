@@ -13,7 +13,7 @@ interface CategoryTile {
   sellerId?: string;
   bgColor?: string;
   slug?: string;
-  type?: "subcategory" | "product" | "category";
+  type?: "subcategory" | "product" | "category" | "shop" | "seller";
 }
 
 interface CategoryTileSectionProps {
@@ -46,17 +46,16 @@ export default function CategoryTileSection({
       }
       return;
     }
+    if (tile.type === "shop" || tile.type === "seller" || (tile as any).sellerId) {
+      navigate(`/store/${tile.categoryId || (tile as any).sellerId || tile.id}`);
+      return;
+    }
     if (tile.categoryId) {
       navigate(`/category/${tile.categoryId}`);
       return;
     }
     if (tile.productId) {
       navigate(`/product/${tile.productId}`);
-      return;
-    }
-    if ((tile as any).sellerId) {
-      // Navigate to seller's products page or category
-      navigate(`/seller/${(tile as any).sellerId}`);
       return;
     }
     // Otherwise just log for now
@@ -96,6 +95,8 @@ export default function CategoryTileSection({
               tile.productImages || (tile.image ? [tile.image] : []);
             const hasImages = images.filter(Boolean).length > 0;
 
+            const isShopOrSeller = tile.type === "shop" || tile.type === "seller" || (tile as any).sellerId;
+
             return (
               <motion.div
                 key={tile.id}
@@ -117,16 +118,16 @@ export default function CategoryTileSection({
                           }`
                       : tile.productId
                         ? `/product/${tile.productId}`
-                        : tile.type === "category"
-                          ? tile.slug
-                            ? `/category/${tile.slug}`
+                        : isShopOrSeller
+                          ? `/store/${tile.categoryId || (tile as any).sellerId || tile.id}`
+                          : tile.type === "category"
+                            ? tile.slug
+                              ? `/category/${tile.slug}`
+                              : tile.categoryId
+                                ? `/category/${tile.categoryId}`
+                                : "#"
                             : tile.categoryId
                               ? `/category/${tile.categoryId}`
-                              : "#"
-                          : tile.categoryId
-                            ? `/category/${tile.categoryId}`
-                            : (tile as any).sellerId
-                              ? `/seller/${(tile as any).sellerId}`
                               : "#"
                   }
                   onClick={(e) => {

@@ -271,12 +271,29 @@ export async function notifyDeliveryBoysOfNewOrder(
     io: SocketIOServer,
     order: any
 ): Promise<void> {
+    const orderId = order._id.toString();
+
+    // Prevent duplicate notifications for the same order
+    if (notificationStates.has(orderId)) {
+        console.log(`ℹ️ Notifications already sent/pending for order ${order.orderNumber}. Skipping.`);
+        return;
+    }
+
+    // Mark as in-progress to prevent race conditions
+    notificationStates.set(orderId, {
+        orderId,
+        notifiedDeliveryBoys: new Set<string>(),
+        rejectedDeliveryBoys: new Set<string>(),
+        acceptedBy: null
+    });
+
     try {
         // Find delivery boys near seller locations (within service radius)
         let nearbyDeliveryBoyIds = await findDeliveryBoysNearSellerLocations(order);
 
         if (nearbyDeliveryBoyIds.length === 0) {
             console.log('No available delivery boys to notify (including fallback)');
+            notificationStates.delete(orderId); // Clean up if no one was notified
             return;
         }
 
@@ -325,7 +342,6 @@ export async function notifyDeliveryBoysOfNewOrder(
         };
 
         // Initialize notification state
-        const orderId = order._id.toString();
         const notifiedIds = new Set<string>();
 
         // Only add delivery boys who are actually connected to the notification room
@@ -339,7 +355,17 @@ export async function notifyDeliveryBoysOfNewOrder(
                 io.to(roomName).emit('new-order', orderData);
                 console.log(`📤 Emitted new-order to connected delivery boy room: ${roomName}`);
             } else {
-                console.log(`⏩ Skipping disconnected delivery boy: ${idString}`);
+                console.log(`⏩ Skipping disconnected delivery boy room: ${idString}, but sending Push.`);
+                // We still want to add them to notifiedIds so they can accept via push notification
+                notifiedIds.add(idString);
+            }
+
+            // Always send push notification as backup even if connected via socket
+            try {
+                const { sendTaskAvailableNotification } = await import('./notificationService');
+                await sendTaskAvailableNotification(idString, orderId, order.orderNumber);
+            } catch (pushErr) {
+                console.error(`Failed to send push notification to delivery boy ${idString}:`, pushErr);
             }
         }
 
@@ -431,7 +457,7 @@ export async function handleOrderAcceptance(
 
         // Also emit to individual rooms (notifiedId is already a string from Set)
         if (state) {
-             for (const notifiedId of state.notifiedDeliveryBoys) {
+            for (const notifiedId of state.notifiedDeliveryBoys) {
                 const notifiedIdString = String(notifiedId).trim();
                 io.to(`delivery-${notifiedIdString}`).emit('order-accepted', {
                     orderId,
@@ -441,10 +467,10 @@ export async function handleOrderAcceptance(
             // Clean up notification state
             notificationStates.delete(orderId);
         } else {
-             // If no state, we can't emit to specific originally notified list,
-             // but 'delivery-notifications' room covers the general case.
-             // We can also try to emit to the accepting delivery boy just in case
-             io.to(`delivery-${normalizedDeliveryBoyId}`).emit('order-accepted', {
+            // If no state, we can't emit to specific originally notified list,
+            // but 'delivery-notifications' room covers the general case.
+            // We can also try to emit to the accepting delivery boy just in case
+            io.to(`delivery-${normalizedDeliveryBoyId}`).emit('order-accepted', {
                 orderId,
                 acceptedBy: normalizedDeliveryBoyId,
             });

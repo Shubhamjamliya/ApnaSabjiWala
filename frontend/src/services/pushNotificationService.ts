@@ -200,15 +200,16 @@ export async function initializePushNotifications(): Promise<void> {
 /**
  * Remove FCM token from backend
  */
-export async function removeFCMToken(): Promise<void> {
+export async function removeFCMToken(providedAuthToken?: string): Promise<void> {
     try {
         const savedToken = localStorage.getItem('fcm_token_web');
         if (!savedToken) {
             return;
         }
 
-        const authToken = getAuthToken();
+        const authToken = providedAuthToken || getAuthToken();
         if (!authToken) {
+            console.warn('⚠️ No auth token available to remove FCM token');
             return;
         }
 

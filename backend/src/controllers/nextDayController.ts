@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import Product from "../models/Product";
 import DeliverySlot from "../models/DeliverySlot";
-import PageConfig from "../models/PageConfig";
 
 // Hardcoded for now, can be moved to AppSettings later
 const CUT_OFF_TIME_HOUR = 21; // 9 PM

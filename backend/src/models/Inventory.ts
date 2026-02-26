@@ -98,6 +98,34 @@ InventorySchema.pre("save", function (next) {
   next();
 });
 
+// Post-save hook for low stock notification
+InventorySchema.post("save", async function (doc) {
+  if (doc.availableStock <= doc.lowStockThreshold) {
+    try {
+      // Avoid circular dependency by using dynamic import
+      const { sendNotification } = await import("../services/notificationService");
+      const Product = mongoose.model("Product");
+      const product = await Product.findById(doc.product);
+
+      if (product) {
+        await sendNotification(
+          "Seller",
+          doc.seller.toString(),
+          "Stock Alert",
+          `Product "${product.productName}" is low on stock (${doc.availableStock} left).`,
+          {
+            type: "Info",
+            idempotencyKey: `low_stock_${doc._id}_${Math.floor(doc.availableStock)}`
+          }
+        );
+      }
+    } catch (pushErr: any) {
+      // Log error but don't crash
+      console.error("Error in low stock notification hook:", pushErr.message);
+    }
+  }
+});
+
 // Indexes for faster queries
 // Index already created by unique: true
 InventorySchema.index({ seller: 1 });

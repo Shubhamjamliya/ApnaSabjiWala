@@ -189,9 +189,9 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   const location =
     longitude && latitude
       ? {
-          type: "Point" as const,
-          coordinates: [longitude, latitude],
-        }
+        type: "Point" as const,
+        coordinates: [longitude, latitude],
+      }
       : undefined;
 
   // Create new seller with GeoJSON location (password not required during signup)
@@ -220,6 +220,21 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   // Generate token
   const token = generateToken(seller._id.toString(), "Seller");
+
+  // Notify Admin
+  try {
+    const { sendNotification } = await import("../../../services/notificationService");
+    const Admin = (await import("../../../models/Admin")).default;
+    const admins = await Admin.find({ status: "Active" });
+    for (const admin of admins) {
+      await sendNotification("Admin", admin._id.toString(), "New Registration", `New seller "${storeName}" has registered.`, {
+        type: "Info",
+        idempotencyKey: `new_seller_${seller._id}`
+      });
+    }
+  } catch (pushErr) {
+    console.error("Error notifying admin of new seller:", pushErr);
+  }
 
   return res.status(201).json({
     success: true,

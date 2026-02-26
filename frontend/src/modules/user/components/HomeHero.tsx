@@ -9,7 +9,7 @@ import { getCategories } from '../../../services/api/customerProductService';
 import { Category } from '../../../types/domain';
 import { getHeaderCategoriesPublic } from '../../../services/api/headerCategoryService';
 import { getIconByName } from '../../../utils/iconLibrary';
-import homeIcon from '@assets/category/Home-icon.png';
+import homeIcon from '@assets/category/home_v2.png';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -27,7 +27,7 @@ interface Tab {
 const HOME_TAB: Tab = {
   id: 'all',
   label: 'Home',
-  icon: <img src={homeIcon} alt="Home" className="w-10 h-10 object-contain" />,
+  icon: <img src={`${homeIcon}?v=${Date.now()}`} alt="Home" className="w-full h-full object-contain" />,
 };
 
 
@@ -43,10 +43,10 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
             id: c.slug,
             label: c.name,
             icon: c.image ? (
-              <img src={c.image} alt={c.name} className="w-10 h-10 object-contain" />
+              <img src={c.image} alt={c.name} className="w-full h-full object-contain" />
             ) : (
-              <div className="w-10 h-10 flex items-center justify-center">
-                {getIconByName(c.conName)}
+              <div className="w-full h-full flex items-center justify-center p-2">
+                {getIconByName(c.iconName || '')}
               </div>
             )
           }));
@@ -372,8 +372,13 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           </div>
         </div>
 
-        {/* Category Tabs */}
-        <div className="w-full" style={{ paddingBottom: '16px' }}>
+        {/* Category Tabs Section */}
+        <div className="w-full relative" style={{ paddingTop: '12px', paddingBottom: '24px' }}>
+          <div className="px-4 md:px-6 lg:px-8 mb-4">
+            <h2 className="text-lg md:text-xl font-bold text-neutral-900 tracking-tight">
+              Popular Categories
+            </h2>
+          </div>
           <div
             ref={tabsContainerRef}
             className="flex gap-4 md:gap-6 overflow-x-auto scrollbar-hide px-4 md:px-6 lg:px-8 md:justify-center scroll-smooth"
@@ -402,12 +407,12 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
                   type="button"
                 >
                   <div
-                    className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isActive
-                        ? 'bg-white shadow-[0_0_0_3px_#111827,0_4px_12px_rgba(0,0,0,0.15)] scale-110 z-20'
-                        : 'bg-white shadow-md border border-neutral-100 hover:shadow-lg group-hover:scale-105'
+                    className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center overflow-hidden transition-all duration-300 ${isActive
+                      ? 'bg-white shadow-[0_0_0_3px_#111827,0_4px_12px_rgba(0,0,0,0.15)] scale-110 z-20'
+                      : 'bg-white shadow-md border border-neutral-100 hover:shadow-lg group-hover:scale-105'
                       }`}
                   >
-                    <div className="transition-all duration-300">
+                    <div className="w-full h-full transition-all duration-300">
                       {tab.icon}
                     </div>
                   </div>

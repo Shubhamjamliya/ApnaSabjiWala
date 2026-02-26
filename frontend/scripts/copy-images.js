@@ -71,10 +71,8 @@ function copyCategoryImages() {
       const categoryName = file.replace('.png', '');
       const destName = imageMap[categoryName] || `category-${file.toLowerCase().replace(/\s+/g, '-')}`;
       const destPath = path.join(publicAssetsDir, destName);
-      if (!fs.existsSync(destPath)) {
-        fs.copyFileSync(srcPath, destPath);
-        console.log(`Copied category: ${file} -> ${destName}`);
-      }
+      fs.copyFileSync(srcPath, destPath);
+      console.log(`Copied category: ${file} -> ${destName}`);
     }
   });
 }
@@ -121,10 +119,8 @@ function copyProductImages() {
     const srcPath = path.join(productBaseDir, src);
     const destPath = path.join(publicAssetsDir, dest);
     if (fs.existsSync(srcPath)) {
-      if (!fs.existsSync(destPath)) {
-        fs.copyFileSync(srcPath, destPath);
-        console.log(`Copied product: ${dest}`);
-      }
+      fs.copyFileSync(srcPath, destPath);
+      console.log(`Copied product: ${dest}`);
     } else {
       console.warn(`Not found: ${srcPath}`);
     }
@@ -136,10 +132,8 @@ function copyBannerImage() {
   const bannerPath = path.join(assetsDir, 'banner-mobile.jpg');
   if (fs.existsSync(bannerPath)) {
     const destPath = path.join(publicAssetsDir, 'banner-mobile.jpg');
-    if (!fs.existsSync(destPath)) {
-      fs.copyFileSync(bannerPath, destPath);
-      console.log('Copied banner: banner-mobile.jpg');
-    }
+    fs.copyFileSync(bannerPath, destPath);
+    console.log('Copied banner: banner-mobile.jpg');
   }
 }
 
@@ -156,10 +150,8 @@ function copyLoginVideo() {
   const videoPath = path.join(loginDir, 'loginvideo.mp4');
   if (fs.existsSync(videoPath)) {
     const destPath = path.join(publicLoginDir, 'loginvideo.mp4');
-    if (!fs.existsSync(destPath)) {
-      fs.copyFileSync(videoPath, destPath);
-      console.log('Copied login video: loginvideo.mp4');
-    }
+    fs.copyFileSync(videoPath, destPath);
+    console.log('Copied login video: loginvideo.mp4');
   }
 }
 
@@ -181,10 +173,8 @@ function copyShopByStoreImages() {
 
     if (stat.isFile() && (file.endsWith('.jpg') || file.endsWith('.jpeg') || file.endsWith('.png'))) {
       const destPath = path.join(publicShopbystoreDir, file);
-      if (!fs.existsSync(destPath)) {
-        fs.copyFileSync(filePath, destPath);
-        console.log(`Copied shopbystore: ${file}`);
-      }
+      fs.copyFileSync(filePath, destPath);
+      console.log(`Copied shopbystore: ${file}`);
     } else if (stat.isDirectory()) {
       // Copy subdirectories (like spiritual/)
       const subDir = file;
@@ -200,10 +190,8 @@ function copyShopByStoreImages() {
         if (subFile.endsWith('.jpg') || subFile.endsWith('.jpeg') || subFile.endsWith('.png')) {
           const srcPath = path.join(subDirPath, subFile);
           const destPath = path.join(publicSubDirPath, subFile);
-          if (!fs.existsSync(destPath)) {
-            fs.copyFileSync(srcPath, destPath);
-            console.log(`Copied shopbystore/${subDir}: ${subFile}`);
-          }
+          fs.copyFileSync(srcPath, destPath);
+          console.log(`Copied shopbystore/${subDir}: ${subFile}`);
         }
       });
     }
@@ -215,10 +203,8 @@ function copyApnaSabjiWalaLogo() {
   const apnasabjiwalaPath = path.join(assetsDir, 'apnasabjiwala.png');
   if (fs.existsSync(apnasabjiwalaPath)) {
     const destPath = path.join(publicAssetsDir, 'apnasabjiwala.png');
-    if (!fs.existsSync(destPath)) {
-      fs.copyFileSync(apnasabjiwalaPath, destPath);
-      console.log('Copied Apna Sabji Wala logo: apnasabjiwala.png');
-    }
+    fs.copyFileSync(apnasabjiwalaPath, destPath);
+    console.log('Copied Apna Sabji Wala logo: apnasabjiwala.png');
   }
 }
 
@@ -235,10 +221,8 @@ function copyDeliveryIcon() {
   const iconPath = path.join(deliveryboyDir, 'deliveryIcon.png');
   if (fs.existsSync(iconPath)) {
     const destPath = path.join(publicDeliveryboyDir, 'deliveryIcon.png');
-    if (!fs.existsSync(destPath)) {
-      fs.copyFileSync(iconPath, destPath);
-      console.log('Copied delivery icon: deliveryIcon.png');
-    }
+    fs.copyFileSync(iconPath, destPath);
+    console.log('Copied delivery icon: deliveryIcon.png');
   }
 }
 

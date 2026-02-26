@@ -311,6 +311,26 @@ export const createWithdrawalRequest = async (
 
         await withdrawRequest.save();
 
+        // Notify Admin
+        try {
+            const { sendWithdrawalRequestNotification } = await import('./notificationService');
+            const Admin = (await import('../models/Admin')).default;
+            const admins = await Admin.find({ status: 'Active' });
+
+            const entityName = userType === 'SELLER' ? (user as any).storeName || user.name : user.name;
+
+            for (const admin of admins) {
+                await sendWithdrawalRequestNotification(
+                    admin._id.toString(),
+                    entityName,
+                    amount,
+                    withdrawRequest._id.toString()
+                );
+            }
+        } catch (pushErr) {
+            console.error('Error notifying admin of withdrawal:', pushErr);
+        }
+
         return {
             success: true,
             message: 'Withdrawal request created successfully',

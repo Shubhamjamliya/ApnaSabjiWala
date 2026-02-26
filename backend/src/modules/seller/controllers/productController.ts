@@ -143,7 +143,7 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
 
   // Build query
   const query: any = {};
-  if (req.user.userType !== "Admin") {
+  if ((req as any).user?.userType !== "Admin") {
     query.seller = sellerId;
   }
 
@@ -233,7 +233,7 @@ export const getProductById = asyncHandler(
     }
 
     const query: any = { _id: id };
-    if (req.user.userType !== "Admin") {
+    if ((req as any).user?.userType !== "Admin") {
       query.seller = sellerId;
     }
 
@@ -355,7 +355,7 @@ export const updateProduct = asyncHandler(
 
     // Use findOne and then save to trigger pre-save hooks
     const query: any = { _id: id };
-    if (req.user.userType !== "Admin") {
+    if ((req as any).user?.userType !== "Admin") {
       query.seller = sellerId;
     }
     const product = await Product.findOne(query);
@@ -415,7 +415,7 @@ export const deleteProduct = asyncHandler(
     console.log("DEBUG deleteProduct: productId:", id);
 
     const query: any = { _id: id };
-    if (req.user.userType !== "Admin") {
+    if ((req as any).user?.userType !== "Admin") {
       query.seller = sellerId;
     }
 
@@ -444,7 +444,7 @@ export const updateStock = asyncHandler(async (req: Request, res: Response) => {
   const { stock, status } = req.body;
 
   const query: any = { _id: id };
-  if (req.user.userType !== "Admin") {
+  if ((req as any).user?.userType !== "Admin") {
     query.seller = sellerId;
   }
   const product = await Product.findOne(query);
@@ -505,7 +505,7 @@ export const updateProductStatus = asyncHandler(
     if (dealOfDay !== undefined) updateData.dealOfDay = dealOfDay;
 
     const query: any = { _id: id };
-    if (req.user.userType !== "Admin") {
+    if ((req as any).user?.userType !== "Admin") {
       query.seller = sellerId;
     }
 
@@ -550,7 +550,7 @@ export const bulkUpdateStock = asyncHandler(
       const { productId, variationId, stock } = update;
 
       const query: any = { _id: productId };
-      if (req.user.userType !== "Admin") {
+      if ((req as any).user?.userType !== "Admin") {
         query.seller = sellerId;
       }
       const product = await Product.findOne(query);
