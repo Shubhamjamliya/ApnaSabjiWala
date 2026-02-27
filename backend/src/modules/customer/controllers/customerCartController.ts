@@ -22,8 +22,17 @@ const calculateItemPrice = (product: any, variationSelector: any) => {
     if (variationId && product.variations?.length) {
         variation = product.variations.find((v: any) =>
             (v._id && v._id.toString() === variationId.toString()) ||
-            (v.id && v.id === variationId)
+            (v.id && v.id === variationId) ||
+            (v.name === variationId) ||
+            (v.value === variationId) ||
+            (v.title === variationId) ||
+            (v.pack === variationId)
         );
+
+        // Fallback for 'Standard' to first variation if no exact match
+        if (!variation && variationId === 'Standard' && product.variations.length > 0) {
+            variation = product.variations[0];
+        }
     }
 
     let finalPrice = variation?.price || product.price || 0;

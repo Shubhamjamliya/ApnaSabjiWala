@@ -178,6 +178,7 @@ export const createOrder = async (req: Request, res: Response) => {
                             _id: item.product.id,
                             $or: [
                                 { "variations._id": mongoose.isValidObjectId(variationValue) ? variationValue : new mongoose.Types.ObjectId() },
+                                { "variations.name": variationValue },
                                 { "variations.value": variationValue },
                                 { "variations.title": variationValue },
                                 { "variations.pack": variationValue }
@@ -192,6 +193,7 @@ export const createOrder = async (req: Request, res: Response) => {
                             _id: item.product.id,
                             $or: [
                                 { "variations._id": mongoose.isValidObjectId(variationValue) ? variationValue : new mongoose.Types.ObjectId() },
+                                { "variations.name": variationValue },
                                 { "variations.value": variationValue },
                                 { "variations.title": variationValue },
                                 { "variations.pack": variationValue }
@@ -211,9 +213,13 @@ export const createOrder = async (req: Request, res: Response) => {
                 if (checkProduct && checkProduct.variations && checkProduct.variations.length > 0) {
                     // Product has variations, but we didn't match one.
                     // If a variation was provided, it means that specific variation is out of stock.
-                    if (variationValue) {
+                    if (variationValue && variationValue !== 'Standard') {
                         throw new Error(`Insufficient stock for variation: ${variationValue}`);
                     }
+
+                    // If variationValue is 'Standard' but not found, or not provided,
+                    // we'll try to find the product again and decrement from the first variation.
+                    // This is handled by falling through to the findOneAndUpdate below.
 
                     // No variation was provided, but the product has them.
                     // To maintain data consistency, we'll try to decrement from the first variation.
@@ -264,6 +270,7 @@ export const createOrder = async (req: Request, res: Response) => {
             if (variationValue && product.variations) {
                 selectedVariation = product.variations.find((v: any) =>
                     (v._id && v._id.toString() === variationValue) ||
+                    v.name === variationValue ||
                     v.value === variationValue ||
                     v.title === variationValue ||
                     v.pack === variationValue
@@ -724,7 +731,12 @@ export const cancelOrder = async (req: Request, res: Response) => {
                     // Check if it was a variation
                     if (orderItem.variation) {
                         // Try to find matching variation
-                        const variationIndex = product.variations?.findIndex((v: any) => v.value === orderItem.variation || v.title === orderItem.variation || v.pack === orderItem.variation);
+                        const variationIndex = product.variations?.findIndex((v: any) =>
+                            v.name === orderItem.variation ||
+                            v.value === orderItem.variation ||
+                            v.title === orderItem.variation ||
+                            v.pack === orderItem.variation
+                        );
 
                         if (variationIndex !== undefined && variationIndex !== -1 && product.variations) {
                             product.variations[variationIndex].stock += orderItem.quantity;

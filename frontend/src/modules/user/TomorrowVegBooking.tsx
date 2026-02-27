@@ -103,33 +103,90 @@ export default function TomorrowVegBooking() {
     pack: p.unit || p.pack
   });
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product | any) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item._id === product._id);
+      const productId = product._id || product.id;
+      const variantId = product.variantId || (product.selectedVariant?._id);
+      const variantTitle = product.variantTitle || product.pack;
+
+      const existing = prev.find((item: any) => {
+        const itemProductId = item._id || item.id;
+        const itemVariantId = item.variantId || (item.selectedVariant?._id);
+        const itemVariantTitle = item.variantTitle || item.pack;
+
+        if (variantId || variantTitle) {
+          return itemProductId === productId && (itemVariantId === variantId || itemVariantTitle === variantTitle);
+        }
+        return itemProductId === productId && !itemVariantId && !itemVariantTitle;
+      });
+
       if (existing) {
-        if (existing.quantity >= product.maxQuantity) return prev;
-        return prev.map((item) =>
-          item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
-        );
+        if (existing.quantity >= (product.maxQuantity || 10)) return prev;
+        return prev.map((item: any) => {
+          const itemProductId = item._id || item.id;
+          const itemVariantId = item.variantId || (item.selectedVariant?._id);
+          const itemVariantTitle = item.variantTitle || item.pack;
+
+          const isMatch = (variantId || variantTitle)
+            ? itemProductId === productId && (itemVariantId === variantId || itemVariantTitle === variantTitle)
+            : itemProductId === productId && !itemVariantId && !itemVariantTitle;
+
+          return isMatch ? { ...item, quantity: item.quantity + 1 } : item;
+        });
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { ...product, _id: productId, id: productId, quantity: 1 }];
     });
   };
 
-  const removeFromCart = (productId: string) => {
+  const removeFromCart = (productId: string, variantInfo?: { id?: string, title?: string }) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item._id === productId);
-      if (existing?.quantity === 1) {
-        return prev.filter((item) => item._id !== productId);
+      let existingIndex = -1;
+
+      if (variantInfo?.id || variantInfo?.title) {
+        existingIndex = prev.findIndex((item: any) => {
+          const itemProductId = item._id || item.id;
+          const itemVariantId = item.variantId || (item.selectedVariant?._id);
+          const itemVariantTitle = item.variantTitle || item.pack;
+          return itemProductId === productId && (itemVariantId === variantInfo.id || itemVariantTitle === variantInfo.title);
+        });
+      } else {
+        // Find the most recently added item of this product if no variant info provided
+        for (let i = prev.length - 1; i >= 0; i--) {
+          if ((prev[i] as any)._id === productId || (prev[i] as any).id === productId) {
+            existingIndex = i;
+            break;
+          }
+        }
       }
-      return prev.map((item) =>
-        item._id === productId ? { ...item, quantity: item.quantity - 1 } : item
+
+      if (existingIndex === -1) return prev;
+
+      const existing = prev[existingIndex];
+      if (existing.quantity === 1) {
+        return prev.filter((_, index) => index !== existingIndex);
+      }
+
+      return prev.map((item: any, index: number) =>
+        index === existingIndex ? { ...item, quantity: item.quantity - 1 } : item
       );
     });
   };
 
-  const getQuantity = (productId: string) => {
-    return cart.find((item) => item._id === productId)?.quantity || 0;
+  const getQuantity = (productId: string, variantInfo?: { id?: string, title?: string }) => {
+    return cart.reduce((acc, item: any) => {
+      const itemProductId = item._id || item.id;
+
+      if (variantInfo?.id || variantInfo?.title) {
+        const itemVariantId = item.variantId || (item.selectedVariant?._id);
+        const itemVariantTitle = item.variantTitle || item.pack;
+        if (itemProductId === productId && (itemVariantId === variantInfo.id || itemVariantTitle === variantInfo.title)) {
+          return acc + item.quantity;
+        }
+      } else if (itemProductId === productId) {
+        return acc + item.quantity;
+      }
+      return acc;
+    }, 0);
   };
 
   const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -236,7 +293,7 @@ export default function TomorrowVegBooking() {
           </div>
         ) : (
           sections.map(section => {
-            const columnCount = Number(section.columns) || 4; 
+            const columnCount = Number(section.columns) || 4;
             const gridClass = "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
             const gapClass = "gap-3 md:gap-4 lg:gap-6";
 
@@ -252,21 +309,22 @@ export default function TomorrowVegBooking() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4 lg:gap-6">
+                <div className="grid grid-cols-3 gap-2 md:grid-cols-4 lg:grid-cols-5 md:gap-4 lg:gap-6">
                   {section.products?.filter(Boolean).map(entry => {
                     const product = mapSectionProduct(entry);
-                    
+
                     return (
-                      <ProductCard 
+                      <ProductCard
                         key={product._id}
                         product={product as any}
                         categoryStyle={true}
                         showBadge={true}
                         showRating={true}
-                        overrideQuantity={getQuantity(product._id)}
+                        showOptionsText={true}
+                        overrideQuantity={getQuantity(product._id, { id: product.variantId, title: product.variantTitle || product.pack })}
                         onAdd={(p) => addToCart(p as any)}
                         onIncrease={(p) => addToCart(p as any)}
-                        onDecrease={(p) => removeFromCart(p._id || p.id)}
+                        onDecrease={(p) => removeFromCart(p._id || p.id, { id: (p as any).variantId, title: (p as any).variantTitle || (p as any).pack })}
                       />
                     );
                   })}
@@ -292,11 +350,10 @@ export default function TomorrowVegBooking() {
           <button
             onClick={handleBooking}
             disabled={isBookingClosed}
-            className={`w-full py-4 rounded-2xl font-black text-sm shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 ${
-              isBookingClosed 
-              ? "bg-gray-200 text-gray-400 cursor-not-allowed" 
+            className={`w-full py-4 rounded-2xl font-black text-sm shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 ${isBookingClosed
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
               : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200"
-            }`}
+              }`}
           >
             {isBookingClosed ? "BOOKING CLOSED" : "PLACE ORDER FOR TOMORROW"}
             {!isBookingClosed && (

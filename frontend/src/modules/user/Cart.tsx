@@ -53,9 +53,11 @@ export default function Cart() {
       <div className="px-4 md:px-6 lg:px-8 space-y-4 md:space-y-6 mb-4 md:mb-6">
         {cart.items.map((item) => {
           const { displayPrice, mrp, hasDiscount } = calculateProductPrice(item.product, item.variant);
+          const variationName = item.variant || (item.product as any).variantTitle || (item.product as any).pack || item.product.pack;
+
           return (
             <div
-              key={item.product.id}
+              key={`${item.product.id}-${variationName}`}
               className="bg-white rounded-lg border border-neutral-200 p-4 md:p-6 hover:shadow-md transition-shadow"
             >
               <div className="flex gap-4 md:gap-6">
@@ -76,10 +78,16 @@ export default function Cart() {
 
                 {/* Product Info */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-neutral-900 mb-1 md:mb-2 line-clamp-2 md:text-lg">
+                  <h3 className="font-semibold text-neutral-900 mb-0.5 md:mb-1 line-clamp-2 md:text-lg">
                     {item.product.name}
                   </h3>
-                  <p className="text-xs md:text-sm text-neutral-500 mb-2">{item.product.pack}</p>
+                  {variationName && (
+                    <div className="mb-2">
+                      <span className="inline-block bg-neutral-100 text-neutral-600 text-[10px] md:text-xs font-bold px-2 py-0.5 rounded border border-neutral-200 uppercase tracking-wide">
+                        {variationName}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 mb-3 md:mb-4">
                     <span className="text-base md:text-lg font-bold text-neutral-900">
                       ₹{displayPrice.toLocaleString('en-IN')}
@@ -122,7 +130,7 @@ export default function Cart() {
 
                 {/* Remove Button */}
                 <button
-                  onClick={() => removeFromCart(item.product.id)}
+                  onClick={() => removeFromCart(item.product.id, item.variant)}
                   className="text-neutral-400 hover:text-red-600 transition-colors self-start"
                   aria-label="Remove item"
                 >

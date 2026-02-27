@@ -20,10 +20,16 @@ import { useThemeContext } from "../../context/ThemeContext";
 export default function Home() {
   const navigate = useNavigate();
   const { location } = useLocation();
-  const { activeCategory, setActiveCategory } = useThemeContext();
+  const { activeCategory, setActiveCategory, currentTheme: theme } = useThemeContext();
   const { startRouteLoading, stopRouteLoading } = useLoading();
   const activeTab = activeCategory; // mapping for existing code compatibility
   const setActiveTab = setActiveCategory;
+
+  // Clear cache on component mount to ensure fresh data for all tabs
+  useEffect(() => {
+    import("../../utils/apiCache").then(m => m.apiCache.clear());
+  }, []);
+
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollHandledRef = useRef(false);
   const SCROLL_POSITION_KEY = 'home-scroll-position';
@@ -75,6 +81,7 @@ export default function Home() {
 
           if (response.data.bestsellers) {
             setProducts(response.data.bestsellers);
+            console.log('Home Bestsellers Variations:', response.data.bestsellers.map((p: any) => ({ name: p.productName || p.name, variations: p.variations })));
           }
         } else {
           setError("Failed to load content. Please try again.");
@@ -263,7 +270,9 @@ export default function Home() {
 
       {/* Main content */}
       <div
-        className="bg-emerald-50/30 -mt-2 pt-1 space-y-5 md:space-y-8 md:pt-4">
+        className="-mt-2 pt-1 space-y-5 md:space-y-8 md:pt-4"
+        style={{ backgroundColor: `${theme.secondary[0]}44` }} // 0x44 is ~27% opacity
+      >
 
         {/* Featured This Week Section */}
         {/* <FeaturedThisWeek /> */}
@@ -332,13 +341,13 @@ export default function Home() {
               Bestsellers
             </h2>
             <div className="px-4 md:px-6 lg:px-8">
-              <div 
+              <div
                 className="flex gap-3 md:gap-4 overflow-x-auto scrollbar-hide pb-2"
                 style={{ scrollSnapType: 'x mandatory' }}
               >
                 {homeData.bestsellers.map((product: any) => (
-                  <div 
-                    key={product.id || product._id} 
+                  <div
+                    key={product.id || product._id}
                     className="flex-shrink-0 w-[140px] md:w-[180px]"
                     style={{ scrollSnapAlign: 'start' }}
                   >

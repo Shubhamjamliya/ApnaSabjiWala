@@ -4,6 +4,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { getTheme } from '../../../utils/themes';
 import { useLocation } from '../../../hooks/useLocation';
+import { useThemeContext } from '../../../context/ThemeContext';
 import { appConfig } from '../../../services/configService';
 import { getCategories } from '../../../services/api/customerProductService';
 import { Category } from '../../../types/domain';
@@ -277,7 +278,8 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
     // Don't scroll - keep page at current position
   };
 
-  const theme = getTheme(activeTab || 'all');
+  const { currentTheme } = useThemeContext();
+  const theme = currentTheme;
   const heroGradient = `linear-gradient(to bottom right, ${theme.primary[0]}, ${theme.primary[1]}, ${theme.primary[2]})`;
 
   // Helper to convert RGB to RGBA

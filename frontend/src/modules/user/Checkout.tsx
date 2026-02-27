@@ -172,7 +172,13 @@ export default function Checkout() {
                 imageUrl: p.mainImage || p.imageUrl || p.mainImageUrl || '',
                 price: displayPrice,
                 mrp: mrp,
-                pack: p.pack || p.variations?.[0]?.title || p.variations?.[0]?.name || 'Standard',
+                pack: (() => {
+                  const v = p.variations?.[0];
+                  if (!v) return (p.pack || 'Standard').trim();
+                  const vName = (v.name || '').trim();
+                  const isPlaceholder = !vName || vName.toLowerCase() === 'variation' || vName.toLowerCase() === 'standard';
+                  return (isPlaceholder ? (v.value || v.title || vName) : vName).trim() || (p.pack || 'Standard').trim();
+                })(),
               };
             })
             .slice(0, 6);
@@ -906,7 +912,9 @@ export default function Checkout() {
                   <h3 className="text-xs font-semibold text-neutral-900 mb-0.5 line-clamp-2">
                     {item.product?.name}
                   </h3>
-                  <p className="text-[10px] text-neutral-600 mb-0.5">{item.quantity} × {item.product?.pack}</p>
+                  <p className="text-[10px] text-neutral-600 mb-0.5">
+                    {item.quantity} × {item.variant || (item.product as any).variantTitle || (item.product as any).pack || item.product?.pack}
+                  </p>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -921,7 +929,7 @@ export default function Checkout() {
                   <div className="flex items-center justify-between mt-1.5">
                     <div className="flex items-center gap-1.5 bg-white border-2 border-green-600 rounded-full px-1.5 py-0.5">
                       <button
-                        onClick={() => updateQuantity(item.product?.id, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.product?.id, item.quantity - 1, item.variant)}
                         className="w-5 h-5 flex items-center justify-center text-green-600 font-bold hover:bg-green-50 rounded-full transition-colors text-xs"
                       >
                         −
@@ -930,7 +938,7 @@ export default function Checkout() {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => updateQuantity(item.product?.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.product?.id, item.quantity + 1, item.variant)}
                         className="w-5 h-5 flex items-center justify-center text-green-600 font-bold hover:bg-green-50 rounded-full transition-colors text-xs"
                       >
                         +

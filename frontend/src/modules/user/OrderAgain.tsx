@@ -7,6 +7,7 @@ import { useCart } from '../../context/CartContext';
 import { getProducts } from '../../services/api/customerProductService';
 import WishlistButton from '../../components/WishlistButton';
 import { calculateProductPrice } from '../../utils/priceUtils';
+import { getVariationColor } from '../../utils/variationUtils';
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -91,10 +92,17 @@ export default function OrderAgain() {
               name: productName,
               imageUrl: p.mainImage || p.imageUrl,
               mrp: p.mrp || p.price,
-              pack: p.variations?.[0]?.title || p.smallDescription || 'Standard'
+              pack: (() => {
+                const v = p.variations?.[0];
+                if (!v) return (p.pack || p.smallDescription || '').trim();
+                const vName = (v.name || '').trim();
+                const isPlaceholder = !vName || vName.toLowerCase() === 'variation' || vName.toLowerCase() === 'standard';
+                return (isPlaceholder ? (v.value || v.title || vName) : vName).trim() || (p.pack || p.smallDescription || '').trim();
+              })()
             };
           });
           setBestsellerProducts(mapped);
+          console.log('Bestsellers Products Variations:', mapped.map(p => ({ name: p.name, variations: p.variations })));
         }
       } catch (error) {
         console.error('Failed to fetch bestsellers:', error);
@@ -250,6 +258,25 @@ export default function OrderAgain() {
                         size="sm"
                         className="top-1 right-1 shadow-sm"
                       />
+
+                      {/* Variation Badges - Bottom Left on image */}
+                      {product.variations && product.variations.length > 0 && (
+                        <div className="absolute bottom-1.5 left-1.5 z-10 flex flex-wrap gap-1 max-w-[85px]">
+                          {product.variations.map((v: any, i: number) => {
+                            const vName = (v.name || '').trim();
+                            const isPlaceholder = !vName || vName.toLowerCase() === 'variation' || vName.toLowerCase() === 'standard';
+                            const label = (isPlaceholder ? (v.value || v.title || vName) : vName).trim() || 'Standard';
+                            return (
+                              <span
+                                key={i}
+                                className={`inline-block ${getVariationColor(label)} text-[7px] font-bold px-1 py-0.5 rounded border leading-tight uppercase shadow-sm bg-opacity-95`}
+                              >
+                                {label}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
 
                       {/* ADD Button or Quantity Stepper - Overlaid on bottom right of image */}
                       <div className="absolute bottom-1.5 right-1.5 z-10">

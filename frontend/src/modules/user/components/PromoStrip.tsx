@@ -7,6 +7,7 @@ import { getSubcategories } from "../../../services/api/categoryService";
 import { apiCache } from "../../../utils/apiCache";
 import { useLocation } from "../../../hooks/useLocation";
 import { calculateProductPrice } from "../../../utils/priceUtils";
+import { useThemeContext } from "../../../context/ThemeContext";
 
 interface PromoCard {
   id: string;
@@ -45,7 +46,8 @@ interface PromoStripProps {
 
 export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
   const { location } = useLocation();
-  const theme = getTheme(activeTab);
+  const { currentTheme } = useThemeContext();
+  const theme = currentTheme;
   const navigate = useNavigate();
   const [categoryCards, setCategoryCards] = useState<PromoCard[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);

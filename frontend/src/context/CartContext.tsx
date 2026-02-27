@@ -23,7 +23,7 @@ interface AddToCartEvent {
 interface CartContextType {
   cart: Cart;
   addToCart: (product: Product, sourceElement?: HTMLElement | null) => Promise<void>;
-  removeFromCart: (productId: string) => Promise<void>;
+  removeFromCart: (productId: string, variant?: string) => Promise<void>;
   updateQuantity: (productId: string, quantity: number, variantId?: string, variantTitle?: string) => Promise<void>;
   clearCart: () => Promise<void>;
   refreshCart: (latitude?: number, longitude?: number) => Promise<void>;
@@ -276,18 +276,35 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const removeFromCart = async (productId: string) => {
-    // Prevent concurrent operations on the same product
-    if (pendingOperationsRef.current.has(productId)) {
+  const removeFromCart = async (productId: string, variant?: string) => {
+    // Unique key for pending operations
+    const operationKey = variant ? `${productId}-${variant}` : productId;
+
+    // Prevent concurrent operations
+    if (pendingOperationsRef.current.has(operationKey)) {
       return;
     }
-    pendingOperationsRef.current.add(productId);
+    pendingOperationsRef.current.add(operationKey);
 
-    // Find item matching either id or _id
-    const itemToRemove = items.find(item => item?.product && (item.product.id === productId || item.product._id === productId));
+    // Find item matching product ID and variant
+    const itemToRemove = items.find(item => {
+      if (!item?.product) return false;
+      const itemProductId = item.product.id || item.product._id;
+      const itemVariant = item.variant || (item.product as any).variantId || (item.product as any).selectedVariant?._id || (item.product as any).variantTitle || (item.product as any).pack;
+      return itemProductId === productId && (itemVariant === variant || !variant);
+    });
 
     const previousItems = [...items];
-    setItems((prevItems) => prevItems.filter((item) => item?.product && item.product.id !== productId && item.product._id !== productId));
+    setItems((prevItems) => prevItems.filter((item) => {
+      if (!item?.product) return true;
+      const itemProductId = item.product.id || item.product._id;
+      const itemVariant = item.variant || (item.product as any).variantId || (item.product as any).selectedVariant?._id || (item.product as any).variantTitle || (item.product as any).pack;
+
+      if (variant) {
+        return !(itemProductId === productId && itemVariant === variant);
+      }
+      return itemProductId !== productId;
+    }));
 
     // Only sync to API if user is authenticated and item has CartItemID
     if (isAuthenticated && user?.userType === 'Customer' && itemToRemove?.id) {
@@ -308,11 +325,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems(previousItems);
       } finally {
         // Remove from pending operations
-        pendingOperationsRef.current.delete(productId);
+        pendingOperationsRef.current.delete(operationKey);
       }
     } else {
       // For unregistered users, remove from pending operations immediately
-      pendingOperationsRef.current.delete(productId);
+      pendingOperationsRef.current.delete(operationKey);
     }
   };
 

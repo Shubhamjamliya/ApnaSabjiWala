@@ -27,7 +27,7 @@ async function fetchSectionData(
         status: "Active",
         publish: true,
       })
-        .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller")
+        .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller variations")
         .lean();
 
       // Sort according to the order in the products array
@@ -58,6 +58,7 @@ async function fetchSectionData(
           type: "product",
           isAvailable,
           seller: p.seller,
+          variations: p.variations,
         };
       });
     }
@@ -107,7 +108,7 @@ async function fetchSectionData(
       const products = await Product.find(query)
         .sort({ createdAt: -1 })
         .limit(limit || 8)
-        .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller")
+        .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller variations")
         .lean();
 
       return products.map((p: any) => {
@@ -132,6 +133,7 @@ async function fetchSectionData(
           type: "product",
           isAvailable,
           seller: p.seller,
+          variations: p.variations,
         };
       });
     }
@@ -189,13 +191,13 @@ export const getHomeContent = async (req: Request, res: Response) => {
         effectiveHeaderSlug = headerCat.slug;
       }
     } else if (!headerCategorySlug || headerCategorySlug === "all") {
-       // For the main Home tab, try to find the "HOME" header category to fetch its assigned content
-       const homeHeader = await HeaderCategory.findOne({ name: { $regex: /home/i } }).select("_id slug");
-       if (homeHeader) {
-         headerCatId = homeHeader._id;
-         // Use the real slug from DB so PromoStrip etc. can find it
-         effectiveHeaderSlug = homeHeader.slug;
-       }
+      // For the main Home tab, try to find the "HOME" header category to fetch its assigned content
+      const homeHeader = await HeaderCategory.findOne({ name: { $regex: /home/i } }).select("_id slug");
+      if (homeHeader) {
+        headerCatId = homeHeader._id;
+        // Use the real slug from DB so PromoStrip etc. can find it
+        effectiveHeaderSlug = homeHeader.slug;
+      }
     }
 
     // 3. Fetch Categories for the selected tab
@@ -264,9 +266,9 @@ export const getHomeContent = async (req: Request, res: Response) => {
       }
     }
 
-    const isMainHome = !headerCategorySlug || 
-                       headerCategorySlug === "all" || 
-                       (effectiveHeaderSlug && effectiveHeaderSlug.toLowerCase().includes("home"));
+    const isMainHome = !headerCategorySlug ||
+      headerCategorySlug === "all" ||
+      (effectiveHeaderSlug && effectiveHeaderSlug.toLowerCase().includes("home"));
 
     const baseProductQuery: any = {
       status: "Active",
@@ -282,7 +284,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       popular: true,
     })
       .limit(12)
-      .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category")
+      .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category variations")
       .lean();
 
     const formattedBestsellers = bestsellers.map((p: any) => ({
@@ -291,7 +293,8 @@ export const getHomeContent = async (req: Request, res: Response) => {
       name: p.productName,
       imageUrl: p.mainImage,
       mrp: p.compareAtPrice || p.price,
-      categoryId: p.category?.toString()
+      categoryId: p.category?.toString(),
+      variations: p.variations
     }));
 
     // -> Lowest Prices Ever (Manual admin selection filtered by header)
@@ -320,7 +323,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       .sort({ order: 1 })
       .populate({
         path: "product",
-        select: "productName mainImage price compareAtPrice discount rating reviewsCount pack seller category",
+        select: "productName mainImage price compareAtPrice discount rating reviewsCount pack seller category variations",
       })
       .limit(12)
       .lean();
@@ -336,7 +339,8 @@ export const getHomeContent = async (req: Request, res: Response) => {
         name: p.productName,
         imageUrl: p.mainImage,
         mrp: p.compareAtPrice || p.price,
-        categoryId: p.category?.toString()
+        categoryId: p.category?.toString(),
+        variations: p.variations
       };
     }).filter(Boolean);
 
@@ -356,7 +360,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       })
         .sort({ discount: -1 })
         .limit(12)
-        .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category")
+        .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category variations")
         .lean();
 
       formattedLowestPrices = lowestPrices.map((p: any) => ({
@@ -365,7 +369,8 @@ export const getHomeContent = async (req: Request, res: Response) => {
         name: p.productName,
         imageUrl: p.mainImage,
         mrp: p.compareAtPrice || p.price,
-        categoryId: p.category?.toString()
+        categoryId: p.category?.toString(),
+        variations: p.variations
       }));
     }
 
@@ -375,7 +380,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       dealOfDay: true,
     })
       .limit(12)
-      .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category")
+      .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category variations")
       .lean();
 
     const formattedTrending = trending.map((p: any) => ({
@@ -384,7 +389,8 @@ export const getHomeContent = async (req: Request, res: Response) => {
       name: p.productName,
       imageUrl: p.mainImage,
       mrp: p.compareAtPrice || p.price,
-      categoryId: p.category?.toString()
+      categoryId: p.category?.toString(),
+      variations: p.variations
     }));
 
     // -> Shop by Store (Curated Shops + Nearby Sellers Fallback)
@@ -394,7 +400,15 @@ export const getHomeContent = async (req: Request, res: Response) => {
     // 1. First, try to fetch curated Shop documents (Marketing collections)
     const shopQuery: any = { isActive: true };
     if (headerCatId) {
-      shopQuery.headerCategoryId = headerCatId;
+      // Show shops assigned to this specific header 
+      // AND shops with no header assigned (for global visibility across all tabs)
+      shopQuery.$or = [
+        { headerCategoryId: headerCatId },
+        { headerCategoryId: { $exists: false } },
+        { headerCategoryId: null }
+      ];
+    } else {
+      // If no header ID (though unlikely), show everything active
     }
 
     rawShops = await Shop.find(shopQuery)
@@ -412,7 +426,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
         .lean();
       shopType = "seller";
     }
-    
+
     // 3. Final fallback: If still no shops, show global approved sellers
     if (rawShops.length === 0) {
       rawShops = await Seller.find({ status: "Approved" })
@@ -425,7 +439,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
     const formattedShops = await Promise.all(
       rawShops.map(async (s: any) => {
         let productImages: string[] = [];
-        
+
         if (shopType === "shop") {
           // Fetch images for products linked to this curated shop
           if (s.products && s.products.length > 0) {
@@ -461,7 +475,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
     // -> Promo Strip (Real Data from Database)
     let promoStrip: any = null;
     let dbPromoStrip = null;
-    
+
     // 1. Try to find a strip specifically for this header category
     if (effectiveHeaderSlug && effectiveHeaderSlug !== "all") {
       dbPromoStrip = await PromoStrip.findOne({
@@ -470,15 +484,15 @@ export const getHomeContent = async (req: Request, res: Response) => {
         startDate: { $lte: new Date() },
         endDate: { $gte: new Date() },
       })
-      .populate("categoryCards.subCategoryId", "name image icon subcategoryName slug")
-      .populate("categoryCards.productId", "productName mainImage price mrp")
-      .populate("productCategoryId", "name icon image color slug")
-      .populate({
-        path: "featuredProducts",
-        select: "productName mainImage price mrp discount rating reviewsCount pack seller category",
-      })
-      .sort({ order: 1 })
-      .lean();
+        .populate("categoryCards.subCategoryId", "name image icon subcategoryName slug")
+        .populate("categoryCards.productId", "productName mainImage price mrp")
+        .populate("productCategoryId", "name icon image color slug")
+        .populate({
+          path: "featuredProducts",
+          select: "productName mainImage price mrp discount rating reviewsCount pack seller category variations",
+        })
+        .sort({ order: 1 })
+        .lean();
     }
 
     // 2. If no specific strip found (or if we are on 'all' tab), fallback to 'all' strip
@@ -489,15 +503,15 @@ export const getHomeContent = async (req: Request, res: Response) => {
         startDate: { $lte: new Date() },
         endDate: { $gte: new Date() },
       })
-      .populate("categoryCards.subCategoryId", "name image icon subcategoryName slug")
-      .populate("categoryCards.productId", "productName mainImage price mrp")
-      .populate("productCategoryId", "name icon image color slug")
-      .populate({
-        path: "featuredProducts",
-        select: "productName mainImage price mrp discount rating reviewsCount pack seller category",
-      })
-      .sort({ order: 1 })
-      .lean();
+        .populate("categoryCards.subCategoryId", "name image icon subcategoryName slug")
+        .populate("categoryCards.productId", "productName mainImage price mrp")
+        .populate("productCategoryId", "name icon image color slug")
+        .populate({
+          path: "featuredProducts",
+          select: "productName mainImage price mrp discount rating reviewsCount pack seller category variations",
+        })
+        .sort({ order: 1 })
+        .lean();
     }
 
     if (dbPromoStrip) {
@@ -517,6 +531,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
           imageUrl: p.mainImage,
           mrp: p.mrp || p.price,
           categoryId: p.category?.toString(),
+          variations: p.variations,
         })),
       };
     }

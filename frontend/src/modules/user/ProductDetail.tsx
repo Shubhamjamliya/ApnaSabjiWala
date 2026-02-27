@@ -82,11 +82,13 @@ export default function ProductDetail() {
             allImages: allImages,
             price: productData.price || 0,
             mrp: productData.mrp || productData.price || 0,
-            pack:
-              productData.variations?.[0]?.title ||
-              productData.variations?.[0]?.value ||
-              productData.smallDescription ||
-              "Standard",
+            pack: (() => {
+              const v = productData.variations?.[0];
+              if (!v) return productData.smallDescription || "Standard";
+              const vName = (v.name || '').trim();
+              const isPlaceholder = !vName || vName.toLowerCase() === 'variation' || vName.toLowerCase() === 'standard';
+              return (isPlaceholder ? (v.value || v.title || vName) : vName).trim() || productData.smallDescription || "Standard";
+            })(),
           });
 
           // Reset selected variant and image when product changes
@@ -135,7 +137,12 @@ export default function ProductDetail() {
   const { displayPrice: variantPrice, mrp: variantMrp, discount, hasDiscount } = calculateProductPrice(product, selectedVariantIndex);
 
   const variantStock = selectedVariant?.stock !== undefined ? selectedVariant.stock : (product?.stock || 0);
-  const variantTitle = selectedVariant?.title || selectedVariant?.value || product?.pack || "Standard";
+  const variantTitle = (() => {
+    if (!selectedVariant) return product?.pack || "Standard";
+    const vName = (selectedVariant.name || '').trim();
+    const isPlaceholder = !vName || vName.toLowerCase() === 'variation' || vName.toLowerCase() === 'standard';
+    return (isPlaceholder ? (selectedVariant.value || selectedVariant.title || vName) : vName).trim() || product?.pack || "Standard";
+  })();
   const isVariantAvailable = selectedVariant?.status !== "Sold out" && (variantStock > 0 || variantStock === 0); // 0 means unlimited
 
   // Get all images for gallery
@@ -474,8 +481,8 @@ export default function ProductDetail() {
                         setTimeout(() => setIsTransitioning(false), 300);
                       }}
                       className={`w-2 h-2 rounded-full transition-all ${index === selectedImageIndex
-                          ? "bg-white w-6"
-                          : "bg-white/50 hover:bg-white/75"
+                        ? "bg-white w-6"
+                        : "bg-white/50 hover:bg-white/75"
                         }`}
                       aria-label={`Go to image ${index + 1}`}
                     />
@@ -505,8 +512,8 @@ export default function ProductDetail() {
                       setTimeout(() => setIsTransitioning(false), 300);
                     }}
                     className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${index === selectedImageIndex
-                        ? "border-green-600 ring-2 ring-green-200"
-                        : "border-neutral-200 hover:border-neutral-300"
+                      ? "border-green-600 ring-2 ring-green-200"
+                      : "border-neutral-200 hover:border-neutral-300"
                       }`}>
                     <img
                       src={image}
@@ -563,7 +570,9 @@ export default function ProductDetail() {
               </label>
               <div className="flex flex-wrap gap-2">
                 {product.variations.map((variant: any, index: number) => {
-                  const variantTitle = variant.title || variant.value || `Variant ${index + 1}`;
+                  const vName = (variant.name || '').trim();
+                  const isPlaceholder = !vName || vName.toLowerCase() === 'variation' || vName.toLowerCase() === 'standard';
+                  const variantTitle = (isPlaceholder ? (variant.value || variant.title || vName) : vName).trim() || `Variant ${index + 1}`;
                   const isOutOfStock = variant.status === "Sold out" || (variant.stock === 0 && variant.stock !== undefined && variant.stock !== null);
                   const isSelected = index === selectedVariantIndex;
 
@@ -572,15 +581,18 @@ export default function ProductDetail() {
                       key={index}
                       onClick={() => setSelectedVariantIndex(index)}
                       disabled={isOutOfStock}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border-2 ${isSelected
-                          ? "border-green-600 bg-green-50 text-green-700"
-                          : isOutOfStock
-                            ? "border-neutral-200 bg-neutral-100 text-neutral-400 cursor-not-allowed"
-                            : "border-neutral-300 bg-white text-neutral-700 hover:border-green-500 hover:bg-green-50"
+                      className={`px-3 py-2 rounded-xl text-sm font-medium transition-all border-2 flex flex-col items-center gap-0.5 min-w-[70px] ${isSelected
+                        ? "border-green-600 bg-green-50 text-green-700 shadow-sm ring-1 ring-green-600/20"
+                        : isOutOfStock
+                          ? "border-neutral-100 bg-neutral-50 text-neutral-400 cursor-not-allowed"
+                          : "border-neutral-200 bg-white text-neutral-600 hover:border-green-300 hover:bg-green-50/30"
                         }`}>
-                      {variantTitle}
+                      <span className="whitespace-nowrap">{variantTitle}</span>
+                      <span className={`text-[10px] font-bold ${isSelected ? "text-green-600" : "text-neutral-500"}`}>
+                        ₹{calculateProductPrice(product, index).displayPrice}
+                      </span>
                       {isOutOfStock && (
-                        <span className="ml-1 text-xs">(Out of Stock)</span>
+                        <span className="text-[9px] uppercase tracking-tighter opacity-70">Sold Out</span>
                       )}
                     </button>
                   );
@@ -1266,8 +1278,8 @@ export default function ProductDetail() {
                     onClick={handleAddToCart}
                     disabled={!isAvailableAtLocation || (!isVariantAvailable && variantStock !== 0)}
                     className={`px-6 py-2 text-sm font-semibold h-[36px] ${!isAvailableAtLocation || (!isVariantAvailable && variantStock !== 0)
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
                       }`}
                     title={
                       !isAvailableAtLocation

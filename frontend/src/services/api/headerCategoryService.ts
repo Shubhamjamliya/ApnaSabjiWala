@@ -7,7 +7,8 @@ export interface HeaderCategory {
     image?: string; // Cloudinary URL
     iconLibrary?: string; // Optional for legacy support
     iconName?: string;
-    slug: string; // Maps to theme key
+    slug: string;
+    theme?: string; // Maps to theme key
     relatedCategory?: string;
     status: 'Published' | 'Unpublished';
     order?: number;

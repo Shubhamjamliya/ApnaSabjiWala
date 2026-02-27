@@ -19,6 +19,7 @@ export const getAdminHeaderCategories = async (
         await HeaderCategory.create({
           name: "HOME",
           slug: "all",
+          theme: "all",
           status: "Published",
           order: -100
         });
@@ -61,6 +62,7 @@ export const createHeaderCategory = async (req: Request, res: Response) => {
       iconLibrary,
       iconName,
       slug,
+      theme,
       relatedCategory,
       status,
       order,
@@ -79,6 +81,7 @@ export const createHeaderCategory = async (req: Request, res: Response) => {
       iconLibrary,
       iconName,
       slug,
+      theme: theme || slug, // Fallback to slug for backward compatibility
       relatedCategory,
       status,
       order,
@@ -101,6 +104,7 @@ export const updateHeaderCategory = async (req: Request, res: Response) => {
       iconLibrary,
       iconName,
       slug,
+      theme,
       relatedCategory,
       status,
       order,
@@ -123,6 +127,7 @@ export const updateHeaderCategory = async (req: Request, res: Response) => {
       category.iconLibrary = iconLibrary || category.iconLibrary;
       category.iconName = iconName || category.iconName;
       category.slug = slug || category.slug;
+      category.theme = theme || category.theme;
       category.relatedCategory = relatedCategory; // Allow clearing it (undefined or null or empty string)
       category.status = status || category.status;
       category.order = order !== undefined ? order : category.order;

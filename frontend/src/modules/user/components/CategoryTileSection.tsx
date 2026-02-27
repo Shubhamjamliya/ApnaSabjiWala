@@ -95,9 +95,12 @@ export default function CategoryTileSection({
       <div className="px-4 md:px-6 lg:px-8 overflow-visible">
         <div className={`grid ${gridCols} ${gapClass} overflow-visible auto-rows-fr`}>
           {tiles.map((tile) => {
-            const images =
-              tile.productImages || (tile.image ? [tile.image] : []);
-            const hasImages = images.filter(Boolean).length > 0;
+            // Prioritize the main image (logo/banner) if available, otherwise fallback to product grid
+            const images = tile.image
+              ? [tile.image]
+              : (tile.productImages && tile.productImages.length > 0 ? tile.productImages : []);
+
+            const hasImages = images.length > 0 && images.some(img => !!img);
 
             const isShopOrSeller = tile.type === "shop" || tile.type === "seller" || (tile as any).sellerId;
 

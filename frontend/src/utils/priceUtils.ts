@@ -21,7 +21,19 @@ export const calculateProductPrice = (product: any, variationSelector?: number |
   if (typeof variationSelector === 'number') {
     variation = product.variations?.[variationSelector];
   } else if (typeof variationSelector === 'string') {
-    variation = product.variations?.find((v: any) => (v._id === variationSelector || v.id === variationSelector));
+    variation = product.variations?.find((v: any) =>
+      v._id === variationSelector ||
+      v.id === variationSelector ||
+      v.name === variationSelector ||
+      v.value === variationSelector ||
+      v.title === variationSelector ||
+      v.pack === variationSelector
+    );
+
+    // Fallback for 'Standard' to first variation if no exact match
+    if (!variation && variationSelector === 'Standard' && product.variations?.length > 0) {
+      variation = product.variations[0];
+    }
   }
 
   // Fallback to first variation if no specific one selected/found but variations exist
@@ -34,8 +46,8 @@ export const calculateProductPrice = (product: any, variationSelector?: number |
   const displayPrice = (variation?.discPrice && variation.discPrice > 0)
     ? variation.discPrice
     : (product.discPrice && product.discPrice > 0)
-    ? product.discPrice
-    : (variation?.price || product.price || 0);
+      ? product.discPrice
+      : (variation?.price || product.price || 0);
 
   const mrp = variation?.price || product.mrp || product.compareAtPrice || product.price || 0;
 

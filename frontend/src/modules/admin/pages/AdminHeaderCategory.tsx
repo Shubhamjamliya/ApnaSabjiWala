@@ -100,10 +100,14 @@ export default function AdminHeaderCategory() {
         setUploadingImage(false);
       }
 
+      const isHome = headerCategoryName.toUpperCase() === 'HOME' ||
+        headerCategories.find(c => c._id === editingId)?.slug === 'all';
+
       const payload = {
         name: headerCategoryName,
         image: finalImageUrl,
-        slug: selectedTheme, // Theme identifier
+        slug: isHome ? 'all' : headerCategoryName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-'),
+        theme: selectedTheme,
         relatedCategory: selectedCategory, // Slug of the linked product category
         status: selectedStatus,
         order: headerCategoryOrder,
@@ -134,7 +138,7 @@ export default function AdminHeaderCategory() {
     setHeaderCategoryImage(category.image || '');
     setImagePreview(category.image || '');
     setSelectedCategory(category.relatedCategory || '');
-    setSelectedTheme(category.slug);
+    setSelectedTheme(category.theme || category.slug);
     setSelectedStatus(category.status);
     setHeaderCategoryOrder(category.order || 1);
     setImageFile(null);
@@ -282,7 +286,7 @@ export default function AdminHeaderCategory() {
                 Brand Color:
               </label>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 bg-neutral-50 p-3 rounded-xl border border-neutral-200">
-                {themeOptions.filter(t => t !== 'all').map(themeKey => {
+                {themeOptions.map(themeKey => {
                   const themeObj = themes[themeKey];
                   const color = themeObj.primary[0];
                   const isSelected = selectedTheme === themeKey;
@@ -397,57 +401,58 @@ export default function AdminHeaderCategory() {
               <tbody className="divide-y divide-neutral-100">
                 {displayedCategories.map((category) => {
                   const isHome = category.slug === 'all' || category.name.toUpperCase() === 'HOME';
-                  
+
                   return (
-                  <tr key={category._id} className="hover:bg-teal-50/30 transition-colors group">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-neutral-50 rounded-lg flex items-center justify-center p-1 border border-neutral-100">
-                          <img src={category.image || '/placeholder.png'} alt="" className="max-w-full max-h-full object-contain" />
+                    <tr key={category._id} className="hover:bg-teal-50/30 transition-colors group">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-neutral-50 rounded-lg flex items-center justify-center p-1 border border-neutral-100">
+                            <img src={category.image || '/placeholder.png'} alt="" className="max-w-full max-h-full object-contain" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-neutral-800">
+                              {category.name}
+                              {isHome && <span className="text-[9px] font-bold text-teal-600 bg-teal-100 px-1 py-0.5 rounded ml-1">DEFAULT</span>}
+                            </p>
+                            <p className="text-[10px] text-teal-600 font-medium">L: {category.relatedCategory || 'All Categories'}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-bold text-neutral-800">
-                            {category.name}
-                            {isHome && <span className="text-[9px] font-bold text-teal-600 bg-teal-100 px-1 py-0.5 rounded ml-1">DEFAULT</span>}
-                          </p>
-                          <p className="text-[10px] text-teal-600 font-medium">L: {category.relatedCategory || 'All Categories'}</p>
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <span className="text-xs font-bold text-neutral-600 bg-neutral-100 px-2 py-1 rounded">
+                          {isHome ? '-1' : (category.order || '-')}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <div className="w-4 h-4 rounded-full mx-auto shadow-sm border border-black/10" style={{ background: themes[category.theme || category.slug]?.primary[0] || '#ccc' }} />
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${category.status === 'Published' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-neutral-100 text-neutral-500'}`}>
+                          {category.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex justify-end gap-1">
+                          <button
+                            onClick={() => handleEdit(category)}
+                            className="p-1.5 text-neutral-400 hover:text-teal-600 hover:bg-white rounded-lg transition-all"
+                            title="Edit"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                          </button>
+                          <button
+                            onClick={() => !isHome && handleDelete(category._id)}
+                            disabled={isHome}
+                            title={isHome ? "Default category cannot be deleted" : "Delete"}
+                            className={`p-1.5 rounded-lg transition-all ${isHome ? 'text-neutral-200 cursor-not-allowed' : 'text-neutral-400 hover:text-red-500 hover:bg-white'}`}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"></path></svg>
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-center">
-                      <span className="text-xs font-bold text-neutral-600 bg-neutral-100 px-2 py-1 rounded">
-                        {isHome ? '-1' : (category.order || '-')}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-center">
-                      <div className="w-4 h-4 rounded-full mx-auto shadow-sm border border-black/10" style={{ background: themes[category.slug]?.primary[0] || '#ccc' }} />
-                    </td>
-                    <td className="px-5 py-4 text-center">
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${category.status === 'Published' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-neutral-100 text-neutral-500'}`}>
-                        {category.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex justify-end gap-1">
-                        <button
-                          onClick={() => handleEdit(category)}
-                          className="p-1.5 text-neutral-400 hover:text-teal-600 hover:bg-white rounded-lg transition-all"
-                          title="Edit"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        </button>
-                        <button
-                          onClick={() => !isHome && handleDelete(category._id)}
-                          disabled={isHome}
-                          title={isHome ? "Default category cannot be deleted" : "Delete"}
-                          className={`p-1.5 rounded-lg transition-all ${isHome ? 'text-neutral-200 cursor-not-allowed' : 'text-neutral-400 hover:text-red-500 hover:bg-white'}`}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"></path></svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )})}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

@@ -428,6 +428,47 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   className="flex-1 h-full"
                 >
                   <Link
+                    to="/order-again"
+                    className="flex flex-col items-center justify-center h-full relative"
+                  >
+                    <div className="flex flex-col items-center justify-center relative z-10">
+                      <motion.svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        animate={isActive('/order-again') ? {
+                          scale: [1, 1.1, 1],
+                          y: [0, -2, 0]
+                        } : {}}
+                        transition={{
+                          duration: 0.4,
+                          ease: "easeInOut",
+                          repeat: isActive('/order-again') ? Infinity : 0,
+                          repeatDelay: 2
+                        }}
+                      >
+                        {isActive('/order-again') ? (
+                          <path d="M5 8V6C5 4.34315 6.34315 3 8 3H16C17.6569 3 19 4.34315 19 6V8H21C21.5523 8 22 8.44772 22 9V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V9C2 8.44772 2.44772 8 3 8H5Z" fill="#22c55e" stroke="#1f2937" strokeWidth="2" strokeLinejoin="round" />
+                        ) : (
+                          <path d="M5 8V6C5 4.34315 6.34315 3 8 3H16C17.6569 3 19 4.34315 19 6V8H21C21.5523 8 22 8.44772 22 9V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V9C2 8.44772 2.44772 8 3 8H5Z" stroke="#6b7280" strokeWidth="2" strokeLinejoin="round" fill="none" />
+                        )}
+                      </motion.svg>
+                    </div>
+                    <span className={`text-xs mt-0.5 relative z-10 ${isActive('/order-again') ? 'font-medium text-neutral-700' : 'font-medium text-neutral-500'}`}>
+                      Order Again
+                    </span>
+                  </Link>
+                </motion.div>
+
+                {/* Tomorrow */}
+                <motion.div
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: 0.1 }}
+                  className="flex-1 h-full"
+                >
+                  <Link
                     to="/tomorrow-veg-booking"
                     className="flex flex-col items-center justify-center h-full relative"
                   >
@@ -461,7 +502,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="#6b7280" strokeWidth="2" fill="none" />
                             <line x1="16" y1="2" x2="16" y2="6" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" />
                             <line x1="8" y1="2" x2="8" y2="6" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" />
-                            <line x1="3" y1="10" x2="21" y2="10" stroke="#6b7280" strokeWidth="2" />
+                            <line x1="3" y1="10" x2="21" y2="10" stroke="#6b7280" strokeWidth="2" fill="none" />
                           </>
                         )}
                       </motion.svg>

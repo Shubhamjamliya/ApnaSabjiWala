@@ -11,6 +11,8 @@ import Button from '../../../components/ui/button';
 import Badge from '../../../components/ui/badge';
 import StarRating from '../../../components/ui/StarRating';
 import { calculateProductPrice } from '../../../utils/priceUtils';
+import { getVariationColor } from '../../../utils/variationUtils';
+import VariationSelectionModal from './VariationSelectionModal';
 
 interface ProductCardProps {
   product: Product;
@@ -30,6 +32,7 @@ interface ProductCardProps {
   onDecrease?: (product: Product) => void;
   onIncrease?: (product: Product) => void;
 }
+
 
 export default function ProductCard({
   product,
@@ -56,6 +59,7 @@ export default function ProductCard({
   const { showToast } = useToast(); // Get toast function
   const imageRef = useRef<HTMLImageElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
+  const [isVariationModalOpen, setIsVariationModalOpen] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   // Single ref to track any cart operation in progress for this product
   const isOperationPendingRef = useRef(false);
@@ -107,8 +111,8 @@ export default function ProductCard({
         showToast('Removed from wishlist');
       } else {
         if (!location?.latitude || !location?.longitude) {
-           showToast('Location is required to add items to wishlist', 'error');
-           return;
+          showToast('Location is required to add items to wishlist', 'error');
+          return;
         }
         // Optimistic update
         setIsWishlisted(true);
@@ -127,7 +131,22 @@ export default function ProductCard({
     }
   };
 
-  const cartItem = cart.items.find((item) => item?.product && (item.product.id === (product as any).id || item.product._id === (product as any).id || item.product.id === product._id));
+  // Get quantity in cart - properly matching the default variation for this card
+  const cartItem = cart.items.find((item) => {
+    if (!item?.product) return false;
+    const itemProductId = item.product.id || item.product._id;
+    const productId = (product as any).id || product._id;
+    if (itemProductId !== productId) return false;
+
+    // If product has variations, the card defaults to the first one
+    if (product.variations && product.variations.length > 0) {
+      const defaultVariant = product.variations[0];
+      const defaultVariantId = defaultVariant?._id || (defaultVariant as any).id || (defaultVariant as any).name || "Standard";
+      const itemVariant = (item.product as any).variantId || (item.product as any).selectedVariant?._id || (item.product as any).variantTitle || (item.product as any).pack;
+      return itemVariant === defaultVariantId;
+    }
+    return true;
+  });
   const inCartQty = cartItem?.quantity || 0;
 
   // Get Price and MRP using utility
@@ -154,6 +173,10 @@ export default function ProductCard({
     isOperationPendingRef.current = true;
 
     try {
+      if (product.variations && product.variations.length > 1) {
+        setIsVariationModalOpen(true);
+        return;
+      }
       await addToCart(product, addButtonRef.current);
     } finally {
       // Reset the flag after the operation truly completes
@@ -197,6 +220,11 @@ export default function ProductCard({
     isOperationPendingRef.current = true;
 
     try {
+      if (product.variations && product.variations.length > 1) {
+        setIsVariationModalOpen(true);
+        return;
+      }
+
       if (onIncrease) {
         onIncrease(product);
         return;
@@ -217,10 +245,17 @@ export default function ProductCard({
   const handleCustomAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+
+    // If there is more than 1 variation, we must show the modal first
+    if (product.variations && product.variations.length > 1) {
+      setIsVariationModalOpen(true);
+      return;
+    }
+
     if (onAdd) {
-       onAdd(product);
+      onAdd(product);
     } else {
-       handleAdd(e);
+      handleAdd(e);
     }
   };
 
@@ -294,7 +329,13 @@ export default function ProductCard({
               variant="outline"
               className="absolute top-2 right-2 z-10 text-xs px-2 py-1 font-medium"
             >
-              {product.variations?.[0]?.value || product.pack}
+              {(() => {
+                const v = product.variations?.[0];
+                if (!v) return (product.pack || 'Standard').trim();
+                const vName = (v.name || '').trim();
+                const isPlaceholder = !vName || vName.toLowerCase() === 'variation' || vName.toLowerCase() === 'standard';
+                return (isPlaceholder ? (v.value || v.title || vName) : vName).trim() || (product.pack || 'Standard').trim();
+              })()}
             </Badge>
           )}
 
@@ -347,11 +388,10 @@ export default function ProductCard({
                     size="sm"
                     disabled={product.isAvailable === false}
                     onClick={handleCustomAdd}
-                    className={`w-full border rounded-full font-semibold text-xs h-7 px-3 flex items-center justify-center uppercase tracking-wide ${
-                      product.isAvailable === false
+                    className={`w-full border rounded-full font-semibold text-xs h-7 px-3 flex items-center justify-center uppercase tracking-wide ${product.isAvailable === false
                       ? 'border-neutral-300 text-neutral-400 bg-neutral-50 cursor-not-allowed'
                       : 'border-green-600 text-green-600 bg-transparent hover:bg-green-50'
-                    }`}
+                      }`}
                   >
                     {product.isAvailable === false ? 'Out of Range' : 'ADD'}
                   </Button>
@@ -379,9 +419,8 @@ export default function ProductCard({
                     e.stopPropagation();
                     handleIncrease(e);
                   }}
-                  className={`w-5 h-5 p-0 bg-transparent text-green-600 shadow-none ${
-                    product.isAvailable === false ? 'text-neutral-300 cursor-not-allowed' : 'hover:bg-green-50'
-                  }`}
+                  className={`w-5 h-5 p-0 bg-transparent text-green-600 shadow-none ${product.isAvailable === false ? 'text-neutral-300 cursor-not-allowed' : 'hover:bg-green-50'
+                    }`}
                   aria-label="Increase quantity"
                 >
                   +
@@ -395,11 +434,29 @@ export default function ProductCard({
           {categoryStyle ? (
             // Category Style Layout: Quantity, Name, Time, % off, Price
             <>
-              {/* 1. Quantity */}
-              {!showPackBadge && (product.pack || product.variations?.[0]?.value) && (
-                <p className="text-[9px] text-neutral-600 mb-0.5 leading-tight">
-                  {product.variations?.[0]?.value || product.pack}
-                </p>
+              {/* 1. Variations/Quantity */}
+              {product.variations && product.variations.length > 0 ? (
+                <div className="flex flex-wrap gap-1 mb-1">
+                  {product.variations.map((v: any, i: number) => {
+                    const vName = (v.name || '').trim();
+                    const isPlaceholder = !vName || vName.toLowerCase() === 'variation' || vName.toLowerCase() === 'standard';
+                    const label = (isPlaceholder ? (v.value || v.title || vName) : vName).trim() || 'Standard';
+                    return (
+                      <span
+                        key={i}
+                        className={`inline-block ${getVariationColor(label)} text-[7px] font-bold px-1 py-0.5 rounded border leading-tight uppercase`}
+                      >
+                        {label}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="mb-0.5">
+                  <span className="inline-block bg-neutral-100 text-neutral-600 text-[8px] font-bold px-1.5 py-0.5 rounded border border-neutral-200 leading-tight uppercase">
+                    {(product.pack || '').trim() || '1 unit'}
+                  </span>
+                </div>
               )}
 
               {/* 2. Name */}
@@ -450,10 +507,28 @@ export default function ProductCard({
           ) : (
             // Non-category style layout (original)
             <>
-              {!showPackBadge && (
-                <p className={`${compact ? 'text-[10px] md:text-xs' : 'text-xs md:text-sm'} text-neutral-500 mb-1`}>
-                    {product.variations?.[0]?.value || product.pack}
-                </p>
+              {product.variations && product.variations.length > 0 ? (
+                <div className={`flex flex-wrap gap-1.5 ${compact ? 'mb-1' : 'mb-2'}`}>
+                  {product.variations.map((v: any, i: number) => {
+                    const vName = (v.name || '').trim();
+                    const isPlaceholder = !vName || vName.toLowerCase() === 'variation' || vName.toLowerCase() === 'standard';
+                    const label = (isPlaceholder ? (v.value || v.title || vName) : vName).trim() || '1 Unit';
+                    return (
+                      <span
+                        key={i}
+                        className={`inline-block ${getVariationColor(label)} text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 rounded border leading-tight uppercase`}
+                      >
+                        {label}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className={`${compact ? 'mb-0.5' : 'mb-1'}`}>
+                  <span className="inline-block bg-neutral-50 text-neutral-500 text-[10px] md:text-xs px-1.5 py-0.5 rounded border border-neutral-100 font-medium leading-tight">
+                    {(product.pack || '').trim() || '1 Unit'}
+                  </span>
+                </div>
               )}
 
               <h3 className={`${compact ? 'text-xs md:text-sm' : 'text-sm md:text-base'} font-semibold text-neutral-900 ${compact ? 'mb-1' : 'mb-2'} line-clamp-2 ${compact ? 'min-h-[2rem]' : 'min-h-[2.5rem]'}`}>
@@ -513,11 +588,10 @@ export default function ProductCard({
                   size="sm"
                   disabled={product.isAvailable === false}
                   onClick={handleCustomAdd}
-                  className={`w-full border h-8 text-xs font-semibold uppercase tracking-wide ${
-                    product.isAvailable === false
+                  className={`w-full border h-8 text-xs font-semibold uppercase tracking-wide ${product.isAvailable === false
                     ? 'border-neutral-300 text-neutral-400 bg-neutral-50 cursor-not-allowed'
                     : 'border-green-600 text-green-600 hover:bg-green-50'
-                  }`}
+                    }`}
                 >
                   {product.isAvailable === false ? 'Out of Range' : 'Add'}
                 </Button>
@@ -543,9 +617,8 @@ export default function ProductCard({
                   size="icon"
                   disabled={product.isAvailable === false}
                   onClick={handleIncrease}
-                  className={`w-6 h-6 p-0 bg-transparent text-green-600 shadow-none ${
-                    product.isAvailable === false ? 'text-neutral-300 cursor-not-allowed' : 'hover:bg-green-50'
-                  }`}
+                  className={`w-6 h-6 p-0 bg-transparent text-green-600 shadow-none ${product.isAvailable === false ? 'text-neutral-300 cursor-not-allowed' : 'hover:bg-green-50'
+                    }`}
                   aria-label="Increase quantity"
                 >
                   +
@@ -555,6 +628,14 @@ export default function ProductCard({
           </div>
         </div>
       )}
+
+      <VariationSelectionModal
+        product={product}
+        open={isVariationModalOpen}
+        onOpenChange={setIsVariationModalOpen}
+        sourceElement={addButtonRef.current}
+        onAdd={onAdd}
+      />
     </motion.div>
   );
 }

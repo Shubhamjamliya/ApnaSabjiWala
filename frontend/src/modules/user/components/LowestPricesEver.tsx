@@ -3,11 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProducts } from '../../../services/api/customerProductService';
 
-import { getTheme } from '../../../utils/themes';
+import { calculateProductPrice } from '../../../utils/priceUtils';
+import { useThemeContext } from '../../../context/ThemeContext';
 import { useCart } from '../../../context/CartContext';
 import { Product } from '../../../types/domain';
 import { useWishlist } from '../../../hooks/useWishlist';
-import { calculateProductPrice } from '../../../utils/priceUtils';
+import VariationSelectionModal from './VariationSelectionModal';
 
 interface LowestPricesEverProps {
   activeTab?: string;
@@ -35,6 +36,8 @@ const ProductCard = memo(({
 }) => {
   const navigate = useNavigate();
   const { isWishlisted, toggleWishlist } = useWishlist(product.id);
+  const [isVariationModalOpen, setIsVariationModalOpen] = useState(false);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
 
   // Get Price and MRP using utility
   const { displayPrice, mrp, discount, hasDiscount } = calculateProductPrice(product);
@@ -114,6 +117,7 @@ const ProductCard = memo(({
                 {inCartQty === 0 ? (
                   <motion.button
                     key="add-button"
+                    ref={addButtonRef}
                     type="button"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -123,7 +127,11 @@ const ProductCard = memo(({
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      onAddToCart(product, e.currentTarget);
+                      if (product.variations && product.variations.length > 1) {
+                        setIsVariationModalOpen(true);
+                      } else {
+                        onAddToCart(product, e.currentTarget);
+                      }
                     }}
                     className={`bg-white/95 backdrop-blur-sm text-[10px] font-semibold px-2 py-1 rounded shadow-md transition-colors ${product.isAvailable === false
                       ? 'text-neutral-400 border-2 border-neutral-300 cursor-not-allowed'
@@ -268,6 +276,12 @@ const ProductCard = memo(({
           </Link>
         </div>
       </div>
+      <VariationSelectionModal
+        product={product}
+        open={isVariationModalOpen}
+        onOpenChange={setIsVariationModalOpen}
+        sourceElement={addButtonRef.current}
+      />
     </div>
   );
 }, (prevProps, nextProps) => {
@@ -282,7 +296,8 @@ const ProductCard = memo(({
 ProductCard.displayName = 'ProductCard';
 
 export default function LowestPricesEver({ activeTab = 'all', products: adminProducts }: LowestPricesEverProps) {
-  const theme = getTheme(activeTab);
+  const { currentTheme } = useThemeContext();
+  const theme = currentTheme;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { cart } = useCart();
   const [fontLoaded, setFontLoaded] = useState(false);
@@ -337,7 +352,13 @@ export default function LowestPricesEver({ activeTab = 'all', products: adminPro
         productName = productName.replace(/\s*-\s*(Fresh|Quality|Assured|Premium|Best|Top|Hygienic|Carefully|Selected).*$/i, '').trim();
 
         // Get pack without description
-        let packValue = p.variations?.[0]?.title || p.pack || 'Standard';
+        let packValue = (() => {
+          const v = p.variations?.[0];
+          if (!v) return (p.pack || p.smallDescription || '').trim();
+          const vName = (v.name || '').trim();
+          const isPlaceholder = !vName || vName.toLowerCase() === 'variation' || vName.toLowerCase() === 'standard';
+          return (isPlaceholder ? (v.value || v.title || vName) : vName).trim() || (p.pack || p.smallDescription || '').trim();
+        })();
         // Remove description from pack if it contains it
         if (packValue && packValue.includes(' - ')) {
           packValue = packValue.split(' - ')[0].trim();
@@ -353,8 +374,9 @@ export default function LowestPricesEver({ activeTab = 'all', products: adminPro
         };
       });
       setProducts(mappedProducts);
+      console.log('LowestPricesEver Products Variations:', mappedProducts.map(p => ({ name: p.name, variations: p.variations })));
     } else {
-        setProducts([]);
+      setProducts([]);
     }
   }, [adminProducts]);
 
@@ -366,9 +388,9 @@ export default function LowestPricesEver({ activeTab = 'all', products: adminPro
     // filtered list of products for the currently active tab. 
     // Note: The backend already handles the fallback to HOME items if nothing is explicitly set.
     if (adminProducts && adminProducts.length > 0) {
-      return products.slice(0, 20); 
+      return products.slice(0, 20);
     }
-    
+
     // Fallback if network fails completely or no products are configured anywhere
     return [];
   };
