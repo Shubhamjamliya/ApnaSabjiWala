@@ -81,7 +81,6 @@ export default function Home() {
 
           if (response.data.bestsellers) {
             setProducts(response.data.bestsellers);
-            console.log('Home Bestsellers Variations:', response.data.bestsellers.map((p: any) => ({ name: p.productName || p.name, variations: p.variations })));
           }
         } else {
           setError("Failed to load content. Please try again.");
@@ -367,7 +366,7 @@ export default function Home() {
         {activeTab === "all" && homeData.categories && homeData.categories.length > 0 && (
           <div className="mt-2 md:mt-4">
             <CategoryTileSection
-              title="Categories"
+              title="Shop by Category"
               tiles={homeData.categories}
               columns={4}
               showProductCount={false}

@@ -21,22 +21,35 @@ router.post('/create-order', authenticate, requireUserType('Customer'), async (r
         }
 
         const order = await Order.findById(orderId);
-        if (!order) {
-            return res.status(404).json({
-                success: false,
-                message: 'Order not found',
-            });
+
+        let totalToPay = 0;
+        let customerId;
+
+        if (order) {
+            totalToPay = order.total;
+            customerId = order.customer.toString();
+        } else {
+            const NextDayOrder = (await import("../models/NextDayOrder")).default;
+            const ndOrder = await NextDayOrder.findById(orderId);
+            if (!ndOrder) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Order not found',
+                });
+            }
+            totalToPay = ndOrder.total;
+            customerId = ndOrder.customer.toString();
         }
 
         // Verify order belongs to customer
-        if (order.customer.toString() !== req.user!.userId) {
+        if (customerId !== req.user!.userId) {
             return res.status(403).json({
                 success: false,
                 message: 'Unauthorized access to order',
             });
         }
 
-        const result = await createRazorpayOrder(orderId, order.total);
+        const result = await createRazorpayOrder(orderId, totalToPay);
 
         if (!result.success) {
             return res.status(400).json(result);
@@ -67,15 +80,25 @@ router.post('/verify', authenticate, requireUserType('Customer'), async (req: Re
         }
 
         const order = await Order.findById(orderId);
-        if (!order) {
-            return res.status(404).json({
-                success: false,
-                message: 'Order not found',
-            });
+
+        let customerId;
+
+        if (order) {
+            customerId = order.customer.toString();
+        } else {
+            const NextDayOrder = (await import("../models/NextDayOrder")).default;
+            const ndOrder = await NextDayOrder.findById(orderId);
+            if (!ndOrder) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Order not found',
+                });
+            }
+            customerId = ndOrder.customer.toString();
         }
 
         // Verify order belongs to customer
-        if (order.customer.toString() !== req.user!.userId) {
+        if (customerId !== req.user!.userId) {
             return res.status(403).json({
                 success: false,
                 message: 'Unauthorized access to order',
@@ -86,7 +109,8 @@ router.post('/verify', authenticate, requireUserType('Customer'), async (req: Re
             orderId,
             razorpayOrderId,
             razorpayPaymentId,
-            razorpaySignature
+            razorpaySignature,
+            !order // Pass boolean flag indicating if it's a next day order (if original order lookup failed)
         );
 
         if (!result.success) {

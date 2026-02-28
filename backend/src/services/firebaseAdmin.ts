@@ -96,9 +96,10 @@ export async function sendPushNotification(
 
         // Log individual failures for debugging
         if (response.failureCount > 0) {
+            console.log('❌ Detailed Failure Log:');
             response.responses.forEach((resp, idx) => {
                 if (!resp.success) {
-                    console.error(`Failed to send to token ${idx}:`, resp.error?.message);
+                    console.error(`   Token Index ${idx}: [${tokens[idx].substring(0, 15)}...] -> Error: ${resp.error?.message} (${(resp.error as any)?.code})`);
                 }
             });
         }

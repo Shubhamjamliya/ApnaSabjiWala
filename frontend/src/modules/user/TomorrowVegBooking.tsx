@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLoading } from "../../context/LoadingContext";
 import { useToast } from "../../context/ToastContext";
+import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api/config";
 import ProductCard from "./components/ProductCard";
+import RazorpayCheckout from "../../components/RazorpayCheckout";
 
 interface Slot {
   _id: string;
@@ -42,6 +44,7 @@ export default function TomorrowVegBooking() {
   const navigate = useNavigate();
   const { startRouteLoading, stopRouteLoading } = useLoading();
   const { showToast } = useToast();
+  const { user } = useAuth();
 
   const [slots, setSlots] = useState<Slot[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
@@ -191,6 +194,9 @@ export default function TomorrowVegBooking() {
 
   const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
+  const [showRazorpayCheckout, setShowRazorpayCheckout] = useState(false);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+
   const handleBooking = async () => {
     if (!selectedSlot) {
       showToast("Please select a delivery slot", "error");
@@ -204,16 +210,15 @@ export default function TomorrowVegBooking() {
     try {
       startRouteLoading();
       const payload = {
-        items: cart.map(i => ({ product: i._id, quantity: i.quantity, price: i.price })),
+        items: cart.map(i => ({ product: i._id, quantity: i.quantity, price: i.price, variantId: (i as any).variantId, variantTitle: (i as any).variantTitle || (i as any).pack })),
         slotId: selectedSlot,
-        paymentMethod: "COD"
+        paymentMethod: "Online"
       };
 
       const res = await api.post("/next-day/order", payload);
-      if (res.data.success) {
-        showToast("Order placed successfully for tomorrow!", "success");
-        setCart([]);
-        navigate("/orders");
+      if (res.data.success && res.data.orderId) {
+        setPendingOrderId(res.data.orderId);
+        setShowRazorpayCheckout(true);
       } else {
         showToast(res.data.message || "Booking failed", "error");
       }
@@ -364,6 +369,32 @@ export default function TomorrowVegBooking() {
           </button>
         </div>
       )}
+
+      {
+        showRazorpayCheckout && pendingOrderId && user && (
+          <RazorpayCheckout
+            orderId={pendingOrderId}
+            amount={cartTotal}
+            customerDetails={{
+              name: user.name || 'Customer',
+              email: user.email || '',
+              phone: user.phone || '',
+            }}
+            onSuccess={(paymentId) => {
+              setShowRazorpayCheckout(false);
+              setCart([]);
+              setPendingOrderId(null);
+              showToast("Order placed successfully for tomorrow!", "success");
+              navigate("/orders");
+            }}
+            onFailure={(error) => {
+              setShowRazorpayCheckout(false);
+              showToast(error || 'Payment failed. Please try again.', 'error');
+              // If payment fails, maybe navigate or just let them retry?
+            }}
+          />
+        )
+      }
     </div>
   );
 }

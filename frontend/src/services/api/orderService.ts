@@ -110,3 +110,19 @@ export const updateOrderStatus = async (id: string, data: UpdateOrderStatusData)
   const response = await api.patch<ApiResponse<{ id: string; status: string }>>(`/orders/${id}/status`, data);
   return response.data;
 };
+
+/**
+ * Get Next Day order by ID
+ */
+export const getNextDayOrderById = async (id: string): Promise<ApiResponse<OrderDetail>> => {
+  const response = await api.get<ApiResponse<OrderDetail>>(`/next-day/seller/orders/${id}`);
+  return response.data;
+};
+
+/**
+ * Update Next Day order status
+ */
+export const updateNextDayOrderStatus = async (id: string, data: UpdateOrderStatusData): Promise<ApiResponse<{ id: string; status: string }>> => {
+  const response = await api.patch<ApiResponse<{ id: string; status: string }>>(`/next-day/seller/orders/${id}/status`, data);
+  return response.data;
+};

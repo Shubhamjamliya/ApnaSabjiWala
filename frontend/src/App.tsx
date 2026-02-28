@@ -78,6 +78,7 @@ const DeliverySignUp = lazy(() => import("./modules/delivery/pages/DeliverySignU
 const SellerLayout = lazy(() => import("./modules/seller/components/SellerLayout"));
 const SellerDashboard = lazy(() => import("./modules/seller/pages/SellerDashboard"));
 const SellerOrders = lazy(() => import("./modules/seller/pages/SellerOrders"));
+const SellerNextDayOrders = lazy(() => import("./modules/seller/pages/SellerNextDayOrders"));
 const SellerOrderDetail = lazy(() => import("./modules/seller/pages/SellerOrderDetail"));
 const SellerCategory = lazy(() => import("./modules/seller/pages/SellerCategory"));
 const SellerSubCategory = lazy(() => import("./modules/seller/pages/SellerSubCategory"));
@@ -281,6 +282,7 @@ function App() {
                                       <Route path="" element={<SellerDashboard />} />
                                       <Route path="orders" element={<SellerOrders />} />
                                       <Route path="orders/:id" element={<SellerOrderDetail />} />
+                                      <Route path="next-day-orders" element={<SellerNextDayOrders />} />
                                       <Route path="category" element={<SellerCategory />} />
                                       <Route path="subcategory" element={<SellerSubCategory />} />
                                       <Route path="product/add" element={<SellerAddProduct />} />

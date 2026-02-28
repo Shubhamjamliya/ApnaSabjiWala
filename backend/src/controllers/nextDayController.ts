@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
 import Product from "../models/Product";
+import Category from "../models/Category";
+import SubCategory from "../models/SubCategory";
+import Customer from "../models/Customer";
+import NextDayOrder from "../models/NextDayOrder";
 import DeliverySlot from "../models/DeliverySlot";
 
 // Hardcoded for now, can be moved to AppSettings later
@@ -45,10 +49,19 @@ export const getNextDaySlots = async (_req: Request, res: Response) => {
 
     // Fallback: If no slots created by admin for tomorrow, provide default morning slots
     if (slots.length === 0) {
-      slots = [
-        { _id: 'default-1', startTime: '07:00 AM', endTime: '09:00 AM', maxCapacity: 20, bookedCount: 0 } as any,
-        { _id: 'default-2', startTime: '09:00 AM', endTime: '11:00 AM', maxCapacity: 20, bookedCount: 0 } as any
-      ];
+      try {
+        const defaultSlotsToCreate = [
+          { date: tomorrow, startTime: '07:00 AM', endTime: '09:00 AM', maxCapacity: 20, bookedCount: 0, isActive: true },
+          { date: tomorrow, startTime: '09:00 AM', endTime: '11:00 AM', maxCapacity: 20, bookedCount: 0, isActive: true }
+        ];
+        slots = await DeliverySlot.insertMany(defaultSlotsToCreate);
+      } catch (e) {
+        // In case multiple concurrent requests try to insert default slots simultaneously
+        slots = await DeliverySlot.find({
+          date: { $gte: tomorrow, $lt: nextDay },
+          isActive: true,
+        }).sort({ startTime: 1 });
+      }
     }
 
     // Transform to show availability
@@ -109,9 +122,6 @@ export const getNextDayProducts = async (_req: Request, res: Response) => {
 export const getNextDayContent = async (_req: Request, res: Response) => {
   try {
     // 1. Fetch all active root categories
-    const Category = (await import("../models/Category")).default;
-    const SubCategory = (await import("../models/SubCategory")).default;
-
     const categories = await Category.find({ status: "Active", parentId: null })
       .sort({ order: 1 })
       .lean();
@@ -122,7 +132,7 @@ export const getNextDayContent = async (_req: Request, res: Response) => {
       status: "Active",
       publish: true
     })
-      .select("productName price mainImage stock nextDay unit category subcategory")
+      .select("productName price discPrice compareAtPrice mainImage galleryImages stock nextDay unit category subcategory variations variationType pack discount totalAllowedQuantity isReturnable shelfLife marketer")
       .lean();
 
     // 3. Build hierarchy: Category -> Subcategory -> Products
@@ -138,17 +148,27 @@ export const getNextDayContent = async (_req: Request, res: Response) => {
       if (catProducts.length === 0) return null;
 
       const mappedProducts = catProducts.map(p => {
-        const price = p.nextDay?.price || p.price;
-        const stock = p.nextDay?.stock || 0;
+        const sellingPrice = p.nextDay?.price || p.discPrice || p.price;
+        const mrpPrice = p.compareAtPrice || p.price;
+        const stock = p.nextDay?.stock !== undefined ? p.nextDay.stock : p.stock;
+
         return {
+          ...p,
           _id: p._id,
+          id: p._id,
           productName: p.productName,
           name: p.productName,
           image: p.mainImage,
-          price: price,
-          originalPrice: p.price,
+          price: sellingPrice,
+          discPrice: sellingPrice,
+          compareAtPrice: mrpPrice,
+          mrp: mrpPrice,
+          originalPrice: mrpPrice,
           stock: stock,
-          unit: p.unit
+          unit: p.unit || p.pack,
+          pack: p.pack || p.unit,
+          imageUrl: p.mainImage,
+          galleryImages: p.galleryImages || []
         };
       });
 
@@ -182,9 +202,12 @@ export const placeNextDayOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Booking closed for tomorrow" });
     }
 
-    const { items, slotId } = req.body;
-    // Note: Assuming middleware attaches req.user (Customer)
-    // const customerId = (req as any).user?._id || (req as any).user?.id;
+    const { items, slotId, paymentMethod } = req.body;
+    const customerId = (req as any).user?.userId;
+
+    if (!customerId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: "Cart is empty" });
@@ -197,35 +220,80 @@ export const placeNextDayOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Slot is full" });
     }
 
-    // Basic calculation (Simplified for this task)
-    // let subtotal = 0;
-    // Iterate items to validate price & stock (omitted deep validation for brevity, but should exist)
-    // For now assuming items have correct price passed or re-fetching
+    // Load customer
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({ success: false, message: "Customer not found" });
+    }
 
-    // Ideally re-fetch products
-    // ...
+    let subtotal = 0;
+    const orderItems = [];
+    const sellers = new Set<string>();
 
-    // Create Order
-    // We need to fetch Customer & Address details as per Order Model requirements
-    // For now assuming the frontend passes strictly necessary ids and we might have to populate
-    // simplified for brevity:
+    for (const item of items) {
+      const product: any = await Product.findById(item.product).lean();
+      if (!product) continue;
 
-    // NOTE: This part requires proper population of address, etc. which is complex in `Order.ts`
-    // I will mock the detailed creation logic or use an existing service if available.
-    // Given the task constraints, I will rely on standard order creation flow but override type.
+      const price = item.price || product.price;
+      subtotal += price * item.quantity;
 
-    // Let's increment slot count first (optimistic)
+      const sellerId = product.seller || product.sellerId || (product as any).shopId; // Ensure seller ref is populated correctly later
+      if (sellerId) sellers.add(sellerId.toString());
+
+      orderItems.push({
+        product: product._id,
+        productName: product.productName,
+        image: product.mainImage,
+        price: price,
+        quantity: item.quantity,
+        unit: product.unit,
+        pack: product.pack,
+        seller: sellerId
+      });
+    }
+
+    const timestamp = Date.now().toString();
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0");
+    const orderNumber = `NDO${timestamp}${random}`;
+
+    const newOrder = new NextDayOrder({
+      orderNumber,
+      customer: customer._id,
+      customerName: customer.name,
+      customerPhone: customer.phone,
+      address: {
+        address: customer.address || "N/A",
+        city: customer.city || "N/A",
+        pincode: customer.pincode || "123456",
+        latitude: customer.latitude,
+        longitude: customer.longitude
+      },
+      slot: slot._id,
+      deliveryDate: slot.date,
+      timeRange: slot.timeRange || `${slot.startTime} - ${slot.endTime}`,
+      items: orderItems,
+      subtotal: subtotal,
+      total: subtotal, // Add delivery charges if needed later
+      status: "Pending",
+      paymentMethod: paymentMethod || "COD",
+      paymentStatus: "Pending",
+      sellers: Array.from(sellers)
+    });
+
+    await newOrder.save();
+
     slot.bookedCount += 1;
     await slot.save();
 
     return res.json({
       success: true,
       message: "Order placed successfully for tomorrow!",
-      orderId: "TEMP_ID_" + Date.now() // Replace with actual Order creation
+      orderId: newOrder._id
     });
 
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("placeNextDayOrder error:", error);
+    return res.status(500).json({ success: false, message: error.message, stack: error.stack });
   }
 };
 
@@ -248,6 +316,138 @@ export const createDailySlots = async (req: Request, res: Response) => {
     }
 
     return res.json({ success: true, data: createdSlots });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// --- SELLER APIS ---
+
+export const getSellerNextDayOrders = async (req: Request, res: Response) => {
+  try {
+    const sellerId = (req as any).user?.userId;
+    if (!sellerId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    // Give the seller all next day orders that contain at least one of their products
+    const orders = await NextDayOrder.find({ sellers: sellerId })
+      .populate("slot", "date startTime endTime")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Map orders to show only relevant items for this seller
+    const sellerOrders = orders.map((order: any) => {
+      const myItems = order.items.filter((item: any) => item.seller?.toString() === sellerId);
+      const mySubtotal = myItems.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
+
+      return {
+        _id: order._id,
+        orderNumber: order.orderNumber,
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        address: order.address,
+        deliveryDate: order.deliveryDate,
+        timeRange: order.timeRange,
+        status: order.status,
+        paymentMethod: order.paymentMethod,
+        paymentStatus: order.paymentStatus,
+        createdAt: order.createdAt,
+        items: myItems,
+        subtotal: mySubtotal
+      };
+    });
+
+    return res.json({ success: true, data: sellerOrders });
+  } catch (error: any) {
+    console.error("getSellerNextDayOrders error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getSellerNextDayOrderById = async (req: Request, res: Response) => {
+  try {
+    const sellerId = (req as any).user?.userId;
+    const { id } = req.params;
+
+    if (!sellerId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const NextDayOrder = (await import("../models/NextDayOrder")).default;
+    const orderDoc = await NextDayOrder.findOne({ _id: id, sellers: sellerId })
+      .populate("slot", "date startTime endTime")
+      .lean();
+
+    if (!orderDoc) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    const order = orderDoc as any;
+
+    // Filter items inside order to only include seller's items
+    const myItems = order.items.filter((item: any) => item.seller?.toString() === sellerId);
+
+    // Transform into OrderDetail format
+    const transformedOrder = {
+      id: order._id,
+      invoiceNumber: order.orderNumber,
+      orderDate: (order as any).createdAt?.toISOString() || order.deliveryDate,
+      deliveryDate: order.deliveryDate,
+      timeSlot: order.timeRange || "N/A",
+      status: order.status,
+      customerName: order.customerName || "N/A",
+      customerEmail: "N/A", // Email not collected yet
+      customerPhone: order.customerPhone || "N/A",
+      deliveryBoyName: "N/A",
+      deliveryBoyPhone: "N/A",
+      items: myItems.map((item: any, idx: number) => ({
+        srNo: String(idx + 1),
+        product: item.productName || "Unknown Product",
+        soldBy: "N/A",
+        unit: item.unit || item.pack || "N/A",
+        price: item.price,
+        tax: 0,
+        taxPercent: 0,
+        qty: item.quantity,
+        subtotal: item.price * item.quantity
+      })),
+      subtotal: myItems.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0),
+      tax: 0,
+      grandTotal: myItems.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0),
+      paymentMethod: order.paymentMethod || "COD",
+      paymentStatus: order.paymentStatus || "Pending",
+      deliveryAddress: order.address || {}
+    };
+
+    return res.json({ success: true, data: transformedOrder });
+  } catch (error: any) {
+    console.error("getSellerNextDayOrderById error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateSellerNextDayOrderStatus = async (req: Request, res: Response) => {
+  try {
+    const sellerId = (req as any).user?.userId;
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!sellerId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const NextDayOrder = (await import("../models/NextDayOrder")).default;
+    const order = await NextDayOrder.findOne({ _id: id, sellers: sellerId });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    order.status = status;
+    await order.save();
+
+    return res.json({ success: true, data: { id: order._id, status: order.status } });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }

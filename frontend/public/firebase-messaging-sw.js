@@ -4,13 +4,13 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-comp
 
 // Firebase configuration (Production credentials)
 const firebaseConfig = {
-    apiKey: 'AIzaSyDdzURk5KJykQwmtUdOg-Lbdj4HjUT9G8g',
-    authDomain: 'apnasabjiwala2.firebaseapp.com',
-    projectId: 'apnasabjiwala2',
-    storageBucket: 'apnasabjiwala2.firebasestorage.app',
-    messagingSenderId: '88524532800',
-    appId: '1:88524532800:web:347183dc062e619a48c3a5',
-    measurementId: 'G-GCPBFW3F1B'
+    apiKey: 'AIzaSyC4qGF2SyoQMkIbB4unTJMpwOpEqip0Ge0',
+    authDomain: 'apnasabjiwala-4ceaa.firebaseapp.com',
+    projectId: 'apnasabjiwala-4ceaa',
+    storageBucket: 'apnasabjiwala-4ceaa.firebasestorage.app',
+    messagingSenderId: '313907744091',
+    appId: '1:313907744091:web:6db8bcfaaa9282c4c31e7e',
+    measurementId: 'G-0YHQNFZ17P'
 };
 
 // Initialize Firebase in service worker
@@ -59,6 +59,12 @@ self.addEventListener('notificationclick', (event) => {
             }
         })
     );
+});
+
+// Service worker installation
+self.addEventListener('install', (event) => {
+    console.log('[firebase-messaging-sw.js] Service worker installing');
+    self.skipWaiting();
 });
 
 // Service worker activation

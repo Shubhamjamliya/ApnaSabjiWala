@@ -5,20 +5,20 @@ import { getMessaging, getToken, onMessage } from "firebase/messaging";
 const firebaseConfig = {
   apiKey:
     import.meta.env.VITE_FIREBASE_API_KEY ||
-    "AIzaSyDdzURk5KJykQwmtUdOg-Lbdj4HjUT9G8g",
+    "AIzaSyC4qGF2SyoQMkIbB4unTJMpwOpEqip0Ge0",
   authDomain:
     import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
-    "apnasabjiwala2.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "apnasabjiwala2",
+    "apnasabjiwala-4ceaa.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "apnasabjiwala-4ceaa",
   storageBucket:
     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
-    "apnasabjiwala2.firebasestorage.app",
+    "apnasabjiwala-4ceaa.firebasestorage.app",
   messagingSenderId:
-    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "88524532800",
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "313907744091",
   appId:
     import.meta.env.VITE_FIREBASE_APP_ID ||
-    "1:88524532800:web:347183dc062e619a48c3a5",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-GCPBFW3F1B",
+    "1:313907744091:web:6db8bcfaaa9282c4c31e7e",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-0YHQNFZ17P",
 };
 
 // Initialize Firebase

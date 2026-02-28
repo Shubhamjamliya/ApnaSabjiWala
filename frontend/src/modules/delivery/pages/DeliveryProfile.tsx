@@ -4,11 +4,15 @@ import DeliveryHeader from '../components/DeliveryHeader';
 import DeliveryBottomNav from '../components/DeliveryBottomNav';
 import { useDeliveryUser } from '../context/DeliveryUserContext';
 import { getDeliveryProfile, updateProfile } from '../../../services/api/delivery/deliveryService';
+import { sendTestNotification } from '../../../services/pushNotificationService';
+import { useToast } from '../../../context/ToastContext';
 
 export default function DeliveryProfile() {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const { userName, setUserName } = useDeliveryUser();
+  const { showToast } = useToast();
+  const [testNotifLoading, setTestNotifLoading] = useState(false);
 
   const [profileData, setProfileData] = useState({
     name: '',
@@ -78,10 +82,26 @@ export default function DeliveryProfile() {
       });
       setUserName(profileData.name);
       setIsEditing(false);
-      // You could add a toast notification here
+      showToast("Profile updated successfully", "success");
     } catch (error) {
       console.error("Failed to update profile", error);
-      alert("Failed to update profile");
+      showToast("Failed to update profile", "error");
+    }
+  };
+
+  const handleTestNotification = async () => {
+    try {
+      setTestNotifLoading(true);
+      const result = await sendTestNotification();
+      if (result.success) {
+        showToast(result.message, 'success');
+      } else {
+        showToast(result.message, 'error');
+      }
+    } catch (err: any) {
+      showToast('Failed to send test notification', 'error');
+    } finally {
+      setTestNotifLoading(false);
     }
   };
 
@@ -287,15 +307,28 @@ export default function DeliveryProfile() {
 
         {/* Stats Card */}
         <div className="bg-white rounded-xl shadow-sm border border-neutral-200 mt-4 p-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center">
+          <div className="grid grid-cols-2 gap-4 text-center">
+            <div>
               <p className="text-neutral-500 text-xs mb-1">Total Deliveries</p>
               <p className="text-neutral-900 text-2xl font-bold">{profileData.totalDeliveries}</p>
             </div>
-            <div className="text-center">
+            <div>
               <p className="text-neutral-500 text-xs mb-1">Joined On</p>
               <p className="text-neutral-900 text-sm font-semibold">{profileData.joinDate}</p>
             </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-neutral-100">
+            <button
+              onClick={handleTestNotification}
+              disabled={testNotifLoading}
+              className="w-full flex items-center justify-center gap-2 text-sm font-medium text-orange-600 hover:text-orange-700 disabled:opacity-50"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {testNotifLoading ? 'Sending Test...' : 'Send Test Notification'}
+            </button>
           </div>
         </div>
 

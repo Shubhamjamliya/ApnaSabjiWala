@@ -374,7 +374,6 @@ export default function LowestPricesEver({ activeTab = 'all', products: adminPro
         };
       });
       setProducts(mappedProducts);
-      console.log('LowestPricesEver Products Variations:', mappedProducts.map(p => ({ name: p.name, variations: p.variations })));
     } else {
       setProducts([]);
     }

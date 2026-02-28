@@ -1,11 +1,13 @@
-﻿import { useParams, useNavigate } from 'react-router-dom';
+﻿import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { getOrderById, updateOrderStatus, OrderDetail } from '../../../services/api/orderService';
+import { getOrderById, updateOrderStatus, getNextDayOrderById, updateNextDayOrderStatus, OrderDetail } from '../../../services/api/orderService';
 import jsPDF from 'jspdf';
 
 export default function SellerOrderDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isNextDay = searchParams.get('type') === 'next-day';
   const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -19,7 +21,7 @@ export default function SellerOrderDetail() {
       setLoading(true);
       setError('');
       try {
-        const response = await getOrderById(id);
+        const response = isNextDay ? await getNextDayOrderById(id) : await getOrderById(id);
         if (response.success && response.data) {
           setOrderDetail(response.data);
           setOrderStatus(response.data.status);
@@ -41,7 +43,9 @@ export default function SellerOrderDetail() {
     if (!orderDetail) return;
 
     try {
-      const response = await updateOrderStatus(orderDetail.id, { status: newStatus as any });
+      const response = isNextDay
+        ? await updateNextDayOrderStatus(orderDetail.id, { status: newStatus as any })
+        : await updateOrderStatus(orderDetail.id, { status: newStatus as any });
       if (response.success) {
         setOrderStatus(newStatus);
         setOrderDetail({ ...orderDetail, status: newStatus as any });
@@ -70,7 +74,7 @@ export default function SellerOrderDetail() {
           <h2 className="text-xl font-bold text-neutral-900 mb-4">Error</h2>
           <p className="text-red-600 mb-4">{error}</p>
           <button
-            onClick={() => navigate('/seller/orders')}
+            onClick={() => isNextDay ? navigate('/seller/next-day-orders') : navigate('/seller/orders')}
             className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded-lg transition-colors"
           >
             Back to Orders
@@ -86,7 +90,7 @@ export default function SellerOrderDetail() {
         <div className="text-center">
           <h2 className="text-xl font-bold text-neutral-900 mb-4">Order Not Found</h2>
           <button
-            onClick={() => navigate('/seller/orders')}
+            onClick={() => isNextDay ? navigate('/seller/next-day-orders') : navigate('/seller/orders')}
             className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded-lg transition-colors"
           >
             Back to Orders

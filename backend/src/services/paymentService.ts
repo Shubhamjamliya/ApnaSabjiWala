@@ -95,7 +95,8 @@ export const capturePayment = async (
     orderId: string,
     razorpayOrderId: string,
     razorpayPaymentId: string,
-    razorpaySignature: string
+    razorpaySignature: string,
+    isNextDay: boolean = false
 ) => {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -112,8 +113,14 @@ export const capturePayment = async (
             throw new Error('Invalid payment signature');
         }
 
-        // Find order
-        const order = await Order.findById(orderId).session(session);
+        let order;
+        if (isNextDay) {
+            const NextDayOrder = (await import("../models/NextDayOrder")).default;
+            order = await NextDayOrder.findById(orderId).session(session);
+        } else {
+            order = await Order.findById(orderId).session(session);
+        }
+
         if (!order) {
             throw new Error('Order not found');
         }
@@ -141,22 +148,24 @@ export const capturePayment = async (
 
         // Update order
         order.paymentStatus = 'Paid';
-        order.paymentId = razorpayPaymentId;
-        // Change order status from 'Pending' to 'Received' after successful payment
+        (order as any).paymentId = razorpayPaymentId;
+        // Change order status from 'Pending' to 'Received' or 'Confirmed' after successful payment
         if (order.status === 'Pending') {
-            order.status = 'Received';
+            order.status = isNextDay ? 'Confirmed' : 'Received';
         }
         await order.save({ session });
 
         await session.commitTransaction();
 
         // Create Pending Commissions (Outside transaction as it has its own logic/logging and failure shouldn't rollback payment)
-        try {
-            const { createPendingCommissions } = await import('./commissionService');
-            await createPendingCommissions(orderId);
-        } catch (commError) {
-            console.error("Failed to create pending commissions after payment:", commError);
-            // Don't fail the request, just log it.
+        if (!isNextDay) {
+            try {
+                const { createPendingCommissions } = await import('./commissionService');
+                await createPendingCommissions(orderId);
+            } catch (commError) {
+                console.error("Failed to create pending commissions after payment:", commError);
+                // Don't fail the request, just log it.
+            }
         }
 
         return {

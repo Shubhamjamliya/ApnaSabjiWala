@@ -200,6 +200,13 @@ export const getHomeContent = async (req: Request, res: Response) => {
       }
     }
 
+    const isMainHome = !headerCategorySlug ||
+      headerCategorySlug === "all" ||
+      (effectiveHeaderSlug && (
+        effectiveHeaderSlug.toLowerCase().includes("home") ||
+        effectiveHeaderSlug.toLowerCase().includes("all")
+      ));
+
     // 3. Fetch Categories for the selected tab
     let connectedCategoryId: string | null = null;
     let headerCatObj: any = null;
@@ -212,15 +219,26 @@ export const getHomeContent = async (req: Request, res: Response) => {
 
     const categoryQuery: any = { status: "Active", parentId: null };
     if (headerCatId) {
-      if (connectedCategoryId) {
-        // If header is connected to a specific category, we look for that category or others linked to this header
+      // Check if we have categories explicitly assigned to this header
+      const explicitHomeCatsCount = await Category.countDocuments({
+        headerCategoryId: headerCatId,
+        status: "Active"
+      });
+
+      if (connectedCategoryId && !isMainHome) {
+        // For sub-tabs (like 'winter' linked to 'Grocery'), restrict to that category
         categoryQuery.$or = [
           { _id: connectedCategoryId },
           { headerCategoryId: headerCatId }
         ];
-      } else {
+      } else if (explicitHomeCatsCount > 0) {
+        // If categories are explicitly assigned to this header (HOME or otherwise), show them
+        categoryQuery.headerCategoryId = headerCatId;
+      } else if (!isMainHome) {
+        // For other tabs with no explicit categories, still filter by header
         categoryQuery.headerCategoryId = headerCatId;
       }
+      // For HOME tab with no explicit categories, categoryQuery remains broad (all root categories)
     }
 
     const allCategoriesRaw = await Category.find(categoryQuery)
@@ -266,9 +284,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       }
     }
 
-    const isMainHome = !headerCategorySlug ||
-      headerCategorySlug === "all" ||
-      (effectiveHeaderSlug && effectiveHeaderSlug.toLowerCase().includes("home"));
+    // (isMainHome already defined above)
 
     const baseProductQuery: any = {
       status: "Active",

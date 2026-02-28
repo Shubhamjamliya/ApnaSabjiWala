@@ -5,6 +5,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { getCategories, Category } from '../../../services/api/categoryService';
 import GoogleMapsAutocomplete from '../../../components/GoogleMapsAutocomplete';
 import LocationPickerMap from '../../../components/LocationPickerMap';
+import { sendTestNotification } from '../../../services/pushNotificationService';
+import { useToast } from '../../../context/ToastContext';
 
 const SellerAccountSettings = () => {
     const { user, updateUser } = useAuth();
@@ -14,6 +16,8 @@ const SellerAccountSettings = () => {
     const [error, setError] = useState<string | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
     const [saveLoading, setSaveLoading] = useState(false);
+    const { showToast } = useToast();
+    const [testNotifLoading, setTestNotifLoading] = useState(false);
 
     // Initial state with empty values
     const [sellerData, setSellerData] = useState({
@@ -144,6 +148,22 @@ const SellerAccountSettings = () => {
             setError(err.response?.data?.message || 'Error updating profile');
         } finally {
             setSaveLoading(false);
+        }
+    };
+
+    const handleTestNotification = async () => {
+        try {
+            setTestNotifLoading(true);
+            const result = await sendTestNotification();
+            if (result.success) {
+                showToast(result.message, 'success');
+            } else {
+                showToast(result.message, 'error');
+            }
+        } catch (err: any) {
+            showToast('Failed to send test notification', 'error');
+        } finally {
+            setTestNotifLoading(false);
         }
     };
 
@@ -341,6 +361,25 @@ const SellerAccountSettings = () => {
                                                         </div>
                                                         {isEditing && <p className="text-xs text-gray-400 ml-1">Leave blank to keep current password</p>}
                                                     </div>
+                                                </div>
+
+                                                <div className="mt-6 pt-6 border-t border-gray-100">
+                                                    <h4 className="text-sm font-semibold text-gray-700 mb-4">Notification Settings</h4>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleTestNotification}
+                                                        disabled={testNotifLoading}
+                                                        className="flex items-center gap-2 px-4 py-2 border border-teal-600 text-teal-600 hover:bg-teal-50 font-medium rounded-lg transition-all disabled:opacity-50"
+                                                    >
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                                                        </svg>
+                                                        {testNotifLoading ? 'Sending Test...' : 'Send Test Notification'}
+                                                    </button>
+                                                    <p className="mt-2 text-xs text-gray-400">
+                                                        Test if push notifications are working correctly on this device.
+                                                    </p>
                                                 </div>
                                             </div>
                                         )}

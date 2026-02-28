@@ -22,6 +22,7 @@ interface SellerSidebarProps {
 const menuItems: MenuItem[] = [
   { label: "Dashboard", path: "/seller" },
   { label: "Orders", path: "/seller/orders" },
+  { label: "Next Day Orders", path: "/seller/next-day-orders" },
   { label: "Category", path: "/seller/category" },
   { label: "SubCategory", path: "/seller/subcategory" },
   {

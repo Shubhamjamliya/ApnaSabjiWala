@@ -57,6 +57,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(userData);
         setIsAuthenticated(true);
       }
+
+      // Register FCM token on app load for already authenticated users
+      import("../services/pushNotificationService").then(({ registerFCMToken }) => {
+        registerFCMToken().catch(error => {
+          console.error("Failed to register FCM token on mount:", error);
+        });
+      });
     } else if (isAuthenticated) {
       setToken(null);
       setUser(null);
