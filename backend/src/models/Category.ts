@@ -146,7 +146,7 @@ CategorySchema.methods.getAllDescendants = async function () {
   return descendants;
 };
 
-const Category = mongoose.model<ICategory, ICategoryModel>(
+const Category = (mongoose.models.Category as ICategoryModel) || mongoose.model<ICategory, ICategoryModel>(
   "Category",
   CategorySchema
 );

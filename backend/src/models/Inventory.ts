@@ -131,6 +131,6 @@ InventorySchema.post("save", async function (doc) {
 InventorySchema.index({ seller: 1 });
 InventorySchema.index({ currentStock: 1 });
 
-const Inventory = mongoose.model<IInventory>("Inventory", InventorySchema);
+const Inventory = mongoose.models.Inventory || mongoose.model<IInventory>("Inventory", InventorySchema);
 
 export default Inventory;
