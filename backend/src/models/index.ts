@@ -33,3 +33,5 @@ export { default as DeliveryArea } from "./DeliveryArea";
 export { default as DeliveryAssignment } from "./DeliveryAssignment";
 export { default as DeliveryTracking } from "./DeliveryTracking";
 export { default as PaymentMethod } from "./PaymentMethod";
+export { default as RewardItem } from "./RewardItem";
+export { default as RewardOrder } from "./RewardOrder";

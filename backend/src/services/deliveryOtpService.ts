@@ -1,5 +1,6 @@
 import Order from '../models/Order';
 import Customer from '../models/Customer';
+import { addRewardCoin } from './rewardService';
 
 /**
  * Generate delivery OTP is no longer needed for regular orders.
@@ -70,6 +71,9 @@ export async function verifyDeliveryOtp(orderId: string, otp: string): Promise<{
       order.invoiceEnabled = true;
       await order.save();
 
+      // Give reward coin
+      await addRewardCoin(order.customer._id ? order.customer._id.toString() : order.customer.toString());
+
       return {
         success: true,
         message: 'OTP verified successfully. Order marked as delivered.',
@@ -87,6 +91,9 @@ export async function verifyDeliveryOtp(orderId: string, otp: string): Promise<{
     order.deliveredAt = new Date();
     order.invoiceEnabled = true;
     await order.save();
+
+    // Give reward coin
+    await addRewardCoin(order.customer._id ? order.customer._id.toString() : order.customer.toString());
 
     return {
       success: true,

@@ -36,11 +36,9 @@ import sellerWalletRoutes from "./sellerWalletRoutes";
 import deliveryWalletRoutes from "./deliveryWalletRoutes";
 import adminWithdrawalRoutes from "./adminWithdrawalRoutes";
 import nextDayRoutes from "./nextDay.routes";
+import adminRewardRoutes from "./adminRewardRoutes";
+import customerRewardRoutes from "./customerRewardRoutes";
 // import pageConfigRoutes from "./pageConfig.routes";
-
-// ...
-
-
 import {
   createOrder,
   getMyOrders,
@@ -118,6 +116,7 @@ router.use("/customer/home", customerHomeRoutes);
 router.use("/customer/cart", customerCartRoutes);
 router.use("/customer/wishlist", wishlistRoutes);
 router.use("/customer/reviews", productReviewRoutes);
+router.use("/customer/rewards", customerRewardRoutes);
 // General customer route (must be last to avoid intercepting specific routes)
 router.use("/customer", customerRoutes);
 
@@ -128,6 +127,7 @@ router.use("/seller/dashboard", dashboardRoutes);
 router.use("/sellers", sellerRoutes);
 
 // Admin routes (protected, admin only)
+router.use("/admin/rewards", authenticate, requireUserType("Admin"), adminRewardRoutes);
 router.use("/admin", adminRoutes);
 
 // Upload routes (protected)

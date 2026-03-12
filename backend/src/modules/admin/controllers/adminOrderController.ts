@@ -200,6 +200,13 @@ export const updateOrderStatus = asyncHandler(
       } catch (error) {
         console.error("Error distributing commissions:", error);
       }
+
+      const { addRewardCoin } = await import("../../../services/rewardService");
+      try {
+        await addRewardCoin(order.customer._id.toString());
+      } catch (error) {
+        console.error("Error adding reward coin:", error);
+      }
     }
 
     return res.status(200).json({

@@ -147,6 +147,10 @@ const AdminPayments = lazy(() => import("./modules/admin/pages/AdminPayments"));
 const AdminWallet = lazy(() => import("./modules/admin/pages/AdminWallet"));
 const AdminBillingSettings = lazy(() => import("./modules/admin/pages/AdminBillingSettings"));
 
+const AdminRewards = lazy(() => import("./modules/admin/pages/AdminRewards"));
+const AdminRewardOrders = lazy(() => import("./modules/admin/pages/AdminRewardOrders"));
+const UserRewards = lazy(() => import("./modules/user/Rewards"));
+
 function App() {
   // Initialize push notifications on app load
   useEffect(() => {
@@ -365,6 +369,8 @@ function App() {
                                         <Route path="payments" element={<AdminPayments />} />
                                         <Route path="wallet" element={<AdminWallet />} />
                                         <Route path="billing-settings" element={<AdminBillingSettings />} />
+                                        <Route path="rewards" element={<AdminRewards />} />
+                                        <Route path="reward-orders" element={<AdminRewardOrders />} />
                                       </Routes>
                                     </Suspense>
                                   </AdminLayout>
@@ -409,6 +415,7 @@ function App() {
                                     <Route path="/store/toy" element={<ToyStore />} />
                                     <Route path="/store/hobby" element={<HobbyStore />} />
                                     <Route path="/tomorrow-veg-booking" element={<TomorrowVegBooking />} />
+                                    <Route path="/rewards" element={<UserRewards />} />
                                   </Routes>
                                 </Suspense>
                               </AppLayout>

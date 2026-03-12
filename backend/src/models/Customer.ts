@@ -37,6 +37,8 @@ export interface ICustomer extends Document {
   // FCM Push Notification Tokens
   fcmTokens?: string[];        // Web push notification tokens
   fcmTokenMobile?: string[];   // Mobile push notification tokens
+  // Reward System
+  rewardCoins: number;
 }
 
 
@@ -154,6 +156,12 @@ const CustomerSchema = new Schema<ICustomer>(
     fcmTokenMobile: {
       type: [String],
       default: []
+    },
+    // Reward System
+    rewardCoins: {
+      type: Number,
+      default: 0,
+      min: [0, 'Reward coins cannot be negative']
     },
   },
 
