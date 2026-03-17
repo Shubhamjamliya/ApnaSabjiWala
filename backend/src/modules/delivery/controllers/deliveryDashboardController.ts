@@ -3,7 +3,6 @@ import { asyncHandler } from "../../../utils/asyncHandler";
 import Delivery from "../../../models/Delivery";
 import Order from "../../../models/Order";
 import mongoose from "mongoose";
-import OrderItem from "../../../models/OrderItem";
 
 /**
  * Get Dashboard Stats

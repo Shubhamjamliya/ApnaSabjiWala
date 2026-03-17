@@ -213,7 +213,7 @@ export const getCategoryById = async (req: Request, res: Response) => {
     if (!category) {
       // Check if it's a subcategory
       if (mongoose.Types.ObjectId.isValid(id)) {
-        const subcategory = await SubCategory.findById(id).lean();
+        const subcategory = (await SubCategory.findById(id).lean()) as any;
         if (subcategory) {
           // Find the parent category
           category = await Category.findById(subcategory.category).lean();
