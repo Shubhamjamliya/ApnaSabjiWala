@@ -201,6 +201,22 @@ export const updateStock = async (
 };
 
 /**
+ * Update price for a product variation
+ */
+export const updatePrice = async (
+  productId: string,
+  variationId: string,
+  price: number,
+  discPrice: number
+): Promise<ApiResponse<Product>> => {
+  const response = await api.patch<ApiResponse<Product>>(
+    `/products/${productId}/variations/${variationId}/price`,
+    { price, discPrice }
+  );
+  return response.data;
+};
+
+/**
  * Bulk update stock for multiple variations
  */
 export const bulkUpdateStock = async (

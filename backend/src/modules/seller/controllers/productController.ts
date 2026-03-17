@@ -491,6 +491,67 @@ export const updateStock = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /**
+ * Update price for a product variation
+ */
+export const updatePrice = asyncHandler(async (req: Request, res: Response) => {
+  const sellerId = (req as any).user.userId;
+  const { id, variationId } = req.params;
+  const { price, discPrice } = req.body;
+
+  const query: any = { _id: id };
+  if ((req as any).user?.userType !== "Admin") {
+    query.seller = sellerId;
+  }
+  const product = await Product.findOne(query);
+
+  if (!product) {
+    return res.status(404).json({
+      success: false,
+      message: "Product not found",
+    });
+  }
+
+  // Find variation
+  // Handle case where product has no variations (uses root price)
+  if (variationId === `${id}-default` || !product.variations || product.variations.length === 0) {
+    if (price !== undefined) product.price = Number(price);
+    if (discPrice !== undefined) product.discPrice = Number(discPrice);
+  } else {
+    const variation: any = product.variations?.find(
+      (v: any) => v._id?.toString() === variationId
+    );
+    if (!variation) {
+      return res.status(404).json({
+        success: false,
+        message: "Variation not found",
+      });
+    }
+
+    if (price !== undefined) variation.price = Number(price);
+    if (discPrice !== undefined) variation.discPrice = Number(discPrice);
+
+    // Sync top-level price if it's the first variation
+    if (product.variations[0]._id?.toString() === variationId) {
+      product.price = Number(price);
+      if (discPrice !== undefined) product.discPrice = Number(discPrice);
+    }
+  }
+
+  // Mark variations as modified since we updated a sub-document field
+  if (product.variations && product.variations.length > 0) {
+    product.markModified("variations");
+  }
+  
+  await product.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Price updated successfully",
+    data: product,
+  });
+});
+
+/**
  * Update product status (publish, popular, dealOfDay)
  */
 export const updateProductStatus = asyncHandler(

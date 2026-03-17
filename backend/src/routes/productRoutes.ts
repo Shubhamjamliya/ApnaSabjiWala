@@ -6,6 +6,7 @@ import {
   updateProduct,
   deleteProduct,
   updateStock,
+  updatePrice,
   updateProductStatus,
   bulkUpdateStock,
   getShops,
@@ -42,6 +43,9 @@ router.delete("/:id", deleteProduct);
 
 // Update stock for a product variation
 router.patch("/:id/variations/:variationId/stock", updateStock);
+
+// Update price for a product variation
+router.patch("/:id/variations/:variationId/price", updatePrice);
 
 // Bulk update stock
 router.patch("/bulk-stock-update", bulkUpdateStock);
