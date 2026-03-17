@@ -69,7 +69,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
     fetchHeaderCategories();
   }, []);
   const navigate = useNavigate();
-  const { location: userLocation } = useLocation();
+  const { location: userLocation, setIsLocationModalOpen } = useLocation();
   const heroRef = useRef<HTMLDivElement>(null);
   const topSectionRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
@@ -308,7 +308,10 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
               <div className="text-neutral-900 font-extrabold text-2xl md:text-xl mb-0 md:mb-0.5 leading-tight">{appConfig.estimatedDeliveryTime}</div>
               {/* Location with dropdown indicator - only show if location is provided */}
               {locationDisplayText && (
-                <div className="text-neutral-700 text-[10px] md:text-xs flex items-center gap-0.5 leading-tight">
+                <div 
+                  className="text-neutral-700 text-[10px] md:text-xs flex items-center gap-0.5 leading-tight cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => setIsLocationModalOpen(true)}
+                >
                   <span className="line-clamp-1" title={locationDisplayText}>{locationDisplayText}</span>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
                     <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

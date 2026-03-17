@@ -114,14 +114,33 @@ export const updateSeller = asyncHandler(
       if (!isNaN(latitude) && !isNaN(longitude)) {
         // Update GeoJSON location for geospatial queries
         updateData.location = {
+          ...updateData.location,
           type: "Point",
-          coordinates: [longitude, latitude], // MongoDB GeoJSON: [longitude, latitude]
+          coordinates: [longitude, latitude],
+          latitude,
+          longitude,
+          updatedAt: new Date()
         };
-        // Ensure string fields are also synchronized
-        updateData.latitude = latitude.toString();
-        updateData.longitude = longitude.toString();
+        // Remove individual fields if they were passed separately
+        delete updateData.latitude;
+        delete updateData.longitude;
       }
     }
+
+    // Also handle address, city, searchLocation being moved into location
+    if (updateData.address || updateData.city || updateData.searchLocation) {
+        updateData.location = {
+            ...updateData.location,
+            ...(updateData.address && { address: updateData.address }),
+            ...(updateData.city && { city: updateData.city }),
+            ...(updateData.searchLocation && { searchLocation: updateData.searchLocation }),
+            updatedAt: new Date()
+        };
+        delete updateData.address;
+        delete updateData.city;
+        delete updateData.searchLocation;
+    }
+
 
     // Handle serviceRadiusKm update
     if (

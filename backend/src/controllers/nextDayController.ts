@@ -262,11 +262,11 @@ export const placeNextDayOrder = async (req: Request, res: Response) => {
       customerName: customer.name,
       customerPhone: customer.phone,
       address: {
-        address: customer.address || "N/A",
-        city: customer.city || "N/A",
-        pincode: customer.pincode || "123456",
-        latitude: customer.latitude,
-        longitude: customer.longitude
+        address: customer.location?.address || "N/A",
+        city: customer.location?.city || "N/A",
+        pincode: customer.location?.pincode || "123456",
+        latitude: customer.location?.latitude,
+        longitude: customer.location?.longitude
       },
       slot: slot._id,
       deliveryDate: slot.date,

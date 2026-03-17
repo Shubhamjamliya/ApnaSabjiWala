@@ -480,7 +480,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
           title: shopType === "shop" ? s.name : s.storeName,
           image: shopType === "shop" ? (s.image || "") : (s.logo || ""),
           imageUrl: shopType === "shop" ? (s.image || "") : (s.logo || ""),
-          description: shopType === "shop" ? (s.description || "") : (s.storeDescription || s.city || ""),
+          description: shopType === "shop" ? (s.description || "") : (s.storeDescription || s.location?.city || ""),
           type: shopType,
           categoryId: shopType === "shop" ? (s.storeId || s._id.toString()) : s._id.toString(),
           productImages

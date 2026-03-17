@@ -39,13 +39,7 @@ export const getProfile = asyncHandler(async (req: Request, res: Response) => {
       walletAmount: customer.walletAmount,
       totalOrders: customer.totalOrders,
       totalSpent: customer.totalSpent,
-      latitude: customer.latitude,
-      longitude: customer.longitude,
-      address: customer.address,
-      city: customer.city,
-      state: customer.state,
-      pincode: customer.pincode,
-      locationUpdatedAt: customer.locationUpdatedAt,
+      location: customer.location,
     },
   });
 });
@@ -115,12 +109,7 @@ export const updateProfile = asyncHandler(
         walletAmount: customer.walletAmount,
         totalOrders: customer.totalOrders,
         totalSpent: customer.totalSpent,
-        latitude: customer.latitude,
-        longitude: customer.longitude,
-        address: customer.address,
-        city: customer.city,
-        state: customer.state,
-        pincode: customer.pincode,
+        location: customer.location,
         notificationPreferences: customer.notificationPreferences,
         accountPrivacy: customer.accountPrivacy,
         donationStats: customer.donationStats,
@@ -161,29 +150,25 @@ export const updateLocation = asyncHandler(
       });
     }
 
-    // Update location fields
-    customer.latitude = latitude;
-    customer.longitude = longitude;
-    customer.address = address;
-    customer.city = city;
-    customer.state = state;
-    customer.pincode = pincode;
-    customer.locationUpdatedAt = new Date();
+    // Update nested location fields
+    customer.location = {
+      type: "Point",
+      coordinates: [longitude, latitude],
+      latitude,
+      longitude,
+      address,
+      city,
+      state,
+      pincode,
+      updatedAt: new Date(),
+    };
 
     await customer.save();
 
     return res.status(200).json({
       success: true,
       message: "Location updated successfully",
-      data: {
-        latitude: customer.latitude,
-        longitude: customer.longitude,
-        address: customer.address,
-        city: customer.city,
-        state: customer.state,
-        pincode: customer.pincode,
-        locationUpdatedAt: customer.locationUpdatedAt,
-      },
+      data: customer.location,
     });
   }
 );
@@ -201,9 +186,7 @@ export const getLocation = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  const customer = await Customer.findById(userId).select(
-    "latitude longitude address city state pincode locationUpdatedAt"
-  );
+  const customer = await Customer.findById(userId).select("location");
 
   if (!customer) {
     return res.status(404).json({
@@ -215,14 +198,6 @@ export const getLocation = asyncHandler(async (req: Request, res: Response) => {
   return res.status(200).json({
     success: true,
     message: "Location retrieved successfully",
-    data: {
-      latitude: customer.latitude,
-      longitude: customer.longitude,
-      address: customer.address,
-      city: customer.city,
-      state: customer.state,
-      pincode: customer.pincode,
-      locationUpdatedAt: customer.locationUpdatedAt,
-    },
+    data: customer.location,
   });
 });

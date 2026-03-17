@@ -11,14 +11,19 @@ export interface ICustomer extends Document {
   deliveryOtp: string; // Permanent 4-digit OTP for delivery verification
   totalOrders: number;
   totalSpent: number;
+  walletAmount: number;
   // Location fields
-  latitude?: number;
-  longitude?: number;
-  address?: string;
-  city?: string;
-  state?: string;
-  pincode?: string;
-  locationUpdatedAt?: Date;
+  location?: {
+    type: "Point";
+    coordinates: [number, number]; // [longitude, latitude]
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    latitude: number;
+    longitude: number;
+    updatedAt: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
   notificationPreferences?: {
@@ -109,31 +114,50 @@ const CustomerSchema = new Schema<ICustomer>(
       default: 0,
       min: [0, 'Total spent cannot be negative'],
     },
-    // Location fields
-    latitude: {
+    walletAmount: {
       type: Number,
+      default: 0,
+      min: [0, 'Wallet amount cannot be negative'],
     },
-    longitude: {
-      type: Number,
-    },
-    address: {
-      type: String,
-      trim: true,
-    },
-    city: {
-      type: String,
-      trim: true,
-    },
-    state: {
-      type: String,
-      trim: true,
-    },
-    pincode: {
-      type: String,
-      trim: true,
-    },
-    locationUpdatedAt: {
-      type: Date,
+    // Nested Location with GeoJSON support
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        default: [0, 0],
+      },
+      address: {
+        type: String,
+        trim: true,
+      },
+      city: {
+        type: String,
+        trim: true,
+      },
+      state: {
+        type: String,
+        trim: true,
+      },
+      pincode: {
+        type: String,
+        trim: true,
+      },
+      latitude: {
+        type: Number,
+        default: 0,
+      },
+      longitude: {
+        type: Number,
+        default: 0,
+      },
+      updatedAt: {
+        type: Date,
+        default: Date.now,
+      },
     },
     notificationPreferences: {
       email: { type: Boolean, default: true },
@@ -163,6 +187,7 @@ const CustomerSchema = new Schema<ICustomer>(
       default: 0,
       min: [0, 'Reward coins cannot be negative']
     },
+
   },
 
   {

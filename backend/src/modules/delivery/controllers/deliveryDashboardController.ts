@@ -3,6 +3,7 @@ import { asyncHandler } from "../../../utils/asyncHandler";
 import Delivery from "../../../models/Delivery";
 import Order from "../../../models/Order";
 import mongoose from "mongoose";
+import OrderItem from "../../../models/OrderItem";
 
 /**
  * Get Dashboard Stats
@@ -64,6 +65,9 @@ export const getDashboardStats = asyncHandler(
                       "Picked Up",
                       "Assigned",
                       "In Transit",
+                      "Accepted",
+                      "Processed",
+                      "Shipped"
                     ],
                   ],
                 },
@@ -206,30 +210,42 @@ export const getDashboardStats = asyncHandler(
           "Picked Up",
           "Assigned",
           "In Transit",
+          "Accepted",
+          "Processed",
+          "Shipped"
         ],
       },
     })
-      .select(
-        "orderNumber customerName deliveryAddress status total estimatedDeliveryDate",
-      ) // Select necessary fields
+      .populate({
+        path: "items",
+        populate: {
+          path: "seller",
+          select: "storeName",
+        },
+      })
       .sort({ createdAt: -1 })
       .limit(5);
 
     // format pending list for Frontend
-    const formattedPendingList = pendingOrdersList.map((order) => ({
-      id: order._id,
-      orderId: order.orderNumber,
-      customerName: order.customerName,
-      status: order.status, // Map backend status to frontend status if needed
-      address: `${order.deliveryAddress.address}, ${order.deliveryAddress.city}`, // Simplify address
-      totalAmount: order.total,
-      estimatedDeliveryTime: order.estimatedDeliveryDate
-        ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-        : "N/A",
-    }));
+    const formattedPendingList = pendingOrdersList.map((order) => {
+      const sellerNames = [...new Set(order.items.map((item: any) => item.seller?.storeName || "Unknown Seller"))];
+
+      return {
+        id: order._id,
+        orderId: order.orderNumber,
+        customerName: order.customerName,
+        status: order.status,
+        address: `${order.deliveryAddress?.address || ""}, ${order.deliveryAddress?.city || ""}`,
+        totalAmount: order.total,
+        sellerNames: sellerNames.join(", "),
+        estimatedDeliveryTime: order.estimatedDeliveryDate
+          ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+          : "N/A",
+      };
+    });
 
     // Fetch Wallet Balance
     let walletBalance = 0;

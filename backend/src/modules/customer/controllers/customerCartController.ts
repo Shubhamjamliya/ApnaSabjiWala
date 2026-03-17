@@ -102,7 +102,7 @@ const calculateDeliveryStuff = async (total: number, items: any[], userLat: numb
 
                     if (sellerIds.size > 0) {
                         const uniqueSellerIds = Array.from(sellerIds).map(id => new mongoose.Types.ObjectId(id));
-                        const sellers = await Seller.find({ _id: { $in: uniqueSellerIds } }).select('location latitude longitude');
+                        const sellers = await Seller.find({ _id: { $in: uniqueSellerIds } }).select('location');
 
                         const sellerLocations: { lat: number; lng: number }[] = [];
                         sellers.forEach(seller => {
@@ -110,9 +110,9 @@ const calculateDeliveryStuff = async (total: number, items: any[], userLat: numb
                             if (seller.location?.coordinates?.length === 2) {
                                 lng = seller.location.coordinates[0];
                                 lat = seller.location.coordinates[1];
-                            } else if (seller.latitude && seller.longitude) {
-                                lat = parseFloat(seller.latitude);
-                                lng = parseFloat(seller.longitude);
+                            } else if (seller.location?.latitude && seller.location?.longitude) {
+                                lat = seller.location.latitude;
+                                lng = seller.location.longitude;
                             }
                             if (lat && lng) sellerLocations.push({ lat, lng });
                         });

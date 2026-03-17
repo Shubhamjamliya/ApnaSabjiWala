@@ -85,7 +85,7 @@ const Icons = {
     )
 };
 
-type DeliveryOrderStatus = 'Pending' | 'Ready for pickup' | 'Picked up' | 'Out for Delivery' | 'Delivered' | 'Cancelled' | 'Returned';
+type DeliveryOrderStatus = 'Pending' | 'Accepted' | 'Processed' | 'Ready for pickup' | 'Picked up' | 'Out for Delivery' | 'Delivered' | 'Cancelled' | 'Returned';
 
 export default function DeliveryOrderDetail() {
     const { id } = useParams();
@@ -497,7 +497,7 @@ export default function DeliveryOrderDetail() {
         );
     }
 
-    const statusFlow: DeliveryOrderStatus[] = ['Pending', 'Ready for pickup', 'Picked up', 'Out for Delivery', 'Delivered'];
+    const statusFlow: DeliveryOrderStatus[] = ['Pending', 'Accepted', 'Processed', 'Ready for pickup', 'Picked up', 'Out for Delivery', 'Delivered'];
 
     let currentStatusIndex = statusFlow.indexOf(order.status as DeliveryOrderStatus);
     // Handle cases where status might not be in the flow (e.g. Cancelled)
@@ -807,7 +807,10 @@ export default function DeliveryOrderDetail() {
                             <div key={idx} className="flex justify-between items-center py-2 border-b border-neutral-50 last:border-0">
                                 <div className="flex items-center gap-3">
                                     <span className="w-6 h-6 rounded bg-neutral-100 flex items-center justify-center text-xs font-bold text-neutral-600">{item.quantity}x</span>
-                                    <span className="text-sm text-neutral-700 font-medium">{item.name}</span>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm text-neutral-700 font-medium">{item.name}</span>
+                                        <span className="text-[10px] text-teal-600 font-medium">Seller: {item.sellerName}</span>
+                                    </div>
                                 </div>
                                 <span className="text-sm font-semibold text-neutral-900">₹{item.price * item.quantity}</span>
                             </div>

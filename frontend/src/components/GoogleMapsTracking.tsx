@@ -36,6 +36,9 @@ const mapContainerStyle = {
     height: '22rem'
 }
 
+type Libraries = ("places" | "drawing" | "geometry" | "visualization")[];
+const libraries: Libraries = ['places'];
+
 export default function GoogleMapsTracking({
     storeLocation,
     sellerLocations = [],
@@ -92,7 +95,8 @@ export default function GoogleMapsTracking({
 
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: apiKey || ''
+        googleMapsApiKey: apiKey || '',
+        libraries: libraries
     })
 
     // Combine storeLocation with sellerLocations

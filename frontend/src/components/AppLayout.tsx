@@ -18,9 +18,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [categoriesRotation, setCategoriesRotation] = useState(0);
   const [prevCategoriesActive, setPrevCategoriesActive] = useState(false);
-  const { isLocationEnabled, isLocationLoading, location: userLocation } = useLocationContext();
+  const { isLocationEnabled, isLocationLoading, location: userLocation, isLocationModalOpen, setIsLocationModalOpen } = useLocationContext();
   const [showLocationRequest, setShowLocationRequest] = useState(false);
-  const [showLocationChangeModal, setShowLocationChangeModal] = useState(false);
   const { currentTheme } = useThemeContext();
 
   const isActive = (path: string) => location.pathname === path;
@@ -127,6 +126,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isCheckoutPage = location.pathname === '/checkout' || location.pathname.startsWith('/checkout/');
   const isCartPage = location.pathname === '/cart';
   const isTomorrowBookingPage = location.pathname === '/tomorrow-veg-booking';
+  const isHomePage = location.pathname === '/' || location.pathname === '/user/home';
   const showHeader = isSearchPage && !isCheckoutPage && !isCartPage;
   const showSearchBar = isSearchPage && !isCheckoutPage && !isCartPage;
   const showFooter = !isCheckoutPage && !isProductDetailPage && !isTomorrowBookingPage;
@@ -263,8 +263,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
               {/* Location line - only show if user has provided location */}
               {userLocation && (userLocation.address || userLocation.city) && (
-                <div className="px-4 md:px-6 lg:px-8 py-2 flex items-center justify-between text-sm">
-                  <span className="text-neutral-700 line-clamp-1" title={userLocation?.address || ''}>
+                <div 
+                  className="px-4 md:px-6 lg:px-8 py-2 flex items-center justify-between text-sm cursor-pointer hover:opacity-80 transition-opacity border-b border-neutral-100"
+                  onClick={() => setIsLocationModalOpen(true)}
+                >
+                  <span className="text-neutral-700 line-clamp-1 flex items-center gap-1.5" title={userLocation?.address || ''}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
                     {userLocation?.address
                       ? userLocation.address.length > 50
                         ? `${userLocation.address.substring(0, 50)}...`
@@ -274,8 +281,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         : userLocation?.city || ''}
                   </span>
                   <button
-                    onClick={() => setShowLocationChangeModal(true)}
-                    className="text-blue-600 font-medium hover:text-blue-700 transition-colors flex-shrink-0 ml-2"
+                    className="text-blue-600 font-bold text-[10px] uppercase tracking-wider hover:text-blue-700 transition-colors flex-shrink-0 ml-2"
                   >
                     Change
                   </button>
@@ -347,10 +353,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
           )}
 
           {/* Location Change Modal */}
-          {showLocationChangeModal && (
+          {isLocationModalOpen && (
             <LocationPermissionRequest
-              onLocationGranted={() => setShowLocationChangeModal(false)}
+              onLocationGranted={() => setIsLocationModalOpen(false)}
               skipable={true}
+              allowChange={true}
               title="Change Location"
               description="Update your location to see products available near you."
             />

@@ -13,6 +13,9 @@ const mapContainerStyle = {
     height: '100%'
 };
 
+type Libraries = ("places" | "drawing" | "geometry" | "visualization")[];
+const libraries: Libraries = ['places'];
+
 export default function GoogleMapsLocationPicker({
     initialLat,
     initialLng,
@@ -26,7 +29,8 @@ export default function GoogleMapsLocationPicker({
 
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: apiKey || ''
+        googleMapsApiKey: apiKey || '',
+        libraries: libraries
     });
 
     // Update center when initial props change significantly

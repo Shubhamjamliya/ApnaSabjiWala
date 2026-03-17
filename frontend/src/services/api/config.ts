@@ -46,12 +46,19 @@ const USER_DATA_KEYS: Record<string, string> = {
 
 // Determine the role based on URL or current path
 const getRole = (url?: string): string => {
-  const currentPath = window.location.pathname;
   const targetUrl = url || "";
+  const currentPath = window.location.pathname;
 
-  if (currentPath.includes("/admin") || targetUrl.includes("/admin/")) return "admin";
-  if (currentPath.includes("/seller") || targetUrl.includes("/seller/") || targetUrl.includes("/sellers")) return "seller";
-  if (currentPath.includes("/delivery") || targetUrl.includes("/delivery/")) return "delivery";
+  // 1. Check target URL first using precise regex to match path segments
+  // This prevents "/delivery/.../sellers-in-radius" from matching "seller"
+  if (/\/admin(\/|$)/i.test(targetUrl)) return "admin";
+  if (/\/delivery(\/|$)/i.test(targetUrl)) return "delivery";
+  if (/\/seller(s)?(\/|$)/i.test(targetUrl)) return "seller";
+
+  // 2. Fallback to current path if target URL is ambiguous
+  if (currentPath.includes("/admin")) return "admin";
+  if (currentPath.includes("/delivery")) return "delivery";
+  if (currentPath.includes("/seller")) return "seller";
 
   return "customer";
 };

@@ -93,6 +93,11 @@ export default function DeliveryPendingOrders() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <p className="text-neutral-900 font-semibold text-sm mb-1">{order.orderId}</p>
+                    {order.sellerNames && (
+                      <p className="text-teal-600 text-[10px] font-bold uppercase tracking-wider mb-1">
+                        Pickup: {order.sellerNames}
+                      </p>
+                    )}
                     <p className="text-neutral-600 text-xs mb-1">{order.customerName}</p>
                     <p className="text-neutral-500 text-xs">{order.customerPhone}</p>
                   </div>

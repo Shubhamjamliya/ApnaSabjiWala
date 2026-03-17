@@ -112,6 +112,7 @@ export const verifySmsOtp = asyncHandler(
           walletAmount: customer.walletAmount,
           refCode: customer.refCode,
           status: customer.status,
+          userType: "Customer",
         },
         isNewUser,
       },

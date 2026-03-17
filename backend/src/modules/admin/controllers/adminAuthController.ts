@@ -91,6 +91,7 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
         mobile: admin.mobile,
         email: admin.email,
         role: admin.role,
+        userType: "Admin",
       },
     },
   });
@@ -154,6 +155,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
         mobile: admin.mobile,
         email: admin.email,
         role: admin.role,
+        userType: "Admin",
       },
     },
   });

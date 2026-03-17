@@ -33,8 +33,19 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
     // Update fields if provided
     if (name) delivery.name = name;
     if (email) delivery.email = email;
-    if (address) delivery.address = address;
-    if (city) delivery.city = city;
+
+    // Update nested location if address or city is provided
+    if (address || city) {
+        if (!delivery.location) {
+            delivery.location = {
+                type: "Point",
+                coordinates: [0, 0]
+            };
+        }
+        if (address) delivery.location.address = address;
+        if (city) delivery.location.city = city;
+        delivery.location.updatedAt = new Date();
+    }
     if (vehicleNumber) delivery.vehicleNumber = vehicleNumber;
     if (vehicleType) delivery.vehicleType = vehicleType;
 

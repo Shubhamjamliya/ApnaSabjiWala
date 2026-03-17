@@ -51,7 +51,7 @@ export async function findSellersWithinRange(
     // Fetch all approved sellers with location
     const sellers = await Seller.find({
       status: "Approved",
-    }).select("_id location serviceRadiusKm latitude longitude");
+    }).select("_id location serviceRadiusKm");
 
     // Filter sellers where user is within their service radius
     const nearbySellerIds: mongoose.Types.ObjectId[] = [];
@@ -65,10 +65,10 @@ export async function findSellersWithinRange(
         sellerLng = seller.location.coordinates[0];
         sellerLat = seller.location.coordinates[1];
       }
-      // Fallback to string fields if GeoJSON missing
-      else if (seller.latitude && seller.longitude) {
-         sellerLat = parseFloat(seller.latitude);
-         sellerLng = parseFloat(seller.longitude);
+      // Fallback to separate fields in location if GeoJSON missing
+      else if (seller.location?.latitude && seller.location?.longitude) {
+         sellerLat = seller.location.latitude;
+         sellerLng = seller.location.longitude;
       }
 
       if (sellerLat !== null && sellerLng !== null && !isNaN(sellerLat) && !isNaN(sellerLng)) {

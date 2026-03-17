@@ -321,7 +321,7 @@ export const createOrder = async (req: Request, res: Response) => {
             const sellers = await Seller.find({
                 _id: { $in: uniqueSellerIds },
                 status: "Approved",
-                location: { $exists: true, $ne: null },
+                "location.coordinates": { $exists: true, $ne: null },
             });
 
             // Check each seller can deliver to user's location
@@ -370,16 +370,16 @@ export const createOrder = async (req: Request, res: Response) => {
                 // Collect seller locations
                 const sellerLocations: { lat: number; lng: number }[] = [];
                 const uniqueSellerIds = Array.from(sellerIds).map(id => new mongoose.Types.ObjectId(id));
-                const sellers = await Seller.find({ _id: { $in: uniqueSellerIds } }).select('location latitude longitude storeName');
+                const sellers = await Seller.find({ _id: { $in: uniqueSellerIds } }).select('location storeName');
 
                 sellers.forEach(seller => {
                     let lat, lng;
                     if (seller.location?.coordinates?.length === 2) {
                         lng = seller.location.coordinates[0];
                         lat = seller.location.coordinates[1];
-                    } else if (seller.latitude && seller.longitude) {
-                        lat = parseFloat(seller.latitude);
-                        lng = parseFloat(seller.longitude);
+                    } else if (seller.location?.latitude && seller.location?.longitude) {
+                        lat = seller.location.latitude;
+                        lng = seller.location.longitude;
                     }
 
                     if (lat && lng) {
@@ -586,7 +586,7 @@ export const getOrderById = async (req: Request, res: Response) => {
                 path: 'items',
                 populate: [
                     { path: 'product', select: 'productName mainImage pack manufacturer price' },
-                    { path: 'seller', select: 'storeName city phone fssaiLicNo' }
+                    { path: 'seller', select: 'storeName location phone fssaiLicNo' }
                 ]
             })
             .populate('deliveryBoy', 'name phone profileImage vehicleNumber');

@@ -8,9 +8,6 @@ export interface IDelivery extends Document {
   email: string;
   dateOfBirth?: Date;
   password: string;
-  address: string;
-  city: string;
-  pincode?: string;
 
   // Documents (URLs pointing to cloud storage)
   drivingLicense?: string;
@@ -34,6 +31,12 @@ export interface IDelivery extends Document {
   location?: {
     type: "Point";
     coordinates: [number, number]; // [longitude, latitude]
+    address?: string;
+    city?: string;
+    pincode?: string;
+    latitude?: number;
+    longitude?: number;
+    updatedAt?: Date;
   };
   balance: number;
   cashCollected: number;
@@ -93,19 +96,9 @@ const DeliverySchema = new Schema<IDelivery>(
       minlength: [6, 'Password must be at least 6 characters'],
       select: false, // Don't return password by default
     },
-    address: {
-      type: String,
-      required: false,
-      trim: true,
-    },
-    city: {
-      type: String,
-      required: false,
-      trim: true,
-    },
-    pincode: {
-      type: String,
-      trim: true,
+    isOnline: {
+      type: Boolean,
+      default: false,
     },
 
     // Documents (URLs)
@@ -161,10 +154,6 @@ const DeliverySchema = new Schema<IDelivery>(
       enum: ['Active', 'Inactive'],
       default: 'Inactive', // New delivery partners start as Inactive until approved
     },
-    isOnline: {
-      type: Boolean,
-      default: false,
-    },
     location: {
       type: {
         type: String,
@@ -174,6 +163,29 @@ const DeliverySchema = new Schema<IDelivery>(
       coordinates: {
         type: [Number], // [longitude, latitude]
         index: "2dsphere",
+        default: [0, 0],
+      },
+      address: {
+        type: String,
+        trim: true,
+      },
+      city: {
+        type: String,
+        trim: true,
+      },
+      pincode: {
+        type: String,
+        trim: true,
+      },
+      latitude: {
+        type: Number,
+      },
+      longitude: {
+        type: Number,
+      },
+      updatedAt: {
+        type: Date,
+        default: Date.now,
       },
     },
     balance: {

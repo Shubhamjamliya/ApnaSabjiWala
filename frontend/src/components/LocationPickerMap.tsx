@@ -5,6 +5,7 @@ interface LocationPickerMapProps {
   initialLat: number;
   initialLng: number;
   onLocationSelect: (lat: number, lng: number) => void;
+  onAddressSelect?: (address: string, components?: { city?: string; state?: string }) => void;
   height?: string;
 }
 
@@ -14,8 +15,8 @@ const containerStyle = {
 };
 
 const defaultCenter = {
-  lat: 20.5937,
-  lng: 78.9629,
+  lat: 22.7196, // Default to Indore center if nothing provided
+  lng: 75.8577,
 };
 
 type Libraries = ("places" | "drawing" | "geometry" | "visualization")[];
@@ -25,9 +26,9 @@ export default function LocationPickerMap({
   initialLat,
   initialLng,
   onLocationSelect,
+  onAddressSelect,
   height = "300px"
 }: LocationPickerMapProps) {
-  // Use the same ID and libraries as GoogleMapsAutocomplete to share the script
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
@@ -36,6 +37,7 @@ export default function LocationPickerMap({
 
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [center, setCenter] = useState(defaultCenter);
+  const geocoderRef = useRef<google.maps.Geocoder | null>(null);
 
   // Update center when props change
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function LocationPickerMap({
     }
   }, [initialLat, initialLng]);
 
-  // Memoize options to prevent re-renders that could freeze the map
+  // Memoize options
   const mapOptions = useMemo(() => ({
     disableDefaultUI: false,
     zoomControl: true,
@@ -52,11 +54,12 @@ export default function LocationPickerMap({
     mapTypeControl: false,
     fullscreenControl: true,
     draggable: true,
-    gestureHandling: "greedy", // Ensures map handles gestures aggressively
+    gestureHandling: "greedy",
   }), []);
 
   const onLoad = useCallback(function callback(map: google.maps.Map) {
     setMap(map);
+    geocoderRef.current = new google.maps.Geocoder();
   }, []);
 
   const onUnmount = useCallback(function callback(map: google.maps.Map) {
@@ -69,10 +72,37 @@ export default function LocationPickerMap({
       if (newCenter) {
         const lat = parseFloat(newCenter.lat().toFixed(6));
         const lng = parseFloat(newCenter.lng().toFixed(6));
+        
+        // Only trigger updates if the location actually changed significantly
+        // to avoid infinite loops or jitter
         onLocationSelect(lat, lng);
+
+        // Reverse Geocode to get address
+        if (onAddressSelect && geocoderRef.current) {
+          geocoderRef.current.geocode({ location: { lat, lng } }, (results, status) => {
+            if (status === 'OK' && results && results[0]) {
+              const address = results[0].formatted_address;
+              
+              let city = '';
+              let state = '';
+              
+              for (const component of results[0].address_components) {
+                if (component.types.includes('locality')) {
+                  city = component.long_name;
+                } else if (component.types.includes('administrative_area_level_3') && !city) {
+                  city = component.long_name;
+                } else if (component.types.includes('administrative_area_level_1')) {
+                  state = component.long_name;
+                }
+              }
+              
+              onAddressSelect(address, { city, state });
+            }
+          });
+        }
       }
     }
-  }, [map, onLocationSelect]);
+  }, [map, onLocationSelect, onAddressSelect]);
 
   if (!isLoaded) {
     return (
@@ -98,16 +128,14 @@ export default function LocationPickerMap({
         onIdle={onIdle}
         options={mapOptions}
       >
-        {/* We don't need a marker because we use a fixed center pin */}
       </GoogleMap>
 
-      {/* Fixed Center Pin Overlay */}
       <div
         className="absolute top-1/2 left-1/2 z-10 pointer-events-none"
         style={{ transform: 'translate(-50%, -100%)' }}
       >
         <img
-          src="https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2.png" // Google Maps standard red pin
+          src="https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2.png"
           alt="Center Location"
           className="w-[27px] h-[43px]"
           style={{ filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.3))' }}

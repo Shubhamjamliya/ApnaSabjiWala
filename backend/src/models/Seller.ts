@@ -13,7 +13,6 @@ export interface ISeller extends Document {
   panCard?: string;
   category: string;
   taxName?: string;
-  address: string;
   taxNumber?: string;
   storeDescription?: string;
   storeBanner?: string;
@@ -28,18 +27,19 @@ export interface ISeller extends Document {
     instagram?: string;
     twitter?: string;
   };
-
   // Store Location Info
-  city: string;
-  serviceableArea?: string;
-  searchLocation?: string;
-  latitude?: string;
-  longitude?: string;
-  // GeoJSON location for geospatial queries
   location?: {
     type: 'Point';
     coordinates: [number, number]; // [longitude, latitude]
+    address?: string;
+    city?: string;
+    latitude?: number;
+    longitude?: number;
+    searchLocation?: string;
+    updatedAt?: Date;
   };
+  serviceableArea?: string;
+
   // Service radius in kilometers
   serviceRadiusKm?: number;
 
@@ -135,12 +135,8 @@ const SellerSchema = new Schema<ISeller>(
       type: String,
       trim: true,
     },
-    address: {
-      type: String,
-      required: false,
-      trim: true,
-    },
     taxNumber: {
+
       type: String,
       trim: true,
     },
@@ -167,28 +163,11 @@ const SellerSchema = new Schema<ISeller>(
       twitter: { type: String },
     },
 
-    // Store Location Info
-    city: {
-      type: String,
-      required: false,
-      trim: true,
-    },
     serviceableArea: {
       type: String,
       trim: true,
     },
-    searchLocation: {
-      type: String,
-      trim: true,
-    },
-    latitude: {
-      type: String,
-      trim: true,
-    },
-    longitude: {
-      type: String,
-      trim: true,
-    },
+
     // GeoJSON location for geospatial queries
     location: {
       type: {
@@ -199,6 +178,12 @@ const SellerSchema = new Schema<ISeller>(
       coordinates: {
         type: [Number], // [longitude, latitude]
       },
+      address: { type: String, trim: true },
+      city: { type: String, trim: true },
+      latitude: { type: Number },
+      longitude: { type: Number },
+      searchLocation: { type: String, trim: true },
+      updatedAt: { type: Date, default: Date.now }
     },
     // Service radius in kilometers (default: 10km if not specified)
     serviceRadiusKm: {

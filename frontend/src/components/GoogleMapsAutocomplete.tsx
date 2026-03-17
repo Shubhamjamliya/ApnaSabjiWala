@@ -46,6 +46,12 @@ export default function GoogleMapsAutocomplete({
   const autocompleteRef = useRef<any>(null);
   const [error, setError] = useState<string>('');
   const [inputValue, setInputValue] = useState(value);
+  const onChangeRef = useRef(onChange);
+
+  // Update onChangeRef whenever onChange changes
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   // Use the same loader configuration as LocationPickerMap
   const { isLoaded, loadError } = useJsApiLoader({
@@ -124,7 +130,7 @@ export default function GoogleMapsAutocomplete({
         }
 
         setInputValue(address);
-        onChange(address, lat, lng, placeName, { city, state });
+        onChangeRef.current(address, lat, lng, placeName, { city, state });
         setError('');
       });
     } catch (err: unknown) {
@@ -132,7 +138,7 @@ export default function GoogleMapsAutocomplete({
       console.error('Autocomplete initialization error:', err);
       setError(`Failed to initialize autocomplete: ${errorMessage}`);
     }
-  }, [onChange, value]);
+  }, []); // Truly stable initialization
 
   useEffect(() => {
     if (isLoaded && inputRef.current && !autocompleteRef.current) {
@@ -157,8 +163,13 @@ export default function GoogleMapsAutocomplete({
         type="text"
         value={inputValue}
         onChange={(e) => {
-          setInputValue(e.target.value);
-          onChange(e.target.value, 0, 0, e.target.value);
+          const newValue = e.target.value;
+          setInputValue(newValue);
+          // Only notify parent of potential coordinate clearing if they were previously set
+          // but mainly stay quiet until a place is selected
+          if (newValue === '') {
+            onChange('', 0, 0, '');
+          }
         }}
         placeholder={placeholder}
         className={`w-full px-3 py-2 border border-neutral-300 rounded-lg placeholder:text-neutral-400 focus:outline-none focus:border-orange-500 bg-white ${className}`}

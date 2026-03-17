@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from '../hooks/useLocation';
 import GoogleMapsAutocomplete from './GoogleMapsAutocomplete';
 
@@ -7,6 +7,7 @@ interface LocationPermissionRequestProps {
   skipable?: boolean;
   title?: string;
   description?: string;
+  allowChange?: boolean;
 }
 
 export default function LocationPermissionRequest({
@@ -14,6 +15,7 @@ export default function LocationPermissionRequest({
   skipable = false,
   title = 'Location Access Required',
   description = 'We need your location to show you products available near you and enable delivery services.',
+  allowChange = false,
 }: LocationPermissionRequestProps) {
   const { requestLocation, updateLocation, isLocationEnabled, isLocationLoading, locationError, locationPermissionStatus, clearLocation } = useLocation();
   const [showManualInput, setShowManualInput] = useState(false);
@@ -21,13 +23,12 @@ export default function LocationPermissionRequest({
   const [manualLat, setManualLat] = useState(0);
   const [manualLng, setManualLng] = useState(0);
 
-  // Auto-grant if already enabled or session permission exists
+  // Auto-close ONLY if we are not in change mode and location is enabled
   useEffect(() => {
-    if (isLocationEnabled) {
-      console.log('[LocationPermissionRequest] Location is enabled, notifying parent.');
+    if (isLocationEnabled && !allowChange) {
       onLocationGranted();
     }
-  }, [isLocationEnabled, onLocationGranted]);
+  }, [isLocationEnabled, allowChange]); 
 
   const handleAllowLocation = async () => {
     // Clear any previous errors before retrying
@@ -75,7 +76,9 @@ export default function LocationPermissionRequest({
     }
   };
 
-  if (isLocationEnabled) {
+  const isClosingRef = useRef(false);
+  
+  if (isLocationEnabled && !allowChange) {
     return null;
   }
 

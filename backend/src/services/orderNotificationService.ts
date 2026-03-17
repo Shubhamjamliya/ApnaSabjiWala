@@ -204,7 +204,7 @@ export async function findDeliveryBoysNearSellerLocations(
         // Get seller locations
         const sellers = await Seller.find({
             _id: { $in: sellerIds },
-        }).select('latitude longitude location serviceRadiusKm storeName');
+        }).select('location storeName serviceRadiusKm');
 
         if (sellers.length === 0) {
             console.log('No seller data found, falling back to all available delivery boys');
@@ -223,9 +223,9 @@ export async function findDeliveryBoysNearSellerLocations(
                 lng = seller.location.coordinates[0];
                 lat = seller.location.coordinates[1];
             } else {
-                // Fallback to legacy fields
-                lat = seller.latitude ? parseFloat(seller.latitude) : null;
-                lng = seller.longitude ? parseFloat(seller.longitude) : null;
+                // Fallback to coordinates in location object if they are numbers
+                lat = seller.location?.latitude || null;
+                lng = seller.location?.longitude || null;
             }
 
             if (!lat || !lng || isNaN(lat) || isNaN(lng)) {

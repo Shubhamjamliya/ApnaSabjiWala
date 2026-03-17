@@ -450,6 +450,11 @@ export default function DeliveryDashboard() {
                       <p className="text-neutral-900 font-semibold text-sm">
                         {order.orderId}
                       </p>
+                      {order.sellerNames && (
+                        <p className="text-teal-600 text-[10px] font-bold uppercase tracking-wider">
+                          Pickup: {order.sellerNames}
+                        </p>
+                      )}
                       <p className="text-neutral-600 text-xs mt-1">
                         {order.customerName}
                       </p>

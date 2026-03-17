@@ -92,8 +92,9 @@ export const verifyOTP = asyncHandler(async (req: Request, res: Response) => {
         storeName: seller.storeName,
         status: seller.status,
         logo: seller.logo,
-        address: seller.address,
-        city: seller.city,
+        userType: "Seller",
+        address: seller.location?.address,
+        city: seller.location?.city,
       },
     },
   });
@@ -185,15 +186,6 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // Create GeoJSON location point [longitude, latitude] if provided
-  const location =
-    longitude && latitude
-      ? {
-        type: "Point" as const,
-        coordinates: [longitude, latitude],
-      }
-      : undefined;
-
   // Create new seller with GeoJSON location (password not required during signup)
   const seller = await Seller.create({
     sellerName,
@@ -202,13 +194,17 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     // password field removed - sellers don't need password during signup
     storeName,
     category,
-    address,
-    city,
     ...(serviceableArea && { serviceableArea }),
-    searchLocation: req.body.searchLocation,
-    latitude: req.body.latitude,
-    longitude: req.body.longitude,
-    location, // GeoJSON location for geospatial queries
+    location: {
+      type: "Point",
+      coordinates: [longitude || 0, latitude || 0],
+      address,
+      city,
+      searchLocation: req.body.searchLocation,
+      latitude: latitude || 0,
+      longitude: longitude || 0,
+      updatedAt: new Date()
+    },
     serviceRadiusKm, // Service radius in kilometers
     status: "Pending",
     requireProductApproval: false,
@@ -248,8 +244,8 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
         email: seller.email,
         storeName: seller.storeName,
         status: seller.status,
-        address: seller.address,
-        city: seller.city,
+        address: seller.location?.address,
+        city: seller.location?.city,
       },
     },
   });
@@ -301,14 +297,33 @@ export const updateProfile = asyncHandler(
       if (!isNaN(latitude) && !isNaN(longitude)) {
         // Update GeoJSON location for geospatial queries
         updates.location = {
+          ...updates.location,
           type: "Point",
-          coordinates: [longitude, latitude], // MongoDB GeoJSON: [longitude, latitude]
+          coordinates: [longitude, latitude],
+          latitude,
+          longitude,
+          updatedAt: new Date()
         };
-        // Ensure string fields are also synchronized
-        updates.latitude = latitude.toString();
-        updates.longitude = longitude.toString();
+        // Remove individual fields if they were passed separately
+        delete updates.latitude;
+        delete updates.longitude;
       }
     }
+
+    // Also handle address, city, searchLocation being moved into location
+    if (updates.address || updates.city || updates.searchLocation) {
+        updates.location = {
+            ...updates.location,
+            ...(updates.address && { address: updates.address }),
+            ...(updates.city && { city: updates.city }),
+            ...(updates.searchLocation && { searchLocation: updates.searchLocation }),
+            updatedAt: new Date()
+        };
+        delete updates.address;
+        delete updates.city;
+        delete updates.searchLocation;
+    }
+
 
     // Handle serviceRadiusKm update
     if (

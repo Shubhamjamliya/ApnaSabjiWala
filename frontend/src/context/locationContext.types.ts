@@ -18,6 +18,8 @@ export interface LocationContextType {
   requestLocation: () => Promise<void>;
   updateLocation: (location: Location) => Promise<void>;
   clearLocation: () => void;
+  isLocationModalOpen: boolean;
+  setIsLocationModalOpen: (isOpen: boolean) => void;
 }
 
 export const LocationContext = createContext<LocationContextType | undefined>(undefined);

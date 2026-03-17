@@ -285,19 +285,19 @@ export const getSellerLocationsForOrder = asyncHandler(
 
     // Get seller details including locations
     const sellers = await Seller.find({ _id: { $in: sellerIds } }).select(
-      "storeName address city latitude longitude"
+      "storeName location"
     );
 
     // Format seller locations
     const sellerLocations = sellers
-      .filter((seller) => seller.latitude && seller.longitude) // Only include sellers with location data
+      .filter((seller) => seller.location && seller.location.latitude && seller.location.longitude) // Only include sellers with location data
       .map((seller) => ({
         sellerId: seller._id.toString(),
         storeName: seller.storeName,
-        address: seller.address,
-        city: seller.city,
-        latitude: parseFloat(seller.latitude || "0"),
-        longitude: parseFloat(seller.longitude || "0"),
+        address: seller.location?.address || "",
+        city: seller.location?.city || "",
+        latitude: seller.location?.latitude || 0,
+        longitude: seller.location?.longitude || 0,
       }));
 
     return res.status(200).json({

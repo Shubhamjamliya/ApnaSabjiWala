@@ -17,7 +17,8 @@ const mapOrderItems = (items: any[]) => {
         name: item.productName || "Unknown Item",
         quantity: item.quantity || 0,
         price: item.total || 0, // Using total price for the line item
-        image: item.productImage
+        image: item.productImage,
+        sellerName: item.seller?.storeName || "Unknown Seller"
     }));
 };
 
@@ -32,7 +33,13 @@ export const getAllOrdersHistory = asyncHandler(async (req: Request, res: Respon
     const skip = (page - 1) * limit;
 
     const orders = await Order.find({ deliveryBoy: deliveryId })
-        .populate("items") // Populate OrderItems
+        .populate({
+            path: "items",
+            populate: {
+                path: "seller",
+                select: "storeName"
+            }
+        })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -65,6 +72,7 @@ export const getAllOrdersHistory = asyncHandler(async (req: Request, res: Respon
         totalAmount: order.total,
         deliveryEarning: commissionMap.get(order._id.toString()) || 0, // Add Earning
         items: mapOrderItems(order.items),
+        sellerNames: [...new Set(order.items.map((item: any) => item.seller?.storeName || "Unknown Seller"))].join(", "),
         createdAt: order.createdAt,
         estimatedDeliveryTime: order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'
     }));
@@ -99,7 +107,13 @@ export const getTodayOrders = asyncHandler(async (req: Request, res: Response) =
             { updatedAt: { $gte: todayStart, $lte: todayEnd } }  // OR Updated today
         ]
     })
-        .populate("items")
+        .populate({
+            path: "items",
+            populate: {
+                path: "seller",
+                select: "storeName"
+            }
+        })
         .sort({ updatedAt: -1 });
 
     const formattedOrders = orders.map(order => ({
@@ -112,6 +126,7 @@ export const getTodayOrders = asyncHandler(async (req: Request, res: Response) =
         address: `${order.deliveryAddress?.address || ''}, ${order.deliveryAddress?.city || ''}`,
         deliveryAddress: order.deliveryAddress,
         items: mapOrderItems(order.items), // Real items
+        sellerNames: [...new Set(order.items.map((item: any) => item.seller?.storeName || "Unknown Seller"))].join(", "),
         totalAmount: order.total,
         estimatedDeliveryTime: order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A',
         createdAt: order.createdAt,
@@ -134,9 +149,15 @@ export const getPendingOrders = asyncHandler(async (req: Request, res: Response)
     // Pending statuses: Ready for pickup, Out for delivery, Picked Up, Assigned, In Transit
     const orders = await Order.find({
         deliveryBoy: deliveryId,
-        status: { $in: ["Ready for pickup", "Out for Delivery", "Picked Up", "Assigned", "In Transit"] }
+        status: { $in: ["Accepted", "Ready for pickup", "Out for Delivery", "Picked Up", "Assigned", "In Transit", "Processed", "Shipped"] }
     })
-        .populate("items")
+        .populate({
+            path: "items",
+            populate: {
+                path: "seller",
+                select: "storeName"
+            }
+        })
         .sort({ createdAt: -1 });
 
     const formattedOrders = orders.map(order => ({
@@ -147,6 +168,7 @@ export const getPendingOrders = asyncHandler(async (req: Request, res: Response)
         status: order.status,
         address: `${order.deliveryAddress?.address || ''}, ${order.deliveryAddress?.city || ''}`,
         items: mapOrderItems(order.items), // Real items
+        sellerNames: [...new Set(order.items.map((item: any) => item.seller?.storeName || "Unknown Seller"))].join(", "),
         totalAmount: order.total,
         estimatedDeliveryTime: order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A',
         createdAt: order.createdAt,
@@ -165,7 +187,13 @@ export const getPendingOrders = asyncHandler(async (req: Request, res: Response)
 export const getOrderDetails = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    const order = await Order.findById(id).populate("items");
+    const order = await Order.findById(id).populate({
+        path: "items",
+        populate: {
+            path: "seller",
+            select: "storeName"
+        }
+    });
 
     if (!order) {
         return res.status(404).json({ success: false, message: "Order not found" });
@@ -187,6 +215,7 @@ export const getOrderDetails = asyncHandler(async (req: Request, res: Response) 
         deliveryAddress: order.deliveryAddress,
         status: order.status,
         items: mapOrderItems(order.items), // Real populated items
+        sellerNames: [...new Set(order.items.map((item: any) => item.seller?.storeName || "Unknown Seller"))].join(", "),
         totalAmount: order.total,
         createdAt: order.createdAt,
         distance: null,
@@ -345,18 +374,18 @@ export const getSellerLocationsForOrder = asyncHandler(async (req: Request, res:
 
     // Get seller details including locations
     const sellers = await Seller.find({ _id: { $in: sellerIds } })
-        .select('storeName address city latitude longitude');
+        .select('storeName location');
 
     // Format seller locations
     const sellerLocations = sellers
-        .filter(seller => seller.latitude && seller.longitude) // Only include sellers with location data
+        .filter(seller => seller.location && seller.location.latitude && seller.location.longitude) // Only include sellers with location data
         .map(seller => ({
             sellerId: seller._id.toString(),
             storeName: seller.storeName,
-            address: seller.address,
-            city: seller.city,
-            latitude: parseFloat(seller.latitude || '0'),
-            longitude: parseFloat(seller.longitude || '0'),
+            address: seller.location?.address || "",
+            city: seller.location?.city || "",
+            latitude: seller.location?.latitude || 0,
+            longitude: seller.location?.longitude || 0,
         }));
 
     return res.status(200).json({
@@ -529,8 +558,8 @@ export const checkSellerProximity = asyncHandler(async (req: Request, res: Respo
     }
 
     // Get seller location
-    const seller = await Seller.findById(sellerId).select('latitude longitude storeName');
-    if (!seller || !seller.latitude || !seller.longitude) {
+    const seller = await Seller.findById(sellerId).select('location storeName');
+    if (!seller || !seller.location || !seller.location.latitude || !seller.location.longitude) {
         return res.status(404).json({ success: false, message: "Seller location not found" });
     }
 
@@ -539,8 +568,8 @@ export const checkSellerProximity = asyncHandler(async (req: Request, res: Respo
     const distance = calculateDistance(
         latitude,
         longitude,
-        parseFloat(seller.latitude),
-        parseFloat(seller.longitude)
+        seller.location.latitude,
+        seller.location.longitude
     );
 
     const withinRange = distance <= 0.5; // 500m = 0.5km
@@ -579,8 +608,8 @@ export const confirmSellerPickup = asyncHandler(async (req: Request, res: Respon
     }
 
     // Verify proximity to seller
-    const seller = await Seller.findById(sellerId).select('latitude longitude storeName');
-    if (!seller || !seller.latitude || !seller.longitude) {
+    const seller = await Seller.findById(sellerId).select('location storeName');
+    if (!seller || !seller.location || !seller.location.latitude || !seller.location.longitude) {
         return res.status(404).json({ success: false, message: "Seller location not found" });
     }
 
@@ -588,8 +617,8 @@ export const confirmSellerPickup = asyncHandler(async (req: Request, res: Respon
     const distance = calculateDistance(
         latitude,
         longitude,
-        parseFloat(seller.latitude),
-        parseFloat(seller.longitude)
+        seller.location.latitude,
+        seller.location.longitude
     );
 
     if (distance > 0.5) { // 500m = 0.5km

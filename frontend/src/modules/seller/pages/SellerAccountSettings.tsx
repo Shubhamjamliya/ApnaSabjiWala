@@ -68,13 +68,16 @@ const SellerAccountSettings = () => {
             const response = await getSellerProfile();
             if (response.success) {
                 const data = response.data;
-                // Map location data to state
-                const locationCoords = data.location?.coordinates || [];
+                const location = data.location || {};
+                const locationCoords = location.coordinates || [];
+                
                 setSellerData({
                     ...data,
-                    latitude: data.latitude || (locationCoords[1]?.toString() || ''),
-                    longitude: data.longitude || (locationCoords[0]?.toString() || ''),
-                    searchLocation: data.searchLocation || data.address || '',
+                    latitude: location.latitude?.toString() || (locationCoords[1]?.toString() || ''),
+                    longitude: location.longitude?.toString() || (locationCoords[0]?.toString() || ''),
+                    searchLocation: location.searchLocation || location.address || data.address || '',
+                    address: location.address || data.address || '',
+                    city: location.city || data.city || '',
                     serviceRadiusKm: (data.serviceRadiusKm || 10).toString(),
                 });
             } else {
@@ -125,12 +128,15 @@ const SellerAccountSettings = () => {
             if (response.success) {
                 setIsEditing(false);
                 const data = response.data;
-                const locationCoords = data.location?.coordinates || [];
+                const location = data.location || {};
+                const locationCoords = location.coordinates || [];
                 setSellerData({
                     ...data,
-                    latitude: data.latitude || (locationCoords[1]?.toString() || ''),
-                    longitude: data.longitude || (locationCoords[0]?.toString() || ''),
-                    searchLocation: data.searchLocation || data.address || '',
+                    latitude: location.latitude?.toString() || (locationCoords[1]?.toString() || ''),
+                    longitude: location.longitude?.toString() || (locationCoords[0]?.toString() || ''),
+                    searchLocation: location.searchLocation || location.address || data.address || '',
+                    address: location.address || data.address || '',
+                    city: location.city || data.city || '',
                     serviceRadiusKm: (data.serviceRadiusKm || 10).toString(),
                 });
                 if (updateUser) {
@@ -215,94 +221,99 @@ const SellerAccountSettings = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50/50">
-            {/* Header Section */}
-            <div className="bg-white border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Settings</h1>
-                            <p className="mt-1 text-sm text-gray-500">Manage your store preferences and profile details</p>
+        <div className="min-h-screen bg-[#f8fafc]">
+            {/* Modern Header with Glassmorphism */}
+            <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between py-6 gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-teal-600 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-teal-200">
+                                {sellerData.sellerName?.charAt(0).toUpperCase() || 'S'}
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+                                    Account Settings
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                                        sellerData.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                    }`}>
+                                        {sellerData.status || 'Pending'}
+                                    </span>
+                                </h1>
+                                <p className="text-sm text-gray-500 font-medium">{sellerData.storeName || 'Manage your business profile'}</p>
+                            </div>
                         </div>
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => setIsEditing(!isEditing)}
-                            className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm flex items-center gap-2 ${isEditing
-                                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-                                : 'bg-teal-600 text-white hover:bg-teal-700 hover:shadow-md'
+                        
+                        <div className="flex items-center gap-3">
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => setIsEditing(!isEditing)}
+                                className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2 ${
+                                    isEditing
+                                        ? 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 border border-neutral-200'
+                                        : 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg shadow-teal-100'
                                 }`}
-                        >
-                            {isEditing ? (
-                                <>
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    Cancel Editing
-                                </>
-                            ) : (
-                                <>
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                                    Edit Profile
-                                </>
-                            )}
-                        </motion.button>
+                            >
+                                {isEditing ? (
+                                    <>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                        Cancel
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                        Edit Profile
+                                    </>
+                                )}
+                            </motion.button>
+                        </div>
+                    </div>
+
+                    {/* Horizontal Tabs Navigation */}
+                    <div className="flex gap-1 overflow-x-auto no-scrollbar scroll-smooth">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-2.5 px-6 py-4 text-sm font-bold border-b-2 transition-all duration-300 relative whitespace-nowrap ${
+                                    activeTab === tab.id
+                                        ? 'text-teal-600 border-teal-600 bg-teal-50/30'
+                                        : 'text-gray-500 border-transparent hover:text-gray-700 hover:bg-gray-50/50'
+                                }`}
+                            >
+                                <span className={activeTab === tab.id ? 'text-teal-600' : 'text-gray-400'}>
+                                    {tab.icon}
+                                </span>
+                                {tab.label}
+                                {activeTab === tab.id && (
+                                    <motion.div 
+                                        layoutId="activeTab" 
+                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-600"
+                                    />
+                                )}
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="flex flex-col lg:flex-row gap-8">
-                    {/* Sidebar Navigation */}
-                    <nav className="w-full lg:w-64 flex-shrink-0 space-y-1">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2">
-                            {tabs.map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === tab.id
-                                        ? 'bg-teal-50 text-teal-700 shadow-sm ring-1 ring-teal-200'
-                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                        }`}
-                                >
-                                    <span className={`${activeTab === tab.id ? 'text-teal-600' : 'text-gray-400'}`}>
-                                        {tab.icon}
-                                    </span>
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Status Card */}
-                        <div className="mt-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-5 text-white shadow-lg">
-                            <div className="flex items-center justify-between mb-4">
-                                <span className="text-xs font-semibold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded">
-                                    Account Status
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">
-                                    {sellerData.sellerName?.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                    <p className="font-medium">{sellerData.sellerName}</p>
-                                    <p className="text-xs text-indigo-100 uppercase">{sellerData.status || 'Active'}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </nav>
-
-                    {/* Main Content Area */}
-                    <div className="flex-1">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div className="w-full">
                         {error && (
                             <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl flex justify-between items-center shadow-sm"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="mb-8 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl flex justify-between items-center shadow-md bg-white"
                             >
-                                <span className="flex items-center gap-2">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    {error}
+                                <span className="flex items-center gap-3">
+                                    <div className="p-2 bg-red-100 rounded-lg">
+                                        <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    </div>
+                                    <span className="font-medium text-sm">{error}</span>
                                 </span>
-                                <button onClick={() => setError(null)} className="text-red-800 hover:bg-red-100 p-1 rounded transition-colors">&times;</button>
+                                <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 p-2 transition-colors">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
                             </motion.div>
                         )}
 
@@ -462,8 +473,8 @@ const SellerAccountSettings = () => {
                                                                         Exact Location <span className="text-teal-600 text-xs font-normal">(Move the map to place the pin on your store's entrance)</span>
                                                                     </p>
                                                                     <LocationPickerMap
-                                                                        initialLat={parseFloat(sellerData.latitude) || 26.9124}
-                                                                        initialLng={parseFloat(sellerData.longitude) || 75.7873}
+                                                                        initialLat={parseFloat(sellerData.latitude) || 22.7196}
+                                                                        initialLng={parseFloat(sellerData.longitude) || 75.8577}
                                                                         onLocationSelect={(lat, lng) => {
                                                                             setSellerData(prev => ({
                                                                                 ...prev,
@@ -471,9 +482,17 @@ const SellerAccountSettings = () => {
                                                                                 longitude: lng.toString()
                                                                             }));
                                                                         }}
+                                                                        onAddressSelect={(address, components) => {
+                                                                            setSellerData(prev => ({
+                                                                                ...prev,
+                                                                                searchLocation: address,
+                                                                                address: address,
+                                                                                city: components?.city || prev.city,
+                                                                            }));
+                                                                        }}
                                                                     />
                                                                     <p className="mt-1 text-xs text-neutral-500 text-center">
-                                                                        Selected Coordinates: {sellerData.latitude || 'Not selected'}, {sellerData.longitude || 'Not selected'}
+                                                                        Selected Coordinates: {parseFloat(sellerData.latitude).toFixed(4) || 'Not selected'}, {parseFloat(sellerData.longitude).toFixed(4) || 'Not selected'}
                                                                     </p>
                                                                 </div>
                                                             </>
@@ -621,7 +640,6 @@ const SellerAccountSettings = () => {
                                 </motion.div>
                             </AnimatePresence>
                         </form>
-                    </div>
                 </div>
             </div>
         </div>
@@ -629,21 +647,27 @@ const SellerAccountSettings = () => {
 };
 
 const InputGroup = ({ label, name, value, onChange, disabled, type = "text", placeholder = "", autoComplete }: any) => (
-
-    <div className="space-y-1.5">
-        <label className="text-sm font-semibold text-gray-700 ml-1">{label}</label>
-        <input
-            type={type}
-            name={name}
-            value={value || ''}
-            onChange={onChange}
-            disabled={disabled}
-            placeholder={placeholder}
-            autoComplete={autoComplete}
-            className={`w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all ${disabled ? 'bg-gray-50/50 text-gray-500 cursor-default' : 'bg-white'
-
+    <div className="space-y-2">
+        <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider ml-1">{label}</label>
+        <div className="relative group">
+            <input
+                type={type}
+                name={name}
+                value={value || ''}
+                onChange={onChange}
+                disabled={disabled}
+                placeholder={placeholder}
+                autoComplete={autoComplete}
+                className={`w-full px-4 py-3 rounded-xl border transition-all outline-none text-sm ${
+                    disabled 
+                        ? 'bg-neutral-50/50 text-neutral-400 border-neutral-100 italic' 
+                        : 'bg-white border-neutral-200 text-neutral-800 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 group-hover:border-neutral-300'
                 }`}
-        />
+            />
+            {!disabled && (
+                <div className="absolute bottom-0 left-0 h-0.5 bg-teal-500 w-0 group-focus-within:w-full transition-all duration-300 rounded-full" />
+            )}
+        </div>
     </div>
 );
 
