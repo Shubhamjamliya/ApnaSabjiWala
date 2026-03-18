@@ -1,7 +1,10 @@
+import dotenv from "dotenv";
+// Load environment variables - must be before other imports
+dotenv.config();
+
 import express, { Application, Request, Response } from "express";
 import { createServer } from "http";
 import cors from "cors";
-import dotenv from "dotenv";
 import connectDB from "./config/db";
 import routes from "./routes";
 import { errorHandler } from "./middleware/errorHandler";
@@ -11,9 +14,6 @@ import { ensureDefaultAdmin } from "./utils/ensureDefaultAdmin";
 import { initializeSocket } from "./socket/socketService";
 import { initializeFirebaseAdmin } from "./services/firebaseAdmin";
 
-
-// Load environment variables
-dotenv.config();
 
 const app: Application = express();
 const httpServer = createServer(app);

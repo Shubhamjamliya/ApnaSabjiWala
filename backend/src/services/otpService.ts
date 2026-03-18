@@ -2,17 +2,9 @@ import axios from 'axios';
 import Otp from '../models/Otp';
 
 // SMS India HUB Configuration
-const SMS_INDIA_HUB_API_KEY = process.env.SMS_INDIA_HUB_API_KEY;
-const SMS_INDIA_HUB_SENDER_ID = process.env.SMS_INDIA_HUB_SENDER_ID;
-const SMS_INDIA_HUB_DLT_TEMPLATE_ID = process.env.SMS_INDIA_HUB_DLT_TEMPLATE_ID;
 const SMS_INDIA_HUB_API_URL = 'http://cloud.smsindiahub.in/vendorsms/pushsms.aspx';
 const API_TIMEOUT = 30000; // 30 seconds
 
-if (!SMS_INDIA_HUB_API_KEY || !SMS_INDIA_HUB_SENDER_ID) {
-  if (process.env.NODE_ENV === 'production') {
-    console.warn('SMS India HUB credentials are not fully set in environment variables');
-  }
-}
 
 /**
  * Interface for OTP Response
@@ -110,23 +102,27 @@ function handleSmsResponse(responseData: SmsIndiaHubResponse): void {
  * Send SMS via SMS India HUB API
  */
 async function sendSmsViaApi(mobile: string, message: string): Promise<void> {
-  if (!SMS_INDIA_HUB_API_KEY || !SMS_INDIA_HUB_SENDER_ID) {
+  const apiKey = process.env.SMS_INDIA_HUB_API_KEY;
+  const senderId = process.env.SMS_INDIA_HUB_SENDER_ID;
+  const dltTemplateId = process.env.SMS_INDIA_HUB_DLT_TEMPLATE_ID;
+
+  if (!apiKey || !senderId) {
     throw new Error('SMS India HUB credentials are missing. Please check environment variables.');
   }
 
   const cleanMobile = normalizeMobileNumber(mobile);
 
   const params: Record<string, string> = {
-    APIKey: SMS_INDIA_HUB_API_KEY.trim(),
+    APIKey: apiKey.trim(),
     msisdn: cleanMobile,
-    sid: SMS_INDIA_HUB_SENDER_ID.trim(),
+    sid: senderId.trim(),
     msg: message,
     fl: '0',
     gwid: '2',
   };
 
-  if (SMS_INDIA_HUB_DLT_TEMPLATE_ID?.trim()) {
-    params.DLT_TE_ID = SMS_INDIA_HUB_DLT_TEMPLATE_ID.trim();
+  if (dltTemplateId?.trim()) {
+    params.DLT_TE_ID = dltTemplateId.trim();
   }
 
   const response = await axios.get<SmsIndiaHubResponse>(SMS_INDIA_HUB_API_URL, {
@@ -206,7 +202,10 @@ function isSpecialBypass(mobile: string): boolean {
  * Check if mock mode should be used
  */
 function isMockMode(): boolean {
-  return process.env.USE_MOCK_OTP === 'true' || !SMS_INDIA_HUB_API_KEY || !SMS_INDIA_HUB_SENDER_ID;
+  const apiKey = process.env.SMS_INDIA_HUB_API_KEY;
+  const senderId = process.env.SMS_INDIA_HUB_SENDER_ID;
+  
+  return process.env.USE_MOCK_OTP === 'true' || !apiKey || !senderId;
 }
 
 /**

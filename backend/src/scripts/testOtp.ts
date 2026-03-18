@@ -6,13 +6,16 @@ import path from 'path';
 const envPath = path.resolve(__dirname, '../../.env');
 dotenv.config({ path: envPath });
 
-import { sendSmsOtp } from '../services/otpService';
+// Import after loading .env
+const { sendSmsOtp } = require('../services/otpService');
 import mongoose from 'mongoose';
 
 async function test() {
   console.log('--- Testing sendSmsOtp ---');
   console.log('Env Path:', envPath);
   console.log('SMS_INDIA_HUB_API_KEY:', process.env.SMS_INDIA_HUB_API_KEY ? '*****' + process.env.SMS_INDIA_HUB_API_KEY.slice(-4) : 'NOT SET');
+  console.log('SMS_INDIA_HUB_SENDER_ID:', process.env.SMS_INDIA_HUB_SENDER_ID || 'NOT SET');
+  console.log('USE_MOCK_OTP:', process.env.USE_MOCK_OTP || 'NOT SET');
 
   // Connect to DB if needed (otpService saves to DB)
   // We need a dummy mongo connection or mock the DB call if we don't want to rely on real DB
