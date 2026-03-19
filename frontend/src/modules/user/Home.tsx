@@ -256,7 +256,7 @@ export default function Home() {
       <HomeHero activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Promo Strip */}
-      <PromoStrip activeTab={activeTab} />
+      <PromoStrip activeTab={activeTab} data={homeData} />
 
       {/* Next Day Vegetable Booking Card */}
       <NextDayBookingCard />

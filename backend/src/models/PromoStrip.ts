@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IPromoStrip extends Document {
+  headerCategory?: mongoose.Types.ObjectId; // Reference to HeaderCategory (Optional for backward compatibility)
   headerCategorySlug: string; // Links to HeaderCategory slug (e.g., "all", "grocery", "fashion")
   productCategoryId?: mongoose.Types.ObjectId; // Links to the main Product Category
   heading: string; // e.g., "HOUSEFULL SALE"
@@ -26,6 +27,10 @@ export interface IPromoStrip extends Document {
 
 const PromoStripSchema = new Schema<IPromoStrip>(
   {
+    headerCategory: {
+      type: Schema.Types.ObjectId,
+      ref: "HeaderCategory",
+    },
     headerCategorySlug: {
       type: String,
       required: [true, "Header category slug is required"],

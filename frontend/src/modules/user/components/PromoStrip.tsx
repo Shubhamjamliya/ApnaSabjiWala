@@ -42,9 +42,10 @@ const getCategoryIcons = (categoryId: string) => {
 
 interface PromoStripProps {
   activeTab?: string;
+  data?: any; // Already fetched data from Home.tsx
 }
 
-export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
+export default function PromoStrip({ activeTab = "all", data: initialData }: PromoStripProps) { // Re-check
   const { location } = useLocation();
   const { currentTheme } = useThemeContext();
   const theme = currentTheme;
@@ -112,209 +113,207 @@ export default function PromoStrip({ activeTab = "all" }: PromoStripProps) {
     }, 300); // 300ms delay - allows main content to render first
   }, []);
 
+  const processData = useCallback((data: any) => {
+    if (!data) return;
+
+    // Reset current product index when process new data
+    setCurrentProductIndex(0);
+
+    let fetchedCards: PromoCard[] = [];
+    let fetchedProducts: any[] = [];
+    let newHeadingText = theme.bannerText;
+    let newSaleTextValue = theme.saleText;
+    let newDateRange = "";
+
+    // 1. Check for PromoStrip data from backend (highest priority)
+    if (data.promoStrip && data.promoStrip.isActive) {
+      const promoStrip = data.promoStrip;
+      newHeadingText = promoStrip.heading || newHeadingText;
+      newSaleTextValue = promoStrip.saleText || newSaleTextValue;
+      // Set CRAZY DEALS title from PromoStrip
+      if (promoStrip.crazyDealsTitle) {
+        setCrazyDealsTitle(promoStrip.crazyDealsTitle);
+      } else {
+        setCrazyDealsTitle("CRAZY DEALS");
+      }
+
+      // Format date range
+      if (promoStrip.startDate && promoStrip.endDate) {
+        const start = new Date(promoStrip.startDate);
+        const end = new Date(promoStrip.endDate);
+        newDateRange = `${start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()} - ${end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}`;
+      }
+
+      // Map category cards from PromoStrip
+      if (promoStrip.categoryCards && promoStrip.categoryCards.length > 0) {
+        fetchedCards = promoStrip.categoryCards
+          .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+          .map((card: any) => {
+            const subCategory = typeof card.subCategoryId === 'object' ? card.subCategoryId : null;
+            const categoryId = card.subCategoryId?._id || card.subCategoryId;
+            const product = typeof card.productId === 'object' ? card.productId : null;
+            const productId = card.productId?._id || card.productId;
+
+            return {
+              id: card._id || categoryId || productId,
+              badge: card.badge || `Save ${card.discountPercentage || 0}%`,
+              title: card.title || product?.productName || subCategory?.subcategoryName || subCategory?.name || "",
+              categoryId: categoryId,
+              productId: productId,
+              subcategoryImages: card.images || [], // Explicitly map backend images
+              slug: product ? `product/${productId}` : (subCategory?.slug || categoryId), // Use product path or category path
+              imageUrl: product?.mainImage || subCategory?.image || subCategory?.subcategoryImage,
+              bgColor: "bg-white",
+              type: product ? 'product' : 'category'
+            };
+          });
+      }
+
+      // Map featured products from PromoStrip
+      if (promoStrip.featuredProducts && promoStrip.featuredProducts.length > 0) {
+        fetchedProducts = promoStrip.featuredProducts.map((p: any) => {
+          const product = typeof p === 'object' ? p : null;
+          const price = Number(product?.price) || 0;
+          const mrp = Number(product?.mrp) || Number(product?.compareAtPrice) || 0;
+          const originalPrice = mrp > 0 ? mrp : (price > 0 ? Math.round(price * 1.2) : 999);
+          const discountedPrice = price > 0 ? price : 499;
+
+          const imageUrl =
+            product?.mainImage ||
+            product?.mainImageUrl ||
+            product?.image ||
+            product?.imageUrl ||
+            (product?.galleryImageUrls && product.galleryImageUrls.length > 0 ? product.galleryImageUrls[0] : null) ||
+            (product?.galleryImages && product.galleryImages.length > 0 ? product.galleryImages[0] : null) ||
+            null;
+
+          const productName = product?.productName || product?.name || "Product";
+
+          return {
+            id: product?._id || p,
+            _id: product?._id || p,
+            name: productName,
+            productName: productName,
+            price: price,
+            mrp: mrp,
+            originalPrice: isNaN(originalPrice) ? 999 : originalPrice,
+            discountedPrice: isNaN(discountedPrice) ? 499 : discountedPrice,
+            imageUrl: imageUrl,
+          };
+        });
+      }
+    }
+    // 2. Fallback to promoCards if no PromoStrip
+    else if (data.promoCards && data.promoCards.length > 0) {
+      fetchedCards = data.promoCards;
+    }
+    // 3. Fallback to categories if no promo cards
+    else if (data.categories && data.categories.length > 0) {
+      fetchedCards = data.categories
+        .slice(0, 4)
+        .map((c: any) => ({
+          id: c._id || c.id,
+          badge: "Up to 50% OFF",
+          title: c.name,
+          categoryId: c.slug || c._id,
+          subcategoryImages: c.image ? [c.image] : [],
+          bgColor: c.color || "bg-yellow-50",
+        }));
+    }
+
+    // Fallback: Map bestsellers to FeaturedProducts if no PromoStrip featured products
+    if (fetchedProducts.length === 0 && data.bestsellers && data.bestsellers.length > 0) {
+      fetchedProducts = data.bestsellers.map((p: any) => {
+        const price = Number(p.price) || 0;
+        const mrp = Number(p.mrp) || 0;
+        const originalPrice = mrp > 0 ? mrp : (price > 0 ? Math.round(price * 1.2) : 999);
+        const discountedPrice = price > 0 ? price : 499;
+
+        const imageUrl =
+          p.mainImage ||
+          p.mainImageUrl ||
+          p.image ||
+          p.imageUrl ||
+          (p.galleryImageUrls && p.galleryImageUrls.length > 0 ? p.galleryImageUrls[0] : null) ||
+          (p.galleryImages && p.galleryImages.length > 0 ? p.galleryImages[0] : null) ||
+          (p.productImages && p.productImages.length > 0 ? p.productImages[0] : null) ||
+          null;
+
+        const productName = p.productName || p.name || "Product";
+
+        return {
+          id: p._id,
+          _id: p._id,
+          name: productName,
+          productName: productName,
+          price: price,
+          mrp: mrp,
+          originalPrice: isNaN(originalPrice) ? 999 : originalPrice,
+          discountedPrice: isNaN(discountedPrice) ? 499 : discountedPrice,
+          imageUrl: imageUrl,
+        };
+      });
+    }
+
+    setCategoryCards(fetchedCards);
+    setFeaturedProducts(fetchedProducts);
+    setHeadingText(newHeadingText);
+    setSaleTextValue(newSaleTextValue);
+    setDateRange(newDateRange);
+    
+    // Reset CRAZY DEALS title if no PromoStrip data
+    if (!data?.promoStrip || !data.promoStrip.isActive) {
+      setCrazyDealsTitle("CRAZY DEALS");
+    }
+    
+    setHasData(fetchedCards.length > 0 || fetchedProducts.length > 0);
+
+    // Fetch subcategory images
+    if (fetchedCards.length > 0) {
+      fetchSubcategoryImages(fetchedCards);
+    }
+  }, [theme.bannerText, theme.saleText, fetchSubcategoryImages]);
+
   useEffect(() => {
-    const fetchData = async () => {
-      // Check cache first before showing loading state
-      const cacheKey = `home-content-${activeTab || 'all'}`;
-      const cachedData = apiCache.getSync(cacheKey);
+    // If we have initialData from parent, use it immediately
+    if (initialData) {
+      processData(initialData);
+      setLoading(false);
+    } else {
+      const fetchData = async () => {
+        const cacheKey = `home-content-${activeTab || 'all'}`;
+        const cachedData = apiCache.getSync(cacheKey);
 
-      // Only show loading if data is not cached
-      if (!cachedData) {
-        setLoading(true);
-      }
-
-      try {
-        // Pass activeTab (header category slug) and location to filter categories
-        // Use cache with 5 minute TTL for faster loading
-        const response = await getHomeContent(
-          activeTab,
-          location?.latitude,
-          location?.longitude,
-          true,
-          5 * 60 * 1000
-        );
-
-        // Reset current product index when fetching new data
-        setCurrentProductIndex(0);
-
-        let fetchedCards: PromoCard[] = [];
-        let fetchedProducts: any[] = [];
-        let newHeadingText = theme.bannerText;
-        let newSaleTextValue = theme.saleText;
-        let newDateRange = "";
-
-        if (response.success && response.data) {
-          // 1. Check for PromoStrip data from backend (highest priority)
-          if (response.data.promoStrip && response.data.promoStrip.isActive) {
-            const promoStrip = response.data.promoStrip;
-            newHeadingText = promoStrip.heading || newHeadingText;
-            newSaleTextValue = promoStrip.saleText || newSaleTextValue;
-            // Set CRAZY DEALS title from PromoStrip
-            if (promoStrip.crazyDealsTitle) {
-              setCrazyDealsTitle(promoStrip.crazyDealsTitle);
-            } else {
-              setCrazyDealsTitle("CRAZY DEALS");
-            }
-
-            // Format date range
-            if (promoStrip.startDate && promoStrip.endDate) {
-              const start = new Date(promoStrip.startDate);
-              const end = new Date(promoStrip.endDate);
-              newDateRange = `${start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()} - ${end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}`;
-            }
-
-            // Map category cards from PromoStrip
-            if (promoStrip.categoryCards && promoStrip.categoryCards.length > 0) {
-              fetchedCards = promoStrip.categoryCards
-                .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-                .map((card: any) => {
-                  const subCategory = typeof card.subCategoryId === 'object' ? card.subCategoryId : null;
-                  const categoryId = card.subCategoryId?._id || card.subCategoryId;
-                  const product = typeof card.productId === 'object' ? card.productId : null;
-                  const productId = card.productId?._id || card.productId;
-
-                  return {
-                    id: card._id || categoryId || productId,
-                    badge: card.badge || `Save ${card.discountPercentage || 0}%`,
-                    title: card.title || product?.productName || subCategory?.subcategoryName || subCategory?.name || "",
-                    categoryId: categoryId,
-                    productId: productId,
-                    subcategoryImages: card.images || [], // Explicitly map backend images
-                    slug: product ? `product/${productId}` : (subCategory?.slug || categoryId), // Use product path or category path
-                    imageUrl: product?.mainImage || subCategory?.image || subCategory?.subcategoryImage,
-                    bgColor: "bg-white",
-                    type: product ? 'product' : 'category'
-                  };
-                });
-            }
-
-            // Map featured products from PromoStrip
-            if (promoStrip.featuredProducts && promoStrip.featuredProducts.length > 0) {
-              fetchedProducts = promoStrip.featuredProducts.map((p: any) => {
-                const product = typeof p === 'object' ? p : null;
-                const price = Number(product?.price) || 0;
-                const mrp = Number(product?.mrp) || Number(product?.compareAtPrice) || 0;
-                const originalPrice = mrp > 0 ? mrp : (price > 0 ? Math.round(price * 1.2) : 999);
-                const discountedPrice = price > 0 ? price : 499;
-
-                // Try multiple image field names and fallbacks
-                const imageUrl =
-                  product?.mainImage ||
-                  product?.mainImageUrl ||
-                  product?.image ||
-                  product?.imageUrl ||
-                  (product?.galleryImageUrls && product.galleryImageUrls.length > 0 ? product.galleryImageUrls[0] : null) ||
-                  (product?.galleryImages && product.galleryImages.length > 0 ? product.galleryImages[0] : null) ||
-                  null;
-
-                // Always prioritize productName to avoid showing category names
-                const productName = product?.productName || product?.name || "Product";
-
-                return {
-                  id: product?._id || p,
-                  _id: product?._id || p,
-                  name: productName,
-                  productName: productName, // Always use productName, never category name
-                  price: price,
-                  mrp: mrp,
-                  originalPrice: isNaN(originalPrice) ? 999 : originalPrice,
-                  discountedPrice: isNaN(discountedPrice) ? 499 : discountedPrice,
-                  imageUrl: imageUrl,
-                };
-              });
-            }
-          }
-          // 2. Fallback to promoCards if no PromoStrip
-          else if (response.data.promoCards && response.data.promoCards.length > 0) {
-            fetchedCards = response.data.promoCards;
-          }
-          // 3. Fallback to categories if no promo cards
-          else if (
-            response.data.categories &&
-            response.data.categories.length > 0
-          ) {
-            fetchedCards = response.data.categories
-              .slice(0, 4)
-              .map((c: any) => ({
-                id: c._id || c.id,
-                badge: "Up to 50% OFF",
-                title: c.name,
-                categoryId: c.slug || c._id,
-                subcategoryImages: c.image ? [c.image] : [],
-                bgColor: c.color || "bg-yellow-50",
-              }));
-          }
-
-          // Fallback: Map bestsellers to FeaturedProducts if no PromoStrip featured products
-          if (fetchedProducts.length === 0 && response.data.bestsellers && response.data.bestsellers.length > 0) {
-            fetchedProducts = response.data.bestsellers.map((p: any) => {
-              const price = Number(p.price) || 0;
-              const mrp = Number(p.mrp) || 0;
-              const originalPrice = mrp > 0 ? mrp : (price > 0 ? Math.round(price * 1.2) : 999);
-              const discountedPrice = price > 0 ? price : 499;
-
-              // Try multiple image field names and fallbacks
-              const imageUrl =
-                p.mainImage ||
-                p.mainImageUrl ||
-                p.image ||
-                p.imageUrl ||
-                (p.galleryImageUrls && p.galleryImageUrls.length > 0 ? p.galleryImageUrls[0] : null) ||
-                (p.galleryImages && p.galleryImages.length > 0 ? p.galleryImages[0] : null) ||
-                (p.productImages && p.productImages.length > 0 ? p.productImages[0] : null) ||
-                null;
-
-              // Always prioritize productName to avoid showing category names
-              const productName = p.productName || p.name || "Product";
-
-              return {
-                id: p._id,
-                _id: p._id,
-                name: productName,
-                productName: productName, // Always use productName, never category name
-                price: price,
-                mrp: mrp,
-                originalPrice: isNaN(originalPrice) ? 999 : originalPrice,
-                discountedPrice: isNaN(discountedPrice) ? 499 : discountedPrice,
-                imageUrl: imageUrl,
-              };
-            });
-          }
+        if (!cachedData) {
+          setLoading(true);
         }
 
-        setCategoryCards(fetchedCards);
-        setFeaturedProducts(fetchedProducts);
-        setHeadingText(newHeadingText);
-        setSaleTextValue(newSaleTextValue);
-        setDateRange(newDateRange);
-        // Reset CRAZY DEALS title if no PromoStrip data
-        if (!response.data?.promoStrip || !response.data.promoStrip.isActive) {
-          setCrazyDealsTitle("CRAZY DEALS");
+        try {
+          const response = await getHomeContent(
+            activeTab,
+            location?.latitude,
+            location?.longitude,
+            true,
+            5 * 60 * 1000
+          );
+
+          if (response.success && response.data) {
+            processData(response.data);
+          }
+        } catch (error) {
+          console.error("Error fetching home content for PromoStrip:", error);
+          setCategoryCards([]);
+          setFeaturedProducts([]);
+          setHasData(false);
+        } finally {
+          setLoading(false);
         }
-        setHasData(fetchedCards.length > 0 || fetchedProducts.length > 0);
+      };
 
-        // Fetch subcategory images AFTER setting hasData to true
-        // This allows the main content to render immediately
-        if (fetchedCards.length > 0) {
-          fetchSubcategoryImages(fetchedCards);
-        }
-      } catch (error) {
-        console.error("Error fetching home content for PromoStrip:", error);
-        setCategoryCards([]);
-        setFeaturedProducts([]);
-        setHasData(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+      fetchData();
+    }
+  }, [activeTab, location?.latitude, location?.longitude, initialData, processData]);
 
-    // REMOVED: Polling every 30 seconds causes unnecessary re-renders and API calls
-    // If real-time updates are needed, consider using WebSockets or Server-Sent Events
-    // For now, data will only refresh when activeTab changes
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, theme.bannerText, theme.saleText]);
 
   // Reset product index when activeTab changes or featuredProducts change
   useEffect(() => {

@@ -13,6 +13,7 @@ export interface CategoryCard {
 
 export interface PromoStrip {
   _id: string;
+  headerCategory?: string | { _id: string; name?: string; slug?: string };
   headerCategorySlug: string;
   productCategoryId?: string | { _id: string; name?: string; slug?: string };
   heading: string;
@@ -29,6 +30,7 @@ export interface PromoStrip {
 }
 
 export interface PromoStripFormData {
+  headerCategory?: string;
   headerCategorySlug: string;
   productCategoryId?: string;
   heading: string;

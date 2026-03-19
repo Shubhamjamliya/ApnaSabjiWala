@@ -90,9 +90,16 @@ export default function DeliveryOrders() {
                 <div className="border-t border-neutral-200 pt-3 mt-3">
                   <p className="text-neutral-600 text-xs mb-2 line-clamp-2">{order.address}</p>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-neutral-500 text-xs">
-                      {order.items.length} item{order.items.length > 1 ? 's' : ''}
-                    </p>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-neutral-500 text-xs">
+                        {order.items.length} item{order.items.length > 1 ? 's' : ''}
+                      </p>
+                      {order.paymentMethod === 'COD' ? (
+                        <span className="text-[10px] bg-red-50 text-red-600 font-bold px-1.5 py-0.5 rounded border border-red-100 self-start uppercase">COD</span>
+                      ) : (
+                        <span className="text-[10px] bg-green-50 text-green-600 font-bold px-1.5 py-0.5 rounded border border-green-100 self-start uppercase">Paid</span>
+                      )}
+                    </div>
                     <p className="text-neutral-900 font-bold">₹ {order.totalAmount}</p>
                   </div>
                   {order.estimatedDeliveryTime && (

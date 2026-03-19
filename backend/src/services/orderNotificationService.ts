@@ -192,9 +192,13 @@ export async function findDeliveryBoysNearSellerLocations(
         // Get unique seller IDs from order items
         const sellerIds = [...new Set(
             order.items
-                ?.map((item: any) => item.seller?.toString())
-                .filter((id: string) => id) || []
-        )];
+                ?.map((item: any) => {
+                    const seller = item.seller;
+                    if (!seller) return null;
+                    return seller._id ? seller._id.toString() : seller.toString();
+                })
+                .filter((id: string | null) => id) || []
+        )] as string[];
 
         if (sellerIds.length === 0) {
             console.log('No sellers found in order, falling back to all available delivery boys');

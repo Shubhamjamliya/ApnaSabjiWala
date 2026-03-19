@@ -12,6 +12,7 @@ import HeaderCategory from "../../../models/HeaderCategory";
 export const createPromoStrip = asyncHandler(async (req: Request, res: Response) => {
   const {
     headerCategorySlug,
+    headerCategoryId,
     productCategoryId,
     heading,
     saleText,
@@ -32,14 +33,21 @@ export const createPromoStrip = asyncHandler(async (req: Request, res: Response)
   }
 
   // Validate header category exists (allow "all" as a special case)
-  if (headerCategorySlug.toLowerCase() !== "all") {
-    const headerCategory = await HeaderCategory.findOne({ slug: headerCategorySlug });
-    if (!headerCategory) {
-      return res.status(404).json({
-        success: false,
-        message: `Header category with slug "${headerCategorySlug}" not found`,
-      });
+  let foundHeaderCategoryId = headerCategoryId;
+  if (!foundHeaderCategoryId && headerCategorySlug) {
+    const headerCategory = await HeaderCategory.findOne({ 
+      slug: { $regex: new RegExp(`^${headerCategorySlug}$`, "i") } 
+    });
+    if (headerCategory) {
+      foundHeaderCategoryId = headerCategory._id;
     }
+  }
+
+  if (headerCategorySlug.toLowerCase() !== "all" && !foundHeaderCategoryId) {
+    return res.status(404).json({
+      success: false,
+      message: `Header category with slug "${headerCategorySlug}" not found`,
+    });
   }
 
   // Validate product category if provided
@@ -98,6 +106,7 @@ export const createPromoStrip = asyncHandler(async (req: Request, res: Response)
   }
 
   const promoStrip = await PromoStrip.create({
+    headerCategory: foundHeaderCategoryId,
     headerCategorySlug: headerCategorySlug.toLowerCase(),
     productCategoryId: sanitizedProductCategoryId,
     heading,
@@ -151,6 +160,7 @@ export const getAllPromoStrips = asyncHandler(async (req: Request, res: Response
   }
 
   const promoStrips = await PromoStrip.find(query)
+    .populate("headerCategory", "name slug")
     .populate("productCategoryId", "name slug")
     .populate("categoryCards.subCategoryId", "name image")
     .populate("categoryCards.productId", "productName mainImage")
@@ -171,6 +181,7 @@ export const getPromoStripById = asyncHandler(async (req: Request, res: Response
   const { id } = req.params;
 
   const promoStrip = await PromoStrip.findById(id)
+    .populate("headerCategory", "name slug")
     .populate("productCategoryId", "name slug")
     .populate("categoryCards.subCategoryId", "name image")
     .populate("categoryCards.productId", "productName mainImage")
@@ -197,6 +208,7 @@ export const updatePromoStrip = asyncHandler(async (req: Request, res: Response)
   const { id } = req.params;
   const {
     headerCategorySlug,
+    headerCategoryId,
     productCategoryId,
     heading,
     saleText,
@@ -217,15 +229,22 @@ export const updatePromoStrip = asyncHandler(async (req: Request, res: Response)
   }
 
   // Validate header category if provided (allow "all" as a special case)
+  if (headerCategoryId) {
+    promoStrip.headerCategory = headerCategoryId as any;
+  }
+  
   if (headerCategorySlug) {
     if (headerCategorySlug.toLowerCase() !== "all") {
-      const headerCategory = await HeaderCategory.findOne({ slug: headerCategorySlug });
+      const headerCategory = await HeaderCategory.findOne({ 
+        slug: { $regex: new RegExp(`^${headerCategorySlug}$`, "i") } 
+      });
       if (!headerCategory) {
         return res.status(404).json({
           success: false,
           message: `Header category with slug "${headerCategorySlug}" not found`,
         });
       }
+      if (!promoStrip.headerCategory) promoStrip.headerCategory = headerCategory._id;
     }
     promoStrip.headerCategorySlug = headerCategorySlug.toLowerCase();
   }

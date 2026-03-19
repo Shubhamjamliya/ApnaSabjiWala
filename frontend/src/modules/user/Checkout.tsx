@@ -78,6 +78,8 @@ export default function Checkout() {
   // Razorpay Payment State
   const [showRazorpayCheckout, setShowRazorpayCheckout] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'Online' | 'COD'>('Online');
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
 
   // Check if user has placeholder data (needs profile completion)
@@ -359,10 +361,8 @@ export default function Checkout() {
       longitude: finalLongitude,
     };
 
-    const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-
     const order: Order = {
-      id: orderId,
+      id: `order_${Date.now()}`,
       items: cart.items,
       totalItems: cart.itemCount || 0,
       subtotal: discountedTotal,
@@ -372,7 +372,8 @@ export default function Checkout() {
       },
       totalAmount: grandTotal,
       address: addressWithLocation,
-      status: 'Pending', // Changed from 'Placed' to 'Pending' until payment is complete
+      paymentMethod: paymentMethod,
+      status: paymentMethod === 'COD' ? 'Received' : 'Pending', // COD orders start as Received
       createdAt: new Date().toISOString(),
       tipAmount: finalTipAmount,
       gstin: gstin || undefined,
@@ -380,21 +381,29 @@ export default function Checkout() {
       giftPackaging: giftPackaging,
     };
 
+    setIsPlacingOrder(true);
     try {
-      // Create the order first (with Pending status)
+      // Create the order
       const placedId = await addOrder(order);
       if (placedId) {
-        // Set the pending order ID and trigger Razorpay payment
-        setPendingOrderId(placedId);
-        setShowRazorpayCheckout(true);
-        // Note: Cart will be cleared and success shown only after successful payment
-        // See the RazorpayCheckout onSuccess handler (lines 1840-1846)
+        if (paymentMethod === 'Online') {
+          // Trigger Razorpay payment for online orders
+          setPendingOrderId(placedId);
+          setShowRazorpayCheckout(true);
+        } else {
+          // Success for COD orders immediately
+          setPlacedOrderId(placedId);
+          setShowOrderSuccess(true);
+          clearCart();
+          showGlobalToast('Order placed successfully (Cash on Delivery)!', 'success');
+        }
       }
     } catch (error: any) {
       console.error("Order placement failed", error);
-      // Show user-friendly error message
       const errorMessage = error.message || error.response?.data?.message || "Failed to place order. Please try again.";
-      alert(errorMessage);
+      showGlobalToast(errorMessage, 'error');
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -1260,6 +1269,47 @@ export default function Checkout() {
         </div>
       )}
 
+      {/* Payment Method Selection */}
+      <div className="px-4 py-3 bg-white border-b border-neutral-200">
+        <h3 className="text-xs font-semibold text-neutral-900 mb-3">Choose Payment Method</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setPaymentMethod('COD')}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${paymentMethod === 'COD'
+              ? 'border-green-600 bg-green-50'
+              : 'border-neutral-200 bg-white hover:border-neutral-300'
+              }`}
+          >
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${paymentMethod === 'COD' ? 'bg-green-600 text-white' : 'bg-neutral-100 text-neutral-500'}`}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <line x1="2" y1="10" x2="22" y2="10" />
+              </svg>
+            </div>
+            <span className={`text-xs font-bold ${paymentMethod === 'COD' ? 'text-green-700' : 'text-neutral-700'}`}>Cash on Delivery</span>
+            <span className="text-[10px] text-neutral-500 mt-0.5">Pay after delivery</span>
+          </button>
+
+          <button
+            onClick={() => setPaymentMethod('Online')}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${paymentMethod === 'Online'
+              ? 'border-green-600 bg-green-50'
+              : 'border-neutral-200 bg-white hover:border-neutral-300'
+              }`}
+          >
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${paymentMethod === 'Online' ? 'bg-green-600 text-white' : 'bg-neutral-100 text-neutral-500'}`}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
+            </div>
+            <span className={`text-xs font-bold ${paymentMethod === 'Online' ? 'text-green-700' : 'text-neutral-700'}`}>Online Payment</span>
+            <span className="text-[10px] text-neutral-500 mt-0.5">PhonePe, Card, UPI</span>
+          </button>
+        </div>
+      </div>
+
       {/* Bill details */}
       <div className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 border-b border-neutral-200">
         <h2 className="text-base font-bold text-neutral-900 mb-2.5">Bill details</h2>
@@ -1743,13 +1793,20 @@ export default function Checkout() {
         {selectedAddress ? (
           <button
             onClick={handlePlaceOrder}
-            disabled={cart.items.length === 0}
-            className={`w-full py-3 px-4 font-bold text-sm uppercase tracking-wide transition-colors ${cart.items.length > 0
+            disabled={cart.items.length === 0 || isPlacingOrder}
+            className={`w-full py-3 px-4 font-bold text-sm uppercase tracking-wide transition-colors flex items-center justify-center gap-2 ${cart.items.length > 0 && !isPlacingOrder
               ? 'bg-green-600 text-white hover:bg-green-700'
               : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
               }`}
           >
-            Place Order
+            {isPlacingOrder ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Placing Order...
+              </>
+            ) : (
+              paymentMethod === 'Online' ? `Pay Online ₹${Math.round(grandTotal)}` : `Place Order ₹${Math.round(grandTotal)}`
+            )}
           </button>
         ) : (
           <button

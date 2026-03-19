@@ -182,28 +182,46 @@ export const getHomeContent = async (req: Request, res: Response) => {
 
     // 2. Header Category Identification
     let headerCatId: any = null;
-    let effectiveHeaderSlug: string = (headerCategorySlug as string) || "all";
+    let effectiveHeaderSlug: string = (headerCategorySlug as string)?.toLowerCase() || "all";
+    const headerSearchSlug = (headerCategorySlug as string)?.toLowerCase();
 
-    if (headerCategorySlug && headerCategorySlug !== "all") {
-      const headerCat = await HeaderCategory.findOne({ slug: headerCategorySlug }).select("_id slug");
+    if (headerSearchSlug && headerSearchSlug !== "all") {
+      const headerCat = await HeaderCategory.findOne({ 
+        slug: { $regex: new RegExp(`^${headerSearchSlug}$`, "i") } 
+      }).select("_id slug");
       if (headerCat) {
         headerCatId = headerCat._id;
-        effectiveHeaderSlug = headerCat.slug;
+        effectiveHeaderSlug = headerCat.slug.toLowerCase();
       }
-    } else if (!headerCategorySlug || headerCategorySlug === "all") {
-      // For the main Home tab, try to find the "HOME" header category to fetch its assigned content
-      const homeHeader = await HeaderCategory.findOne({ name: { $regex: /home/i } }).select("_id slug");
+    } else if (!headerSearchSlug || headerSearchSlug === "all") {
+      // For the main Home tab, try to find the "HOME" header category
+      // 1. Try by slug "all" first (correct standard)
+      let homeHeader = await HeaderCategory.findOne({ slug: "all" }).select("_id slug");
+      
+      // 2. Fallback to name-based search if slug "all" not found
+      if (!homeHeader) {
+        homeHeader = await HeaderCategory.findOne({ 
+          name: { $regex: new RegExp("^home$", "i") } 
+        }).select("_id slug");
+      }
+      
+      // 3. Last resort: any category containing "home"
+      if (!homeHeader) {
+        homeHeader = await HeaderCategory.findOne({ 
+          name: { $regex: /home/i } 
+        }).select("_id slug");
+      }
+
       if (homeHeader) {
         headerCatId = homeHeader._id;
-        // Use the real slug from DB so PromoStrip etc. can find it
-        effectiveHeaderSlug = homeHeader.slug;
+        effectiveHeaderSlug = homeHeader.slug.toLowerCase();
       }
     }
 
-    const isMainHome = !headerCategorySlug ||
-      headerCategorySlug === "all" ||
+    const isMainHome = !headerSearchSlug || 
+      headerSearchSlug === "all" || 
       (effectiveHeaderSlug && (
-        effectiveHeaderSlug.toLowerCase().includes("home") ||
+        effectiveHeaderSlug.toLowerCase().includes("home") || 
         effectiveHeaderSlug.toLowerCase().includes("all")
       ));
 
@@ -493,10 +511,17 @@ export const getHomeContent = async (req: Request, res: Response) => {
     let dbPromoStrip = null;
 
     // 1. Try to find a strip specifically for this header category
-    if (effectiveHeaderSlug && effectiveHeaderSlug !== "all") {
+    if (headerCatId || (effectiveHeaderSlug && effectiveHeaderSlug !== "all")) {
+      const query: any = { isActive: true };
+      
+      if (headerCatId) {
+        query.headerCategory = headerCatId;
+      } else {
+        query.headerCategorySlug = effectiveHeaderSlug;
+      }
+
       dbPromoStrip = await PromoStrip.findOne({
-        headerCategorySlug: effectiveHeaderSlug,
-        isActive: true,
+        ...query,
         startDate: { $lte: new Date() },
         endDate: { $gte: new Date() },
       })
@@ -511,8 +536,8 @@ export const getHomeContent = async (req: Request, res: Response) => {
         .lean();
     }
 
-    // 2. If no specific strip found (or if we are on 'all' tab), fallback to 'all' strip
-    if (!dbPromoStrip) {
+    // 2. If no specific strip found, fallback to 'all' strip ONLY IF we are on the main home tab
+    if (!dbPromoStrip && isMainHome) {
       dbPromoStrip = await PromoStrip.findOne({
         headerCategorySlug: "all",
         isActive: true,

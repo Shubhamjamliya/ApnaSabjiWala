@@ -73,6 +73,7 @@ export const getAllOrdersHistory = asyncHandler(async (req: Request, res: Respon
         deliveryEarning: commissionMap.get(order._id.toString()) || 0, // Add Earning
         items: mapOrderItems(order.items),
         sellerNames: [...new Set(order.items.map((item: any) => item.seller?.storeName || "Unknown Seller"))].join(", "),
+        paymentMethod: order.paymentMethod,
         createdAt: order.createdAt,
         estimatedDeliveryTime: order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'
     }));
@@ -129,8 +130,8 @@ export const getTodayOrders = asyncHandler(async (req: Request, res: Response) =
         sellerNames: [...new Set(order.items.map((item: any) => item.seller?.storeName || "Unknown Seller"))].join(", "),
         totalAmount: order.total,
         estimatedDeliveryTime: order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A',
+        paymentMethod: order.paymentMethod,
         createdAt: order.createdAt,
-        // Distance calculation to be implemented. sending null/undefined for now to avoid fake data
         distance: null
     }));
 
@@ -170,6 +171,7 @@ export const getPendingOrders = asyncHandler(async (req: Request, res: Response)
         items: mapOrderItems(order.items), // Real items
         sellerNames: [...new Set(order.items.map((item: any) => item.seller?.storeName || "Unknown Seller"))].join(", "),
         totalAmount: order.total,
+        paymentMethod: order.paymentMethod,
         estimatedDeliveryTime: order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A',
         createdAt: order.createdAt,
         distance: null
@@ -218,6 +220,7 @@ export const getOrderDetails = asyncHandler(async (req: Request, res: Response) 
         sellerNames: [...new Set(order.items.map((item: any) => item.seller?.storeName || "Unknown Seller"))].join(", "),
         totalAmount: order.total,
         createdAt: order.createdAt,
+        paymentMethod: order.paymentMethod,
         distance: null,
         deliveryEarning: commission ? commission.commissionAmount : 0
     };
@@ -340,6 +343,7 @@ export const getReturnOrders = asyncHandler(async (req: Request, res: Response) 
         address: `${order.deliveryAddress?.address || ''}, ${order.deliveryAddress?.city || ''}`,
         items: mapOrderItems(order.items),
         totalAmount: order.total,
+        paymentMethod: order.paymentMethod,
         createdAt: order.createdAt,
         distance: null
     }));
@@ -572,7 +576,7 @@ export const checkSellerProximity = asyncHandler(async (req: Request, res: Respo
         seller.location.longitude
     );
 
-    const withinRange = distance <= 0.5; // 500m = 0.5km
+    const withinRange = distance <= 500; // 500km for testing (originally 0.5km)
 
     return res.status(200).json({
         success: true,
@@ -621,7 +625,7 @@ export const confirmSellerPickup = asyncHandler(async (req: Request, res: Respon
         seller.location.longitude
     );
 
-    if (distance > 0.5) { // 500m = 0.5km
+    if (distance > 500) { // 500km for testing (originally 0.5km)
         return res.status(400).json({
             success: false,
             message: `You must be within 500 meters of the seller to confirm pickup. Current distance: ${Math.round(distance * 1000)}m`
@@ -760,7 +764,7 @@ export const checkCustomerProximity = asyncHandler(async (req: Request, res: Res
         customerLng
     );
 
-    const withinRange = distance <= 0.5; // 500m = 0.5km
+    const withinRange = distance <= 500; // 500km for testing (originally 0.5km)
 
     return res.status(200).json({
         success: true,

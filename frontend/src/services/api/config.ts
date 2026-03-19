@@ -49,16 +49,20 @@ const getRole = (url?: string): string => {
   const targetUrl = url || "";
   const currentPath = window.location.pathname;
 
-  // 1. Check target URL first using precise regex to match path segments
-  // This prevents "/delivery/.../sellers-in-radius" from matching "seller"
-  if (/\/admin(\/|$)/i.test(targetUrl)) return "admin";
-  if (/\/delivery(\/|$)/i.test(targetUrl)) return "delivery";
-  if (/\/seller(s)?(\/|$)/i.test(targetUrl)) return "seller";
+  // 1. Check target URL segments first using split to isolate path parts
+  const urlSegments = targetUrl.split(/[/?#]/);
+  if (urlSegments.includes("admin")) return "admin";
+  if (urlSegments.includes("delivery")) return "delivery";
+  if (urlSegments.includes("sellers")) return "admin";
+  if (urlSegments.includes("seller")) return "seller";
+  if (urlSegments.includes("customer")) return "customer";
 
   // 2. Fallback to current path if target URL is ambiguous
-  if (currentPath.includes("/admin")) return "admin";
-  if (currentPath.includes("/delivery")) return "delivery";
-  if (currentPath.includes("/seller")) return "seller";
+  const pathSegments = currentPath.split('/');
+  if (pathSegments.includes("admin")) return "admin";
+  if (pathSegments.includes("delivery")) return "delivery";
+  if (pathSegments.includes("seller")) return "seller";
+  if (pathSegments.includes("customer")) return "customer";
 
   return "customer";
 };

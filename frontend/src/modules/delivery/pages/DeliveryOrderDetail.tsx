@@ -673,13 +673,13 @@ export default function DeliveryOrderDetail() {
                                         {!isPickedUp && (
                                             <button
                                                 onClick={() => handleSellerPickup(seller.sellerId)}
-                                                disabled={!withinRange || isLoading}
-                                                className={`w-full py-2.5 rounded-lg font-semibold text-sm transition-all ${withinRange && !isLoading
+                                                disabled={isLoading}
+                                                className={`w-full py-2.5 rounded-lg font-semibold text-sm transition-all ${!isLoading
                                                         ? 'bg-green-600 text-white hover:bg-green-700 active:scale-[0.98]'
                                                         : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
                                                     }`}
                                             >
-                                                {isLoading ? 'Confirming...' : withinRange ? 'Confirm Pickup' : 'Move within 500m to pickup'}
+                                                {isLoading ? 'Confirming...' : 'Confirm Pickup (Dev Mode: Range Free)'}
                                             </button>
                                         )}
                                     </div>
@@ -818,7 +818,18 @@ export default function DeliveryOrderDetail() {
                     </div>
                     <div className="mt-4 pt-4 border-t border-dashed border-neutral-200 flex justify-between items-center">
                         <span className="font-semibold text-neutral-700">Total Amount</span>
-                        <span className="text-xl font-bold text-neutral-900">₹{order.totalAmount}</span>
+                        <div className="flex flex-col items-end">
+                            <span className="text-xl font-bold text-neutral-900">₹{order.totalAmount}</span>
+                            {order.paymentMethod === 'COD' ? (
+                                <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded mt-1 border border-red-100 uppercase animate-pulse">
+                                    Collect Cash
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded mt-1 border border-green-100 uppercase">
+                                    Paid Online
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -873,13 +884,13 @@ export default function DeliveryOrderDetail() {
                             {!showOtpInput ? (
                                 <button
                                     onClick={handleSendOtp}
-                                    disabled={!getOtpEnabled || otpSending}
-                                    className={`flex-1 py-3 rounded-xl font-semibold transition-all ${getOtpEnabled && !otpSending
+                                    disabled={otpSending}
+                                    className={`flex-1 py-3 rounded-xl font-semibold transition-all ${!otpSending
                                             ? 'bg-green-600 text-white hover:bg-green-700 active:scale-[0.98]'
                                             : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
                                         }`}
                                 >
-                                    {otpSending ? 'Sending...' : getOtpEnabled ? 'Get OTP' : 'Move within 500m to get OTP'}
+                                    {otpSending ? 'Sending...' : 'Get OTP (Dev Mode: Range Free)'}
                                 </button>
                             ) : (
                                 <>

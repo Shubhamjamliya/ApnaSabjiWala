@@ -124,6 +124,7 @@ const CompactPromoPreview = ({ strip }: { strip: PromoStrip }) => {
 export default function AdminPromoStrip() {
   // --- Form state ---
   const [headerCategorySlug, setHeaderCategorySlug] = useState("");
+  const [headerCategoryId, setHeaderCategoryId] = useState("");
   const [productCategoryId, setProductCategoryId] = useState("");
   const [heading, setHeading] = useState("");
   const [saleText, setSaleText] = useState("");
@@ -356,6 +357,7 @@ export default function AdminPromoStrip() {
 
     const formData: PromoStripFormData = {
       headerCategorySlug,
+      headerCategory: headerCategoryId,
       productCategoryId,
       heading,
       saleText,
@@ -393,6 +395,7 @@ export default function AdminPromoStrip() {
 
   const handleEdit = (strip: PromoStrip) => {
     setHeaderCategorySlug(strip.headerCategorySlug);
+    setHeaderCategoryId(typeof strip.headerCategory === 'string' ? strip.headerCategory : (strip.headerCategory as any)?._id || "");
     setProductCategoryId(typeof strip.productCategoryId === 'string' ? strip.productCategoryId : (strip.productCategoryId as any)?._id || "");
     setHeading(strip.heading);
     setSaleText(strip.saleText);
@@ -457,6 +460,7 @@ export default function AdminPromoStrip() {
 
   const resetForm = () => {
     setHeaderCategorySlug("");
+    setHeaderCategoryId("");
     setProductCategoryId("");
     setHeading("");
     setSaleText("");
@@ -601,7 +605,11 @@ export default function AdminPromoStrip() {
                     <label className="text-[10px] font-semibold text-slate-500 uppercase">1. Header Placement</label>
                     <select
                       value={headerCategorySlug}
-                      onChange={(e) => setHeaderCategorySlug(e.target.value)}
+                      onChange={(e) => {
+                        setHeaderCategorySlug(e.target.value);
+                        const cat = headerCategories.find(h => h.slug === e.target.value);
+                        if (cat) setHeaderCategoryId(cat._id);
+                      }}
                       className="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg font-semibold text-sm focus:ring-2 focus:ring-teal-500/10 outline-none transition-all"
                       required
                     >
@@ -1035,7 +1043,10 @@ export default function AdminPromoStrip() {
                     <div className="flex justify-between items-start mb-6">
                       <div>
                         <span className="text-[9px] font-bold text-neutral-400 uppercase block mb-1">
-                          {strip.headerCategorySlug === 'all' ? "HOME MAIN" : `${strip.headerCategorySlug} PLACEMENT`}
+                          {strip.headerCategorySlug === 'all' ? "HOME MAIN" : 
+                           (typeof strip.headerCategory === 'object' && (strip.headerCategory as any)?.name) ? 
+                           `${(strip.headerCategory as any).name.toUpperCase()} PLACEMENT` : 
+                           `${strip.headerCategorySlug.toUpperCase()} PLACEMENT`}
                         </span>
                         <h3 className="text-xl font-bold text-neutral-800 leading-tight">{strip.heading}</h3>
                         <div className="flex items-center gap-2 mt-2">
