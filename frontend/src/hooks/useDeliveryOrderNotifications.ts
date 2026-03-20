@@ -16,7 +16,7 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 const INITIAL_RECONNECT_DELAY = 2000;
 
 export const useDeliveryOrderNotifications = () => {
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated, user, token } = useAuth();
     const [state, setState] = useState<NotificationState>({
         currentNotification: null,
         notificationQueue: [],
@@ -29,7 +29,7 @@ export const useDeliveryOrderNotifications = () => {
     const reconnectAttemptsRef = useRef(0);
 
     const connectSocket = useCallback(() => {
-        if (!isAuthenticated || user?.userType !== 'Delivery' || !user?.id) {
+        if (!isAuthenticated || user?.userType !== 'Delivery' || !user?.id || !token) {
             return;
         }
 
@@ -39,7 +39,6 @@ export const useDeliveryOrderNotifications = () => {
             reconnectTimeoutRef.current = null;
         }
 
-        const token = localStorage.getItem('authToken');
         const socket = io(getSocketBaseURL(), {
             auth: {
                 token,
@@ -187,7 +186,7 @@ export const useDeliveryOrderNotifications = () => {
         });
 
         return socket;
-    }, [isAuthenticated, user]);
+    }, [isAuthenticated, user, token]);
 
     const attemptReconnect = useCallback(() => {
         reconnectAttemptsRef.current += 1;
