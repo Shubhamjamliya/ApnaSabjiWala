@@ -2,7 +2,7 @@ import { messaging, getToken, onMessage } from './firebase';
 import { getAuthToken } from './api/config';
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BL6zx7ldM8gHbypngBAly0E2GiZp6AIaa3cFn37QThi6e5ObtcriTSCEFIYNPl2-PtvJbR49hezN98iqVIY1XZk';
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1').trim();
 
 console.log('📡 Push Notification Service Config:', {
     hasVapid: !!VAPID_KEY,
