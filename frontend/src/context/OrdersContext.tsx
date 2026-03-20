@@ -5,7 +5,7 @@ import {
 } from "react";
 import { useAuth } from "./AuthContext";
 import { Order } from "../types/order";
-import { createOrder, getMyOrders } from "../services/api/customerOrderService";
+import { createOrder, getMyOrders, getOrderById as apiGetOrderById } from "../services/api/customerOrderService";
 import { OrdersContext } from "./ordersContext.types";
 
 // Type for API response order (with _id from MongoDB)
@@ -157,9 +157,6 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
 
   const fetchOrderById = async (id: string): Promise<Order | undefined> => {
     try {
-      const { getOrderById: apiGetOrderById } = await import(
-        "../services/api/customerOrderService"
-      );
       const response = await apiGetOrderById(id);
       if (response && response.data) {
         const mappedOrder = {

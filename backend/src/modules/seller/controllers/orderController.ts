@@ -299,6 +299,9 @@ export const updateOrderStatus = asyncHandler(
           if (fullOrder) {
             await notifyDeliveryBoysOfNewOrder(io, fullOrder);
             console.log(`Delivery notification triggered for Accepted order ${order.orderNumber}`);
+            
+            // Also notify all involved sellers about the status update
+            await notifySellersOfOrderUpdate(io, fullOrder, 'STATUS_UPDATE');
           }
         }
       } catch (notifyError) {

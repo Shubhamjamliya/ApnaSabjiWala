@@ -10,6 +10,9 @@ import { appConfig } from '../../services/configService';
 import { calculateProductPrice } from '../../utils/priceUtils';
 import GoogleMapsLocationPicker from '../../components/GoogleMapsLocationPicker';
 
+type Libraries = ("places" | "drawing" | "geometry" | "visualization")[];
+const libraries: Libraries = ['places'];
+
 export default function CheckoutAddress() {
   const { cart } = useCart();
   const { isAuthenticated } = useAuth();
@@ -44,7 +47,7 @@ export default function CheckoutAddress() {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['places']
+    libraries: libraries
   });
 
   // Get user's current location on mount

@@ -18,20 +18,31 @@ export async function notifySellersOfOrderUpdate(
 
         // Get all unique seller IDs from order items
         // If items are populated, we can get them directly, otherwise we need to query
-        let orderItems = order.items;
+        let orderItems = Array.isArray(order.items) ? order.items : [];
 
-        // If items are just IDs, fetch the full OrderItem details to get seller IDs
-        if (orderItems.length > 0 && typeof orderItems[0] === 'string' || orderItems[0] instanceof mongoose.Types.ObjectId) {
+        // If items are just IDs or empty, fetch the full OrderItem details
+        if (orderItems.length === 0 || typeof orderItems[0] === 'string' || orderItems[0] instanceof mongoose.Types.ObjectId) {
             orderItems = await OrderItem.find({ order: order._id });
         }
 
-        const sellerIds = [...new Set(orderItems.map((item: any) => item.seller.toString()))];
+        // Safer seller ID extraction: handle cases where seller could be a string, ObjectId or populated object
+        const sellerIds = [...new Set(
+            orderItems
+                .map((item: any) => {
+                    if (!item.seller) return null;
+                    return item.seller._id ? item.seller._id.toString() : item.seller.toString();
+                })
+                .filter(id => !!id)
+        )] as string[];
 
         console.log(`🔔 Notifying ${sellerIds.length} sellers about ${type} for order ${order.orderNumber}`);
 
         for (const sellerId of sellerIds) {
             // Get only items belonging to this seller
-            const sellerSpecificItems = orderItems.filter((item: any) => item.seller.toString() === sellerId);
+            const sellerSpecificItems = orderItems.filter((item: any) => {
+                const itemSellerId = item.seller?._id ? item.seller._id.toString() : item.seller?.toString();
+                return itemSellerId === sellerId;
+            });
 
             const notificationData = {
                 type,

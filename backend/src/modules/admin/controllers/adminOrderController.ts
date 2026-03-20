@@ -170,12 +170,10 @@ export const updateOrderStatus = asyncHandler(
     }
 
 
-    // Trigger notification if status is "Processed" (Confirmed) or if paymentStatus changed to "Paid"
+    // Trigger notification to all involved sellers for any status change
     const io: SocketIOServer = req.app.get("io");
-    if (status === "Processed" || order.paymentStatus === "Paid") {
-      if (io) {
-        notifySellersOfOrderUpdate(io, order, "STATUS_UPDATE");
-      }
+    if (io) {
+      notifySellersOfOrderUpdate(io, order, "STATUS_UPDATE");
     }
 
     // Push notification to Customer

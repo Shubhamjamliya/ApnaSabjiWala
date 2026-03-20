@@ -15,6 +15,7 @@ import { useLocation } from "../../hooks/useLocation";
 import { useLoading } from "../../context/LoadingContext";
 import PageLoader from "../../components/PageLoader";
 
+import { apiCache } from "../../utils/apiCache";
 import { useThemeContext } from "../../context/ThemeContext";
 
 export default function Home() {
@@ -27,7 +28,7 @@ export default function Home() {
 
   // Clear cache on component mount to ensure fresh data for all tabs
   useEffect(() => {
-    import("../../utils/apiCache").then(m => m.apiCache.clear());
+    apiCache.clear();
   }, []);
 
   const contentRef = useRef<HTMLDivElement>(null);
