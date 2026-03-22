@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getAllSellers, updateSellerStatus, deleteSeller, Seller as SellerType, updateSeller } from '../../../services/api/sellerService';
 import SellerServiceMap from '../components/SellerServiceMap';
 
@@ -39,6 +39,18 @@ interface Seller {
     addressProof?: string;
     requireProductApproval?: boolean;
     viewCustomerDetails?: boolean;
+    storeDescription?: string;
+    fssaiLicNo?: string;
+    workingHours?: {
+        open: string;
+        close: string;
+        offDays: string[];
+    };
+    socialLinks?: {
+        facebook?: string;
+        instagram?: string;
+        twitter?: string;
+    };
 }
 
 // Helper function to convert backend seller to frontend format
@@ -59,15 +71,15 @@ const mapSellerToFrontend = (seller: SellerType): Seller => {
         status: seller.status,
         needApproval: seller.status === 'Pending',
         category: seller.category,
-        address: seller.address,
-        city: seller.city,
+        address: seller.address || seller.location?.address,
+        city: seller.city || seller.location?.city,
         serviceableArea: seller.serviceableArea,
         panCard: seller.panCard,
         taxName: seller.taxName,
         taxNumber: seller.taxNumber,
-        searchLocation: seller.searchLocation,
-        latitude: seller.latitude,
-        longitude: seller.longitude,
+        searchLocation: seller.searchLocation || seller.location?.searchLocation,
+        latitude: seller.latitude || (seller.location?.latitude?.toString()),
+        longitude: seller.longitude || (seller.location?.longitude?.toString()),
         serviceRadiusKm: seller.serviceRadiusKm,
         accountName: seller.accountName,
         bankName: seller.bankName,
@@ -79,6 +91,10 @@ const mapSellerToFrontend = (seller: SellerType): Seller => {
         addressProof: seller.addressProof,
         requireProductApproval: seller.requireProductApproval,
         viewCustomerDetails: seller.viewCustomerDetails,
+        storeDescription: seller.storeDescription,
+        fssaiLicNo: seller.fssaiLicNo,
+        workingHours: seller.workingHours,
+        socialLinks: seller.socialLinks,
     };
 };
 
@@ -829,6 +845,12 @@ export default function AdminManageSellerList() {
                                             <label className="text-xs text-neutral-500">Store Name</label>
                                             <p className="text-sm font-medium text-neutral-900">{editingSeller.storeName}</p>
                                         </div>
+                                        {editingSeller.storeDescription && (
+                                            <div className="md:col-span-2">
+                                                <label className="text-xs text-neutral-500">Store Description</label>
+                                                <p className="text-sm font-medium text-neutral-900">{editingSeller.storeDescription}</p>
+                                            </div>
+                                        )}
                                         <div>
                                             <label className="text-xs text-neutral-500">Email</label>
                                             <p className="text-sm font-medium text-neutral-900">{editingSeller.email}</p>
@@ -936,12 +958,18 @@ export default function AdminManageSellerList() {
                                 {/* Tax Information */}
                                 {(editingSeller.panCard || editingSeller.taxName || editingSeller.taxNumber) && (
                                     <div className="bg-neutral-50 rounded-lg p-4">
-                                        <h4 className="text-sm font-semibold text-neutral-700 mb-3">Tax Information</h4>
+                                        <h4 className="text-sm font-semibold text-neutral-700 mb-3">Tax & Business Info</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {editingSeller.panCard && (
                                                 <div>
                                                     <label className="text-xs text-neutral-500">PAN Card</label>
                                                     <p className="text-sm font-medium text-neutral-900">{editingSeller.panCard}</p>
+                                                </div>
+                                            )}
+                                            {editingSeller.fssaiLicNo && (
+                                                <div>
+                                                    <label className="text-xs text-neutral-500">FSSAI License No</label>
+                                                    <p className="text-sm font-medium text-neutral-900">{editingSeller.fssaiLicNo}</p>
                                                 </div>
                                             )}
                                             {editingSeller.taxName && (
@@ -951,7 +979,7 @@ export default function AdminManageSellerList() {
                                                 </div>
                                             )}
                                             {editingSeller.taxNumber && (
-                                                <div className="md:col-span-2">
+                                                <div>
                                                     <label className="text-xs text-neutral-500">Tax Number</label>
                                                     <p className="text-sm font-medium text-neutral-900">{editingSeller.taxNumber}</p>
                                                 </div>
@@ -1001,7 +1029,7 @@ export default function AdminManageSellerList() {
 
                                 {/* Settings */}
                                 <div className="bg-neutral-50 rounded-lg p-4">
-                                    <h4 className="text-sm font-semibold text-neutral-700 mb-3">Settings</h4>
+                                    <h4 className="text-sm font-semibold text-neutral-700 mb-3">Settings & Business Hours</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="text-xs text-neutral-500">Require Product Approval</label>
@@ -1019,10 +1047,21 @@ export default function AdminManageSellerList() {
                                             <label className="text-xs text-neutral-500">Balance</label>
                                             <p className="text-sm font-medium text-neutral-900">₹{editingSeller.balance.toFixed(2)}</p>
                                         </div>
-                                        <div>
-                                            <label className="text-xs text-neutral-500">Categories Count</label>
-                                            <p className="text-sm font-medium text-neutral-900">{editingSeller.categories.length} categories</p>
-                                        </div>
+                                        {editingSeller.workingHours && (
+                                            <div className="md:col-span-2">
+                                                <label className="text-xs text-neutral-500">Working Hours</label>
+                                                <p className="text-sm font-medium text-neutral-900">
+                                                    {(editingSeller.workingHours.open && editingSeller.workingHours.close) 
+                                                        ? `${editingSeller.workingHours.open} - ${editingSeller.workingHours.close}`
+                                                        : 'N/A'}
+                                                    {editingSeller.workingHours.offDays && editingSeller.workingHours.offDays.length > 0 && (
+                                                        <span className="text-xs text-red-500 ml-2">
+                                                            (Closed on: {editingSeller.workingHours.offDays.join(', ')})
+                                                        </span>
+                                                    )}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

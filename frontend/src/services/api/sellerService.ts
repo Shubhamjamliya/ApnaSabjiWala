@@ -40,6 +40,28 @@ export interface Seller {
   viewCustomerDetails?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  storeDescription?: string;
+  fssaiLicNo?: string;
+  workingHours?: {
+    open: string;
+    close: string;
+    offDays: string[];
+  };
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+  };
+  location?: {
+    type: string;
+    coordinates: [number, number];
+    address?: string;
+    city?: string;
+    latitude?: number;
+    longitude?: number;
+    searchLocation?: string;
+    updatedAt?: string;
+  };
 }
 
 export interface GetAllSellersParams {

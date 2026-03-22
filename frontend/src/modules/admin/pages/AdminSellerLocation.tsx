@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getAllSellers, Seller as SellerType } from '../../../services/api/sellerService';
 import SellerServiceMap from '../components/SellerServiceMap';
 
@@ -35,11 +35,11 @@ export default function AdminSellerLocation() {
             storeName: seller.storeName || 'Unknown Store',
             email: seller.email || '',
             phone: seller.mobile || '',
-            address: seller.address,
-            city: seller.city,
-            searchLocation: seller.searchLocation,
-            latitude: seller.latitude,
-            longitude: seller.longitude,
+            address: seller.address || seller.location?.address,
+            city: seller.city || seller.location?.city,
+            searchLocation: seller.searchLocation || seller.location?.searchLocation,
+            latitude: seller.latitude || (seller.location?.latitude?.toString()),
+            longitude: seller.longitude || (seller.location?.longitude?.toString()),
             serviceRadiusKm: seller.serviceRadiusKm,
             status: seller.status || 'Pending',
           }));
