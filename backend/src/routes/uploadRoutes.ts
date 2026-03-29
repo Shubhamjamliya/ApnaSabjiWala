@@ -17,8 +17,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 
 const router = Router();
 
-// All upload routes require authentication
-router.use(authenticate);
+// Public routes for registration (no global authenticate)
 
 /**
  * POST /api/v1/upload/image
@@ -26,7 +25,13 @@ router.use(authenticate);
  */
 router.post(
   "/image",
-  requireUserType("Admin", "Seller"),
+  // Optional: authenticate if possible, but allow public for registration
+  (req, res, next) => {
+    if (req.headers.authorization) {
+      return authenticate(req, res, next);
+    }
+    next();
+  },
   uploadSingleImage.single("image"),
   handleUploadError,
   asyncHandler(async (req: Request, res: Response) => {
@@ -56,6 +61,7 @@ router.post(
  */
 router.post(
   "/images",
+  authenticate,
   requireUserType("Admin", "Seller"),
   uploadMultipleImages.array("images", 10), // Max 10 images
   handleUploadError,
@@ -92,7 +98,13 @@ router.post(
  */
 router.post(
   "/document",
-  authenticate, // All authenticated users can upload documents
+  // Make authenticate optional for registration
+  (req, res, next) => {
+    if (req.headers.authorization) {
+      return authenticate(req, res, next);
+    }
+    next();
+  },
   uploadDocument.single("document"),
   handleUploadError,
   asyncHandler(async (req: Request, res: Response) => {
@@ -103,8 +115,8 @@ router.post(
       });
     }
 
-    // Determine folder based on user type
-    let folder: string = CLOUDINARY_FOLDERS.SELLER_DOCUMENTS;
+    // Determine folder based on user type or request body
+    let folder: string = (req.body.folder as string) || CLOUDINARY_FOLDERS.SELLER_DOCUMENTS;
     const userType = (req as any).user?.userType;
 
     if (userType === "Delivery") {
@@ -182,6 +194,7 @@ router.post(
  */
 router.delete(
   "/:publicId",
+  authenticate,
   requireUserType("Admin", "Seller"),
   asyncHandler(async (req: Request, res: Response) => {
     const { publicId } = req.params;
