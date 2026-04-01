@@ -78,7 +78,7 @@ export default function Checkout() {
   // Razorpay Payment State
   const [showRazorpayCheckout, setShowRazorpayCheckout] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'Online' | 'COD'>('Online');
+  const [paymentMethod, setPaymentMethod] = useState<'Online' | 'COD'>('COD');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
 
@@ -899,8 +899,8 @@ export default function Checkout() {
 
           {/* Cart Items */}
           <div className="space-y-2.5">
-            {displayItems.filter(item => item.product).map((item) => (
-              <div key={item.product?.id || Math.random()} className="flex gap-2">
+            {displayItems.filter(item => item && item.product).map((item, idx) => (
+              <div key={`cart-${item.product?.id || 'item'}-${idx}`} className="flex gap-2">
                 {/* Product Image */}
                 <div className="w-12 h-12 bg-neutral-100 rounded-lg flex-shrink-0 overflow-hidden">
                   {item.product?.imageUrl ? (
@@ -982,7 +982,7 @@ export default function Checkout() {
       <div className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 border-b border-neutral-200">
         <h2 className="text-sm font-semibold text-neutral-900 mb-2">You might also like</h2>
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-3" style={{ scrollSnapType: 'x mandatory' }}>
-          {similarProducts.map((product) => {
+          {similarProducts.map((product, index) => {
             // Get price details
             const { displayPrice, mrp, discount, hasDiscount } = calculateProductPrice(product);
 
@@ -996,7 +996,7 @@ export default function Checkout() {
 
             return (
               <div
-                key={product.id}
+                key={`similar-${productId || 'product'}-${index}`}
                 className="flex-shrink-0 w-[140px]"
                 style={{ scrollSnapAlign: 'start' }}
               >
@@ -1291,21 +1291,21 @@ export default function Checkout() {
           </button>
 
           <button
-            onClick={() => setPaymentMethod('Online')}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${paymentMethod === 'Online'
-              ? 'border-green-600 bg-green-50'
-              : 'border-neutral-200 bg-white hover:border-neutral-300'
-              }`}
+            disabled
+            className="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-neutral-100 bg-neutral-50 cursor-not-allowed opacity-70 relative overflow-hidden"
           >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${paymentMethod === 'Online' ? 'bg-green-600 text-white' : 'bg-neutral-100 text-neutral-500'}`}>
+            <div className="absolute top-0 right-0 bg-orange-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg">
+              Coming Soon
+            </div>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center mb-2 bg-neutral-200 text-neutral-400">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                 <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
                 <line x1="12" y1="22.08" x2="12" y2="12" />
               </svg>
             </div>
-            <span className={`text-xs font-bold ${paymentMethod === 'Online' ? 'text-green-700' : 'text-neutral-700'}`}>Online Payment</span>
-            <span className="text-[10px] text-neutral-500 mt-0.5">PhonePe, Card, UPI</span>
+            <span className="text-xs font-bold text-neutral-400">Online Payment</span>
+            <span className="text-[10px] text-neutral-400 mt-0.5">PhonePe, Card, UPI</span>
           </button>
         </div>
       </div>

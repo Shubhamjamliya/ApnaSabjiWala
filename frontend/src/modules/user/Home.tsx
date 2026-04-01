@@ -212,10 +212,11 @@ export default function Home() {
 
   // Removed duplicate saveScrollPosition
   const getFilteredProducts = (tabId: string) => {
+    const availableProducts = products.filter(p => p.isAvailable !== false);
     if (tabId === "all") {
-      return products;
+      return availableProducts;
     }
-    return products.filter(
+    return availableProducts.filter(
       (p) =>
         p.categoryId === tabId ||
         (p.category && (p.category._id === tabId || p.category.slug === tabId))
@@ -263,7 +264,7 @@ export default function Home() {
       <NextDayBookingCard />
 
       {/* LOWEST PRICES EVER Section */}
-      <LowestPricesEver activeTab={activeTab} products={homeData.lowestPrices} />
+      <LowestPricesEver activeTab={activeTab} products={homeData.lowestPrices?.filter((p: any) => p.isAvailable !== false)} />
 
       {/* BESTSELLER CARDS (2x2 Grid) */}
       <BestsellerCards cards={homeData.bestsellerCards} />
@@ -304,17 +305,19 @@ export default function Home() {
                     )}
                     <div className="px-4 md:px-6 lg:px-8">
                       <div className={`grid ${gridClass} ${gapClass}`}>
-                        {section.data.map((product: any) => (
-                          <ProductCard
-                            key={product.id || product._id}
-                            product={product}
-                            categoryStyle={true}
-                            showBadge={true}
-                            showPackBadge={false}
-                            showStockInfo={false}
-                            compact={isCompact}
-                          />
-                        ))}
+                        {section.data
+                          .filter((p: any) => p.isAvailable !== false)
+                          .map((product: any) => (
+                            <ProductCard
+                              key={product.id || product._id}
+                              product={product}
+                              categoryStyle={true}
+                              showBadge={true}
+                              showPackBadge={false}
+                              showStockInfo={false}
+                              compact={isCompact}
+                            />
+                          ))}
                       </div>
                     </div>
                   </div>
@@ -345,19 +348,21 @@ export default function Home() {
                 className="flex gap-3 md:gap-4 overflow-x-auto scrollbar-hide pb-2"
                 style={{ scrollSnapType: 'x mandatory' }}
               >
-                {homeData.bestsellers.map((product: any) => (
-                  <div
-                    key={product.id || product._id}
-                    className="flex-shrink-0 w-[140px] md:w-[180px]"
-                    style={{ scrollSnapAlign: 'start' }}
-                  >
-                    <ProductCard
-                      product={product}
-                      categoryStyle={true}
-                      showBadge={true}
-                    />
-                  </div>
-                ))}
+                {homeData.bestsellers
+                  .filter((p: any) => p.isAvailable !== false)
+                  .map((product: any) => (
+                    <div
+                      key={product.id || product._id}
+                      className="flex-shrink-0 w-[140px] md:w-[180px]"
+                      style={{ scrollSnapAlign: 'start' }}
+                    >
+                      <ProductCard
+                        product={product}
+                        categoryStyle={true}
+                        showBadge={true}
+                      />
+                    </div>
+                  ))}
               </div>
             </div>
           </div>

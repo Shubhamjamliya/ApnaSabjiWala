@@ -17,6 +17,11 @@ export default function Search() {
   const [loading, setLoading] = useState(false);
   const [contentLoading, setContentLoading] = useState(true);
 
+  // Filter products
+  const filteredResults = useMemo(() => {
+    return searchResults.filter((p) => (p as any).isAvailable !== false && (p as any).isOutOfRange !== true);
+  }, [searchResults]);
+
   // Fetch products based on search query
   useEffect(() => {
     const fetchProducts = async () => {
@@ -86,16 +91,16 @@ export default function Search() {
             </div>
           ) : searchResults.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
-              {searchResults.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  categoryStyle={true}
-                  showBadge={true}
-                  showPackBadge={false}
-                  showStockInfo={true}
-                />
-              ))}
+              {filteredResults.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    categoryStyle={true}
+                    showBadge={true}
+                    showPackBadge={false}
+                    showStockInfo={true}
+                  />
+                ))}
             </div>
           ) : (
             <div className="text-center py-12 md:py-16 text-neutral-500">

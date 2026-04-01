@@ -48,10 +48,10 @@ export const verifySmsOtp = asyncHandler(
       });
     }
 
-    if (!otp || !/^[0-9]{4}$/.test(otp)) {
+    if (!otp || !/^[0-9]{4,6}$/.test(otp)) {
       return res.status(400).json({
         success: false,
-        message: "Valid 4-digit OTP is required",
+        message: "Valid OTP (4-6 digits) is required",
       });
     }
 
