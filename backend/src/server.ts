@@ -18,9 +18,29 @@ import { initializeFirebaseAdmin } from "./services/firebaseAdmin";
 const app: Application = express();
 const httpServer = createServer(app);
 
-// Simplified CORS for Production Debugging (Allow All)
+// Enhanced CORS for production and mobile app support
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "capacitor://localhost",
+  "http://localhost",
+  "ionic://localhost"
+].filter(Boolean) as string[];
+
 app.use(cors({
-  origin: true, // Reflects the request origin
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in our allowed list or matches localhost patterns for dev
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes("localhost") || origin.includes("192.168.")) {
+      callback(null, true);
+    } else {
+      // In production development we also allow other origins for now to avoid blocking
+      callback(null, true);
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"]
