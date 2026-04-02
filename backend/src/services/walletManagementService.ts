@@ -217,26 +217,27 @@ export const validateWithdrawal = async (
             };
         }
 
-        // Check balance
-        const balance = await getWalletBalance(userId, userType);
-        if (balance < amount) {
-            return {
-                success: false,
-                message: 'Insufficient wallet balance',
-            };
-        }
-
-        // Check for pending withdrawal requests
-        const pendingRequests = await WithdrawRequest.countDocuments({
+        // Calculate total pending/approved withdrawal amount
+        const requests = await WithdrawRequest.find({
             userId,
             userType,
             status: { $in: ['Pending', 'Approved'] },
         });
 
-        if (pendingRequests > 0) {
+        const pendingWithdrawalTotal = requests.reduce((sum, req) => sum + req.amount, 0);
+
+        // Check if current request + pending total exceeds balance
+        const balance = await getWalletBalance(userId, userType);
+        if (balance < (amount + pendingWithdrawalTotal)) {
+            if (pendingWithdrawalTotal > 0) {
+                return {
+                    success: false,
+                    message: `Insufficient balance. You already have ₹${pendingWithdrawalTotal} in pending withdrawals, leaving ₹${(balance - pendingWithdrawalTotal).toFixed(2)} available.`,
+                };
+            }
             return {
                 success: false,
-                message: 'You have a pending withdrawal request. Please wait for it to be processed.',
+                message: 'Insufficient wallet balance',
             };
         }
 
@@ -251,11 +252,16 @@ export const validateWithdrawal = async (
             };
         }
 
-        const ifsc = (user as any).ifsc || (user as any).ifscCode;
+        const ifsc = userType === 'SELLER' ? (user as any).ifsc : (user as any).ifscCode;
         if (!user.accountNumber || !ifsc || !user.bankName) {
+            const missing = [];
+            if (!user.accountNumber) missing.push('Account Number');
+            if (!user.bankName) missing.push('Bank Name');
+            if (!ifsc) missing.push('IFSC Code');
+            
             return {
                 success: false,
-                message: 'Please complete your bank account details before requesting withdrawal',
+                message: `Please complete your bank account details (${missing.join(', ')}) before requesting withdrawal`,
             };
         }
 
@@ -297,7 +303,8 @@ export const createWithdrawalRequest = async (
         }
 
         // Create account details string
-        const accountDetails = `${user.bankName} - ${user.accountNumber} (${user.ifscCode})`;
+        const ifsc = userType === 'SELLER' ? (user as any).ifsc : (user as any).ifscCode;
+        const accountDetails = `${user.bankName} - ${user.accountNumber} (${ifsc})`;
 
         // Create withdrawal request
         const withdrawRequest = new WithdrawRequest({

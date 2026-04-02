@@ -5,7 +5,9 @@ import { asyncHandler } from "../../../utils/asyncHandler";
 import Seller from "../../../models/Seller";
 import WalletTransaction from "../../../models/WalletTransaction";
 import { notifyDeliveryBoysOfNewOrder, getNotificationState } from "../../../services/orderNotificationService";
+import { notifySellersOfOrderUpdate } from "../../../services/sellerNotificationService";
 import { Server as SocketIOServer } from "socket.io";
+import mongoose from "mongoose";
 
 /**
  * Get seller's orders with filters, sorting, and pagination
@@ -122,21 +124,15 @@ export const getOrderById = asyncHandler(
     const sellerId = (req as any).user.userId;
     const { id } = req.params;
 
-    // First check if this seller has items in this order
-    // First check if this seller has items in this order
-    const sellerItems = await OrderItem.find({ order: id, seller: sellerId })
-      .populate("seller", "storeName")
-      .populate("product");
-
-    if (!sellerItems || sellerItems.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+    // Find the order first by either _id or orderNumber to get the actual ObjectId
+    let orderQuery;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      orderQuery = { $or: [{ _id: id }, { orderNumber: id }] };
+    } else {
+      orderQuery = { orderNumber: id };
     }
 
-    // Get order with populated data
-    const order = await Order.findById(id)
+    const order = await Order.findOne(orderQuery)
       .populate("customer", "name email phone")
       .populate("deliveryBoy", "name mobile email");
 
@@ -146,6 +142,11 @@ export const getOrderById = asyncHandler(
         message: "Order not found",
       });
     }
+
+    // Now check if this seller has items in this order using the order's actual _id
+    const sellerItems = await OrderItem.find({ order: order._id, seller: sellerId })
+      .populate("seller", "storeName")
+      .populate("product");
 
     // Get only this seller's order items
     const orderItems = sellerItems;
@@ -250,22 +251,30 @@ export const updateOrderStatus = asyncHandler(
       });
     }
 
-    // Check if this seller has items in this order
-    const sellerItems = await OrderItem.findOne({ order: id, seller: sellerId });
-
-    if (!sellerItems) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found or you are not authorized to manage this order",
-      });
+    // Find the order first by either _id or orderNumber
+    let orderQuery;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      orderQuery = { $or: [{ _id: id }, { orderNumber: id }] };
+    } else {
+      orderQuery = { orderNumber: id };
     }
 
-    const order = await Order.findById(id);
+    const order = await Order.findOne(orderQuery);
 
     if (!order) {
       return res.status(404).json({
         success: false,
         message: "Order not found",
+      });
+    }
+
+    // Check if this seller has items in this order
+    const sellerItems = await OrderItem.findOne({ order: order._id, seller: sellerId });
+
+    if (!sellerItems) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found or you are not authorized to manage this order",
       });
     }
 
@@ -370,20 +379,28 @@ export const resendOrderNotification = asyncHandler(
     const { id } = req.params;
 
     try {
-      // Verify order exists and belongs to this seller by checking sellerItems
-      const sellerItems = await OrderItem.findOne({ order: id, seller: sellerId });
-      if (!sellerItems) {
-        return res.status(403).json({
-          success: false,
-          message: "You are not authorized to manage this order",
-        });
+      // Find the order first by either _id or orderNumber
+      let orderQuery;
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        orderQuery = { $or: [{ _id: id }, { orderNumber: id }] };
+      } else {
+        orderQuery = { orderNumber: id };
       }
 
-      const order = await Order.findById(id);
+      const order = await Order.findOne(orderQuery);
       if (!order) {
         return res.status(404).json({
           success: false,
           message: "Order not found",
+        });
+      }
+
+      // Verify order belongs to this seller by checking sellerItems
+      const sellerItems = await OrderItem.findOne({ order: order._id, seller: sellerId });
+      if (!sellerItems) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to manage this order",
         });
       }
 

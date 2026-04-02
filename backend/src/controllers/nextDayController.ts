@@ -374,8 +374,17 @@ export const getSellerNextDayOrderById = async (req: Request, res: Response) => 
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
+    // Find the order first by either _id or orderNumber
+    let orderQuery;
+    const mongoose = (await import("mongoose")).default;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      orderQuery = { $or: [{ _id: id }, { orderNumber: id }], sellers: sellerId };
+    } else {
+      orderQuery = { orderNumber: id, sellers: sellerId };
+    }
+
     const NextDayOrder = (await import("../models/NextDayOrder")).default;
-    const orderDoc = await NextDayOrder.findOne({ _id: id, sellers: sellerId })
+    const orderDoc = await NextDayOrder.findOne(orderQuery)
       .populate("slot", "date startTime endTime")
       .lean();
 
@@ -437,8 +446,17 @@ export const updateSellerNextDayOrderStatus = async (req: Request, res: Response
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
+    // Find the order first by either _id or orderNumber
+    let orderQuery;
+    const mongoose = (await import("mongoose")).default;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      orderQuery = { $or: [{ _id: id }, { orderNumber: id }], sellers: sellerId };
+    } else {
+      orderQuery = { orderNumber: id, sellers: sellerId };
+    }
+
     const NextDayOrder = (await import("../models/NextDayOrder")).default;
-    const order = await NextDayOrder.findOne({ _id: id, sellers: sellerId });
+    const order = await NextDayOrder.findOne(orderQuery);
 
     if (!order) {
       return res.status(404).json({ success: false, message: "Order not found" });
