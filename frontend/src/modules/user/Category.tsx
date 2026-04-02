@@ -144,8 +144,10 @@ export default function CategoryPage() {
     }
   }, [id, selectedSubcategory, category?._id, userLocation]);
 
-  // Client-side filtering removed in favor of backend subcategory filtering
-  const categoryProducts = products;
+  // Map and filter products
+  const categoryProducts = useMemo(() => {
+    return products.filter((p) => p.isAvailable !== false);
+  }, [products]);
 
   if ((categoryLoading || loading) && !products.length && !category) {
     return null; // Let global IconLoader handle it

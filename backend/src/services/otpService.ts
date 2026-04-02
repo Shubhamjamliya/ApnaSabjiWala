@@ -204,7 +204,7 @@ function isSpecialBypass(mobile: string): boolean {
 function isMockMode(): boolean {
   const apiKey = process.env.SMS_INDIA_HUB_API_KEY;
   const senderId = process.env.SMS_INDIA_HUB_SENDER_ID;
-  
+
   return process.env.USE_MOCK_OTP === 'true' || !apiKey || !senderId;
 }
 
@@ -212,7 +212,12 @@ function isMockMode(): boolean {
  * Check if developer bypass OTP
  */
 function isDeveloperBypass(otp: string): boolean {
-  return (process.env.NODE_ENV !== 'production' || process.env.USE_MOCK_OTP === 'true') && otp === '999999';
+  const defaultOtp = (process.env.DEFAULT_OTP || '9999').trim();
+  const inputOtp = String(otp).trim();
+  
+  const isDevOrMock = process.env.NODE_ENV !== 'production' || process.env.USE_MOCK_OTP === 'true';
+  
+  return isDevOrMock && (inputOtp === defaultOtp || inputOtp === '999999');
 }
 
 // ==========================================

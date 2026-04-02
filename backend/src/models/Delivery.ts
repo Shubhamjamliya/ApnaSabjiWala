@@ -242,6 +242,10 @@ DeliverySchema.methods.comparePassword = async function (
 
 const Delivery = mongoose.models.Delivery || mongoose.model<IDelivery>('Delivery', DeliverySchema);
 
+// Create geospatial index on location field for efficient queries
+DeliverySchema.index({ location: '2dsphere' });
+DeliverySchema.index({ isOnline: 1, status: 1 }); // Performance index
+
 // Register Alias for refPath 'DELIVERY_BOY'
 if (!mongoose.models.DELIVERY_BOY) {
   mongoose.model('DELIVERY_BOY', DeliverySchema, 'deliveries');

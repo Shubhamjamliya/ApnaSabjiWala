@@ -63,6 +63,7 @@ export const useDeliveryOrderNotifications = () => {
             }));
 
             // Join delivery notification room
+            console.log('📤 Emitting join-delivery-notifications for delivery boy:', user.id);
             socket.emit('join-delivery-notifications', user.id);
         });
 

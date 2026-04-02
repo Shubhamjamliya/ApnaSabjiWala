@@ -294,9 +294,10 @@ export async function notifyDeliveryBoysOfNewOrder(
     try {
         // Find delivery boys near seller locations (within service radius)
         let nearbyDeliveryBoyIds = await findDeliveryBoysNearSellerLocations(order);
+        console.log(`🔍 Nearby Check: Found ${nearbyDeliveryBoyIds.length} delivery boys for order ${order.orderNumber}. IDs:`, nearbyDeliveryBoyIds.map(id => id.toString()));
 
         if (nearbyDeliveryBoyIds.length === 0) {
-            console.log('No available delivery boys to notify (including fallback)');
+            console.log('❌ No available delivery boys found near seller locations (including fallback)');
             notificationStates.delete(orderId); // Clean up if no one was notified
             return;
         }
@@ -304,26 +305,33 @@ export async function notifyDeliveryBoysOfNewOrder(
         // --- FILTER BUSY DELIVERY BOYS ---
         // Check if any of these delivery boys already have an active order
         // Active = deliveryBoyStatus is Assigned, Picked Up, or In Transit
-        const busyDeliveryBoys = await Order.find({
+        const busyOrders = await Order.find({
             deliveryBoy: { $in: nearbyDeliveryBoyIds },
             deliveryBoyStatus: { $in: ['Assigned', 'Picked Up', 'In Transit'] },
             // Double check status to be sure we don't count completed/cancelled ones just in case statuses are out of sync
             status: { $nin: ['Delivered', 'Cancelled', 'Rejected', 'Returned'] }
-        }).distinct('deliveryBoy');
+        }).select('_id deliveryBoy status orderNumber');
 
-        if (busyDeliveryBoys.length > 0) {
-            const busyIdsSet = new Set(busyDeliveryBoys.map(id => id.toString()));
+        const busyIdsSet = new Set(busyOrders.map(o => o.deliveryBoy?.toString()));
+
+        if (busyIdsSet.size > 0) {
+            console.log(`🚫 Busy Check: Found ${busyIdsSet.size} busy delivery boys among nearby list:`, Array.from(busyIdsSet));
+            console.log('📝 Active Orders pinning them as busy:');
+            busyOrders.forEach(bo => {
+                console.log(`   - Partner ${bo.deliveryBoy} is on ${bo.orderNumber} (Status: ${bo.status})`);
+            });
 
             const originalCount = nearbyDeliveryBoyIds.length;
             nearbyDeliveryBoyIds = nearbyDeliveryBoyIds.filter(id => !busyIdsSet.has(id.toString()));
 
-            console.log(`ℹ️ Filtered out ${originalCount - nearbyDeliveryBoyIds.length} busy delivery boys. Active: ${nearbyDeliveryBoyIds.length}`);
+            console.log(`ℹ️ Filtered nearby list: ${originalCount} -> ${nearbyDeliveryBoyIds.length} available partners.`);
 
             if (nearbyDeliveryBoyIds.length === 0) {
                 console.log('⚠️ All nearby delivery boys are currently busy with other orders.');
-                // Optionally: could emit to admin or retry later
                 return;
             }
+        } else {
+            console.log('✅ Busy Check: All nearby delivery boys are free.');
         }
         // ---------------------------------
 
@@ -357,9 +365,9 @@ export async function notifyDeliveryBoysOfNewOrder(
             if (room && room.size > 0) {
                 notifiedIds.add(idString);
                 io.to(roomName).emit('new-order', orderData);
-                console.log(`📤 Emitted new-order to connected delivery boy room: ${roomName}`);
+                console.log(`📤 Emitted new-order to connected delivery boy room: ${roomName}. Room size: ${room.size}`);
             } else {
-                console.log(`⏩ Skipping disconnected delivery boy room: ${idString}, but sending Push.`);
+                console.log(`⏩ Room Check: No active socket in room ${roomName} (Found?: ${!!room}, Size: ${room?.size || 0}). Sending via Push backup.`);
                 // We still want to add them to notifiedIds so they can accept via push notification
                 notifiedIds.add(idString);
             }

@@ -167,24 +167,25 @@ export default function DeliverySignUp() {
 
       if (drivingLicenseFile || nationalIdentityCardFile) {
         setUploadingDocs(true);
+        try {
+          if (drivingLicenseFile) {
+            const drivingLicenseResult = await uploadDocument(
+              drivingLicenseFile,
+              "apnasabjiwala/delivery/documents"
+            );
+            drivingLicenseUrl = drivingLicenseResult.secureUrl;
+          }
 
-        if (drivingLicenseFile) {
-          const drivingLicenseResult = await uploadDocument(
-            drivingLicenseFile,
-            "apnasabjiwala/delivery/documents"
-          );
-          drivingLicenseUrl = drivingLicenseResult.secureUrl;
+          if (nationalIdentityCardFile) {
+            const nationalIdResult = await uploadDocument(
+              nationalIdentityCardFile,
+              "apnasabjiwala/delivery/documents"
+            );
+            nationalIdentityCardUrl = nationalIdResult.secureUrl;
+          }
+        } finally {
+          setUploadingDocs(false);
         }
-
-        if (nationalIdentityCardFile) {
-          const nationalIdResult = await uploadDocument(
-            nationalIdentityCardFile,
-            "apnasabjiwala/delivery/documents"
-          );
-          nationalIdentityCardUrl = nationalIdResult.secureUrl;
-        }
-
-        setUploadingDocs(false);
       }
 
       const response = await register({

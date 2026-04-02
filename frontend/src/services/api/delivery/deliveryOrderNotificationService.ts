@@ -45,6 +45,7 @@ export const acceptOrder = (
             });
         }, 10000); // 10 second timeout
 
+        console.log(`📤 Emitting accept-order for order ${orderId} by partner ${deliveryBoyId}`);
         socket.emit('accept-order', { orderId, deliveryBoyId });
 
         socket.once('accept-order-response', (response: AcceptOrderResponse) => {
@@ -71,6 +72,7 @@ export const rejectOrder = (
             });
         }, 10000); // 10 second timeout
 
+        console.log(`📤 Emitting reject-order for order ${orderId} by partner ${deliveryBoyId}`);
         socket.emit('reject-order', { orderId, deliveryBoyId });
 
         socket.once('reject-order-response', (response: RejectOrderResponse) => {

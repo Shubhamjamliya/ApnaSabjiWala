@@ -9,7 +9,7 @@ import { useDeliveryStatus } from "../context/DeliveryStatusContext";
 
 export default function DeliveryDashboard() {
   const navigate = useNavigate();
-  const { isOnline, sellersInRangeCount, locationError } = useDeliveryStatus();
+  const { isOnline, sellersInRangeCount, locationError, currentLocation } = useDeliveryStatus();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -329,6 +329,46 @@ export default function DeliveryDashboard() {
             </p>
           </div>
         </div>
+
+        {/* Live Location Console (Debug/Transparency) */}
+        {isOnline && (
+          <div className="bg-neutral-900 rounded-xl p-3 shadow-inner border border-neutral-700 font-mono">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></span>
+                <span className="text-[10px] text-green-400 font-bold uppercase tracking-tighter">Live Location Console</span>
+              </div>
+              <span className="text-[9px] text-neutral-500">Updating every 30s</span>
+            </div>
+            
+            {currentLocation ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-neutral-800/50 p-2 rounded border border-neutral-700/50">
+                  <p className="text-[9px] text-neutral-500 uppercase mb-0.5">Latitude</p>
+                  <p className="text-xs text-white font-bold">{currentLocation.latitude.toFixed(6)}</p>
+                </div>
+                <div className="bg-neutral-800/50 p-2 rounded border border-neutral-700/50">
+                  <p className="text-[9px] text-neutral-500 uppercase mb-0.5">Longitude</p>
+                  <p className="text-xs text-white font-bold">{currentLocation.longitude.toFixed(6)}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="py-2 flex items-center justify-center gap-2">
+                <svg className="animate-spin h-3 w-3 text-teal-500" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p className="text-[10px] text-neutral-400 italic">Waiting for GPS fix...</p>
+              </div>
+            )}
+            
+            {locationError && (
+              <div className="mt-2 pt-2 border-t border-neutral-800">
+                <p className="text-[9px] text-red-400 leading-tight">ERR: {locationError}</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Real-time Seller Radius Indicator */}
         <div
