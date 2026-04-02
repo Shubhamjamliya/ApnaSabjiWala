@@ -3,6 +3,7 @@ import {
   getOrders,
   getOrderById,
   updateOrderStatus,
+  resendOrderNotification,
 } from "../modules/seller/controllers/orderController";
 import { authenticate, requireUserType } from "../middleware/auth";
 
@@ -20,5 +21,8 @@ router.get("/:id", getOrderById);
 
 // Update order status
 router.patch("/:id/status", updateOrderStatus);
+
+// Resend notification
+router.post("/:id/resend-notification", resendOrderNotification);
 
 export default router;

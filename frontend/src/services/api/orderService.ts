@@ -60,6 +60,7 @@ export interface OrderDetail {
   paymentMethod: string;
   paymentStatus: string;
   deliveryAddress: DeliveryAddress;
+  notifiedCount: number;
 }
 
 export interface UpdateOrderStatusData {
@@ -124,5 +125,13 @@ export const getNextDayOrderById = async (id: string): Promise<ApiResponse<Order
  */
 export const updateNextDayOrderStatus = async (id: string, data: UpdateOrderStatusData): Promise<ApiResponse<{ id: string; status: string }>> => {
   const response = await api.patch<ApiResponse<{ id: string; status: string }>>(`/next-day/seller/orders/${id}/status`, data);
+  return response.data;
+};
+
+/**
+ * Resend order notification to delivery boys
+ */
+export const resendOrderNotification = async (id: string): Promise<ApiResponse<void>> => {
+  const response = await api.post<ApiResponse<void>>(`/orders/${id}/resend-notification`);
   return response.data;
 };

@@ -1,6 +1,6 @@
-﻿import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { getOrderById, updateOrderStatus, getNextDayOrderById, updateNextDayOrderStatus, OrderDetail } from '../../../services/api/orderService';
+import { getOrderById, updateOrderStatus, getNextDayOrderById, updateNextDayOrderStatus, resendOrderNotification, OrderDetail } from '../../../services/api/orderService';
 import jsPDF from 'jspdf';
 
 export default function SellerOrderDetail() {
@@ -12,6 +12,7 @@ export default function SellerOrderDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [orderStatus, setOrderStatus] = useState<string>('Out For Delivery');
+  const [resending, setResending] = useState(false);
 
   // Fetch order detail from API
   useEffect(() => {
@@ -54,6 +55,24 @@ export default function SellerOrderDetail() {
       }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to update order status');
+    }
+  };
+
+  const handleResendNotification = async () => {
+    if (!orderDetail) return;
+    
+    setResending(true);
+    try {
+      const response = await resendOrderNotification(orderDetail.id);
+      if (response.success) {
+        alert('Notifications resent successfully');
+      } else {
+        alert(response.message || 'Failed to resend notifications');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to resend notifications');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -397,6 +416,34 @@ export default function SellerOrderDetail() {
                 </select>
               )}
             </div>
+
+            {orderStatus === 'Accepted' && !orderDetail.deliveryBoyName && (
+              <button
+                onClick={handleResendNotification}
+                disabled={resending}
+                className={`flex items-center gap-2 ${resending ? 'bg-neutral-400' : 'bg-orange-500 hover:bg-orange-600'} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm transition-all active:scale-95`}
+              >
+                {resending ? (
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 2L11 13" />
+                    <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+                  </svg>
+                )}
+                {resending ? 'Sending...' : 'Resend Delivery Alert'}
+              </button>
+            )}
+
+            {orderStatus === 'Accepted' && !orderDetail.deliveryBoyName && orderDetail.notifiedCount === 0 && (
+              <div className="px-3 py-1 bg-red-50 text-red-600 rounded-lg border border-red-100 text-[10px] font-bold italic animate-pulse">
+                ⚠️ NO ELIGIBLE PARTNERS NEARBY TO NOTIFY
+              </div>
+            )}
+
             <button
               onClick={handleExportPDF}
               className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
@@ -482,6 +529,15 @@ export default function SellerOrderDetail() {
                   {orderStatus}
                 </span>
               </div>
+              
+              {orderStatus === 'Accepted' && !orderDetail.deliveryBoyName && orderDetail.notifiedCount > 0 && (
+                <div className="flex items-center gap-2 lg:justify-end mt-2">
+                  <span className="flex items-center gap-1.5 px-2 py-1 bg-orange-50 text-orange-600 rounded-md text-[10px] font-bold border border-orange-100">
+                    <span className="w-1 h-1 bg-orange-500 rounded-full animate-ping"></span>
+                    📡 NOTIFIED {orderDetail.notifiedCount} PARTNERS
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

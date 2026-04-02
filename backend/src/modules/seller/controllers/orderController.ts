@@ -4,7 +4,7 @@ import OrderItem from "../../../models/OrderItem";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import Seller from "../../../models/Seller";
 import WalletTransaction from "../../../models/WalletTransaction";
-import { notifyDeliveryBoysOfNewOrder } from "../../../services/orderNotificationService";
+import { notifyDeliveryBoysOfNewOrder, getNotificationState } from "../../../services/orderNotificationService";
 import { Server as SocketIOServer } from "socket.io";
 
 /**
@@ -221,6 +221,7 @@ export const getOrderById = asyncHandler(
       paymentMethod: order.paymentMethod || 'N/A',
       paymentStatus: order.paymentStatus || 'Pending',
       deliveryAddress: order.deliveryAddress || {},
+      notifiedCount: getNotificationState(id.toString())?.notifiedDeliveryBoys.size || 0,
     };
 
     return res.status(200).json({
@@ -357,5 +358,85 @@ export const updateOrderStatus = asyncHandler(
         status: order.status,
       },
     });
+  }
+);
+
+/**
+ * Resend delivery alerts for an already accepted order
+ */
+export const resendOrderNotification = asyncHandler(
+  async (req: Request, res: Response) => {
+    const sellerId = (req as any).user.userId;
+    const { id } = req.params;
+
+    try {
+      // Verify order exists and belongs to this seller by checking sellerItems
+      const sellerItems = await OrderItem.findOne({ order: id, seller: sellerId });
+      if (!sellerItems) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to manage this order",
+        });
+      }
+
+      const order = await Order.findById(id);
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found",
+        });
+      }
+
+      // Check if order status is appropriate (only notify if accepted/unassigned)
+      if (order.status !== 'Accepted') {
+        return res.status(400).json({
+          success: false,
+          message: `Notifications can only be resent for 'Accepted' orders. Current status: ${order.status}`,
+        });
+      }
+
+      if (order.deliveryBoy) {
+        return res.status(400).json({
+          success: false,
+          message: "Order already assigned to a delivery partner",
+        });
+      }
+
+      const io: SocketIOServer = (req.app.get("io") as SocketIOServer);
+      if (io) {
+        // Fetch full order with populated seller details
+        const fullOrder = await Order.findById(id)
+          .populate({
+            path: 'items',
+            populate: { path: 'seller' }
+          })
+          .lean();
+
+        if (fullOrder) {
+          // Clear any existing notification state in-memory to force a fresh emission
+          // (imported in-line to avoid circular or early reference issues if needed)
+          const { clearNotificationState } = await import("../../../services/orderNotificationService");
+          clearNotificationState(id);
+
+          await notifyDeliveryBoysOfNewOrder(io, fullOrder);
+          
+          return res.status(200).json({
+            success: true,
+            message: "Delivery notifications resent successfully",
+          });
+        }
+      }
+      
+      return res.status(500).json({
+        success: false,
+        message: "Socket service not available",
+      });
+    } catch (error: any) {
+      console.error('Error resending notification:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Failed to resend notification",
+      });
+    }
   }
 );

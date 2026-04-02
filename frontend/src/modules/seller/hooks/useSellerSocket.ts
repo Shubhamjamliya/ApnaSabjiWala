@@ -57,6 +57,7 @@ export const useSellerSocket = (onNotificationReceived?: (notification: SellerNo
             setIsConnected(true);
 
             // Join seller room
+            console.log('📤 Emitting join-seller-room for seller:', user.id);
             newSocket.emit('join-seller-room', user.id);
         });
 
