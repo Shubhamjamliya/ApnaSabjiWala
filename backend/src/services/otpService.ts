@@ -50,16 +50,32 @@ function generateOTP(length: number = 4): string {
 function normalizeMobileNumber(mobile: string): string {
   let cleanMobile = mobile.replace(/^\+/, '').replace(/\D/g, '');
 
-  if (!cleanMobile.startsWith('91')) {
+  // If exactly 10 digits are provided, it's missing the country code (even if it naturally starts with 91)
+  if (cleanMobile.length === 10) {
+    cleanMobile = '91' + cleanMobile;
+  } else if (!cleanMobile.startsWith('91')) {
+    // If it's not 10 digits and doesn't start with 91, try prepending 91 anyway
     cleanMobile = '91' + cleanMobile;
   }
 
   if (cleanMobile.length < 12 || cleanMobile.length > 13) {
-    throw new Error(`Invalid mobile number: ${cleanMobile}. Must be 12-13 digits with country code.`);
+    throw new Error(`Invalid mobile number: ${cleanMobile}. Must be 10 digits or 12-13 digits with country code.`);
   }
 
   return cleanMobile;
 }
+
+/**
+ * Normalize to standard 10-digit mobile number for database lookups
+ */
+function normalizeTo10Digits(mobile: string): string {
+  const clean = mobile.replace(/\D/g, '');
+  if (clean.length > 10) {
+    return clean.slice(-10);
+  }
+  return clean;
+}
+
 
 /**
  * Build DLT-compliant message
@@ -142,8 +158,7 @@ async function sendSmsViaApi(mobile: string, message: string): Promise<void> {
  * Save OTP to database
  */
 async function saveOtpToDb(mobile: string, otp: string, userType: UserType): Promise<void> {
-  // Normalize mobile number (remove any non-digits, ensure consistent format)
-  const normalizedMobile = mobile.replace(/\D/g, '');
+  const normalizedMobile = normalizeTo10Digits(mobile);
 
   await Otp.deleteMany({ mobile: normalizedMobile, userType });
   await Otp.create({
@@ -158,8 +173,7 @@ async function saveOtpToDb(mobile: string, otp: string, userType: UserType): Pro
  * Verify OTP from database
  */
 async function verifyOtpFromDb(mobile: string, otp: string, userType: UserType): Promise<boolean> {
-  // Normalize mobile number (remove any non-digits, ensure consistent format)
-  const normalizedMobile = mobile.replace(/\D/g, '');
+  const normalizedMobile = normalizeTo10Digits(mobile);
 
   const record = await Otp.findOne({
     mobile: normalizedMobile,
@@ -313,8 +327,8 @@ export async function verifySmsOtp(
     return false;
   }
 
-  // Normalize mobile number
-  const normalizedMobile = targetMobile.replace(/\D/g, '');
+  // Normalize mobile number to 10 digits
+  const normalizedMobile = normalizeTo10Digits(targetMobile);
 
   if (normalizedMobile.length !== 10) {
     console.error('OTP verification failed - invalid mobile format:', {
@@ -400,8 +414,8 @@ export async function verifyOTP(
     return false;
   }
 
-  // Normalize mobile number
-  const normalizedMobile = mobile.replace(/\D/g, '');
+  // Normalize mobile number to 10 digits
+  const normalizedMobile = normalizeTo10Digits(mobile);
 
   if (normalizedMobile.length !== 10) {
     console.error('OTP verification failed - invalid mobile format:', {

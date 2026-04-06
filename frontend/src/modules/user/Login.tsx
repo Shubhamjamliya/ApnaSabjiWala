@@ -135,7 +135,7 @@ export default function Login() {
                   type="tel"
                   value={mobileNumber}
                   onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  placeholder="98765 43210"
+                  placeholder="Enter mobile number"
                   className="flex-1 px-4 h-full text-base font-medium text-neutral-900 placeholder:text-neutral-400 focus:outline-none bg-transparent"
                   maxLength={10}
                   disabled={loading}
