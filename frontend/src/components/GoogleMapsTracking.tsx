@@ -36,8 +36,8 @@ const mapContainerStyle = {
     height: '22rem'
 }
 
-type Libraries = ("places" | "drawing" | "geometry" | "visualization")[];
-const libraries: Libraries = ['places'];
+type Libraries = ("places" | "drawing" | "geometry" | "visualization" | "marker")[];
+const libraries: Libraries = ['places', 'marker', 'geometry'];
 
 export default function GoogleMapsTracking({
     storeLocation,
@@ -69,6 +69,10 @@ export default function GoogleMapsTracking({
     } | null>(null)
     const [routeError, setRouteError] = useState<string | null>(null)
     const [isGPSWeak, setIsGPSWeak] = useState<boolean>(false)
+    const [isSimulating, setIsSimulating] = useState<boolean>(false)
+    const [simulatedLocation, setSimulatedLocation] = useState<Location | undefined>(undefined)
+    const simulationIntervalRef = useRef<any>(null)
+    const lastDirectionsResultRef = useRef<any>(null)
 
     // Check for weak GPS signal (no updates for > 45 seconds)
     useEffect(() => {
@@ -103,16 +107,19 @@ export default function GoogleMapsTracking({
     const allSellers = storeLocation ? [storeLocation, ...sellerLocations] : sellerLocations;
 
     // Center will be updated dynamically based on deliveryLocation
-    const center = deliveryLocation || (allSellers.length > 0 ? {
+    const currentDeliveryLocation = isSimulating ? simulatedLocation : deliveryLocation;
+
+    const center = currentDeliveryLocation || (allSellers.length > 0 ? {
         lat: (allSellers[0].lat + customerLocation.lat) / 2,
         lng: (allSellers[0].lng + customerLocation.lng) / 2
     } : customerLocation)
 
-    const path = [
-        ...allSellers,
-        ...(deliveryLocation ? [deliveryLocation] : []),
-        customerLocation
-    ].filter(loc => loc && (loc.lat !== 0 || loc.lng !== 0))
+    // Logical path for fallback polyline: Rider -> Next Waypoints -> Customer
+    const path = currentDeliveryLocation 
+        ? [currentDeliveryLocation, ...routeWaypoints, customerLocation]
+        : [...allSellers, customerLocation];
+    
+    const filteredPath = path.filter(loc => loc && (loc.lat !== 0 || loc.lng !== 0))
 
     // Auto-center and fit bounds when location or route changes
     useEffect(() => {
@@ -314,6 +321,7 @@ export default function GoogleMapsTracking({
             (result: any, status: any) => {
                 if (status === 'OK' && result.routes && result.routes[0]) {
                     setRouteError(null)
+                    lastDirectionsResultRef.current = result
                     // Extract route information
                     const route = result.routes[0]
                     if (route.legs && route.legs.length > 0) {
@@ -377,37 +385,70 @@ export default function GoogleMapsTracking({
             // Clear route if showRoute is false
             directionsRendererRef.current.setMap(null)
             directionsRendererRef.current = null
+            lastDirectionsResultRef.current = null
             setRouteInfo(null)
         }
     }, [showRoute, routeOrigin, routeDestination, routeWaypoints, isLoaded, calculateAndDisplayRoute])
 
     // Interpolation State
     const [animatedDeliveryLocation, setAnimatedDeliveryLocation] = useState<Location | undefined>(deliveryLocation);
+    const [heading, setHeading] = useState<number>(0);
     const animationRef = useRef<number>();
     const lastDeliveryLocationRef = useRef<Location | undefined>(deliveryLocation);
+
+    // Bearing between two points (in degrees)
+    const calculateBearing = (start: Location, end: Location) => {
+        if (window.google?.maps?.geometry?.spherical) {
+            return window.google.maps.geometry.spherical.computeHeading(
+                new window.google.maps.LatLng(start.lat, start.lng),
+                new window.google.maps.LatLng(end.lat, end.lng)
+            );
+        }
+        
+        // Fallback mathematical formula
+        const lat1 = (start.lat * Math.PI) / 180;
+        const lat2 = (end.lat * Math.PI) / 180;
+        const lng1 = (start.lng * Math.PI) / 180;
+        const lng2 = (end.lng * Math.PI) / 180;
+
+        const y = Math.sin(lng2 - lng1) * Math.cos(lat2);
+        const x = Math.cos(lat1) * Math.sin(lat2) -
+            Math.sin(lat1) * Math.cos(lat2) * Math.cos(lng2 - lng1);
+        const brng = (Math.atan2(y, x) * 180) / Math.PI;
+        return (brng + 360) % 360;
+    };
 
     // Center is only for initial load, we use panTo/fitBounds for updates
     const [initialCenter] = useState(center);
 
     // Animation Logic
+    const activeLocation = isSimulating ? simulatedLocation : deliveryLocation;
+    
     useEffect(() => {
-        if (!deliveryLocation) return;
+        if (!activeLocation) return;
 
         // If no previous location, snap to current (initial load)
         if (!lastDeliveryLocationRef.current) {
-            setAnimatedDeliveryLocation(deliveryLocation);
-            lastDeliveryLocationRef.current = deliveryLocation;
+            setAnimatedDeliveryLocation(activeLocation);
+            lastDeliveryLocationRef.current = activeLocation;
             return;
         }
 
         // If location hasn't changed (deep check), do nothing
-        if (deliveryLocation.lat === lastDeliveryLocationRef.current.lat &&
-            deliveryLocation.lng === lastDeliveryLocationRef.current.lng) {
+        if (activeLocation.lat === lastDeliveryLocationRef.current.lat &&
+            activeLocation.lng === lastDeliveryLocationRef.current.lng) {
             return;
         }
 
         const startLocation = animatedDeliveryLocation || lastDeliveryLocationRef.current;
-        const targetLocation = deliveryLocation;
+        const targetLocation = activeLocation;
+
+        // Calculate heading for rotation
+        const newHeading = calculateBearing(startLocation, targetLocation);
+        if (Math.abs(newHeading) > 0.1) {
+            setHeading(newHeading);
+        }
+
         const startTime = performance.now();
         const duration = 3800; // Slightly less than 4s interval to ensure completion
 
@@ -415,14 +456,21 @@ export default function GoogleMapsTracking({
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
 
-            // Ease out slightly for more natural movement (optional, linear is fine for tracking)
-            // const ease = 1 - Math.pow(1 - progress, 3);
-            const ease = progress; // Linear for constant speed prediction
+            // Use easeInOutQuad for smooth tracking movement
+            const ease = progress < 0.5 
+                ? 2 * progress * progress 
+                : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
             const lat = startLocation.lat + (targetLocation.lat - startLocation.lat) * ease;
             const lng = startLocation.lng + (targetLocation.lng - startLocation.lng) * ease;
+            
+            const newPos = { lat, lng };
+            setAnimatedDeliveryLocation(newPos);
 
-            setAnimatedDeliveryLocation({ lat, lng });
+            // Smoothly pan map WITH the marker
+            if (mapRef.current && !userHasInteracted) {
+                mapRef.current.panTo(newPos);
+            }
 
             if (progress < 1) {
                 animationRef.current = requestAnimationFrame(animate);
@@ -435,12 +483,69 @@ export default function GoogleMapsTracking({
         animationRef.current = requestAnimationFrame(animate);
 
         // Update ref for next comparison
-        lastDeliveryLocationRef.current = deliveryLocation;
+        lastDeliveryLocationRef.current = activeLocation;
 
         return () => {
             if (animationRef.current) cancelAnimationFrame(animationRef.current);
         };
-    }, [deliveryLocation]);
+    }, [activeLocation]);
+
+    // Simulation Logic
+    const toggleSimulation = () => {
+        if (isSimulating) {
+            clearSimulation();
+            return;
+        }
+
+        // Create a path for simulation
+        let simulationPath: Location[] = [];
+
+        // If we have a road route, follow it precisely
+        if (lastDirectionsResultRef.current?.routes?.[0]?.overview_path) {
+            simulationPath = lastDirectionsResultRef.current.routes[0].overview_path.map((p: any) => ({
+                lat: p.lat(),
+                lng: p.lng()
+            }));
+        } else {
+            // Fallback to waypoints
+            simulationPath = [
+                deliveryLocation || routeOrigin || allSellers[0] || { lat: 21.1702, lng: 72.8311 },
+                ...routeWaypoints,
+                customerLocation
+            ].filter(Boolean) as Location[];
+        }
+
+        if (simulationPath.length < 2) return;
+
+        setIsSimulating(true);
+        let currentStep = 0;
+        
+        // Detailed path needs faster updates or fewer steps
+        const delay = lastDirectionsResultRef.current ? 1000 : 4000;
+
+        simulationIntervalRef.current = setInterval(() => {
+            if (currentStep >= simulationPath.length) {
+                clearSimulation();
+                return;
+            }
+
+            setSimulatedLocation(simulationPath[currentStep]);
+            currentStep++;
+        }, delay);
+    };
+
+    const clearSimulation = () => {
+        setIsSimulating(false);
+        setSimulatedLocation(undefined);
+        if (simulationIntervalRef.current) {
+            clearInterval(simulationIntervalRef.current);
+            simulationIntervalRef.current = null;
+        }
+    };
+
+    useEffect(() => {
+        return () => clearSimulation();
+    }, []);
 
 
     const containerClasses = isFullScreen
@@ -521,9 +626,9 @@ export default function GoogleMapsTracking({
                     title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
                 >
                     {isFullScreen ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" /></svg>
                     ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
                     )}
                 </button>
                 <button
@@ -531,8 +636,18 @@ export default function GoogleMapsTracking({
                     className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
                     title="Recenter"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 12h3m12 0h3M12 3v3m0 12v3"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M3 12h3m12 0h3M12 3v3m0 12v3" /></svg>
                 </button>
+
+                {import.meta.env.DEV && (
+                    <button
+                        onClick={toggleSimulation}
+                        className={`p-2 rounded-full shadow-md transition-colors ${isSimulating ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                        title={isSimulating ? "Stop Simulation" : "Simulate Trace"}
+                    >
+                        <span className="text-lg">🧪</span>
+                    </button>
+                )}
             </div>
 
             {routeError && (
@@ -549,8 +664,8 @@ export default function GoogleMapsTracking({
                 <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 w-max max-w-[90%]">
                     <div className="bg-orange-50 border border-orange-200 text-orange-800 px-4 py-3 rounded-lg text-xs font-medium shadow-lg flex flex-col items-center gap-1 text-center">
                         <div className="flex items-center gap-2">
-                             <span>📍</span>
-                             <span className="font-bold">Location Unavailable</span>
+                            <span>📍</span>
+                            <span className="font-bold">Location Unavailable</span>
                         </div>
                         <span>Customer hasn't pinned their location.</span>
                         <span className="text-orange-600/80 text-[10px]">Please rely on the written address.</span>
@@ -569,63 +684,77 @@ export default function GoogleMapsTracking({
                     mapTypeControl: false,
                     fullscreenControl: false,
                     disableDefaultUI: true,
-                    styles: [
-                        {
-                            featureType: "poi",
-                            elementType: "labels",
-                            stylers: [{ visibility: "off" }]
-                        }
-                    ]
+                    mapId: '4504f8b37365c3d0', // Required for AdvancedMarkerElement
                 }}
             >
                 {/* Customer Marker */}
-                {/* Customer Marker - Only show if valid location */}
                 {customerLocation && (customerLocation.lat !== 0 || customerLocation.lng !== 0) && (
-                <Marker
-                    position={customerLocation}
-                    icon={{
-                        url: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><text x="8" y="32" font-size="32">📍</text></svg>')}`,
-                        scaledSize: window.google?.maps?.Size ? new window.google.maps.Size(40, 40) : undefined
-                    } as any}
-                    title="Delivery Address"
-                />
+                    <AdvancedMarker
+                        map={mapRef.current}
+                        position={customerLocation}
+                        title="Delivery Address"
+                        content={
+                            <div style={{ fontSize: '30px' }}>📍</div>
+                        }
+                    />
                 )}
 
                 {/* Seller Markers */}
                 {allSellers.map((seller, index) => (
-                    <Marker
+                    <AdvancedMarker
                         key={`seller-${index}`}
+                        map={mapRef.current}
                         position={seller}
-                        icon={showRoute && routeDestination?.lat === seller.lat ? {
-                            path: window.google?.maps?.SymbolPath?.CIRCLE || 0,
-                            scale: 10,
-                            fillColor: '#ef4444',
-                            fillOpacity: 1,
-                            strokeWeight: 3,
-                            strokeColor: '#ffffff',
-                        } : {
-                            url: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><text x="8" y="32" font-size="32">🏪</text></svg>')}`,
-                            scaledSize: window.google?.maps?.Size ? new window.google.maps.Size(40, 40) : undefined
-                        } as any}
                         title={seller.name || "Seller Shop"}
+                        content={
+                            showRoute && routeDestination?.lat === seller.lat ? (
+                                <div style={{ 
+                                    width: '20px', 
+                                    height: '20px', 
+                                    backgroundColor: '#ef4444', 
+                                    borderRadius: '50%', 
+                                    border: '3px solid white',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                                }} />
+                            ) : (
+                                <div style={{ fontSize: '30px' }}>🏪</div>
+                            )
+                        }
                     />
                 ))}
 
-                {/* Delivery Partner Marker (Animated) */}
+                {/* Delivery Partner Marker (Animated & Rotated) */}
                 {animatedDeliveryLocation && (
-                    <Marker
+                    <AdvancedMarker
+                        map={mapRef.current}
                         position={animatedDeliveryLocation}
-                        icon={{
-                            url: getDeliveryIconUrl(),
-                            scaledSize: window.google?.maps?.Size ? new window.google.maps.Size(60, 60) : undefined,
-                            anchor: window.google?.maps?.Point ? new window.google.maps.Point(30, 30) : undefined
-                        } as any}
                         title="Delivery Partner"
+                        rotation={heading}
+                        content={
+                            <div style={{ 
+                                width: '60px', 
+                                height: '60px', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                backgroundColor: 'white',
+                                borderRadius: '50%',
+                                border: '2px solid #16a34a',
+                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                overflow: 'hidden'
+                            }}>
+                                <img 
+                                    src={getDeliveryIconUrl()} 
+                                    alt="Rider"
+                                    style={{ width: '40px', height: '40px', margin: 'auto' }}
+                                />
+                            </div>
+                        }
                     />
                 )}
-                {( !showRoute || routeError ) && (
+                {(!showRoute || routeError) && (
                     <Polyline
-                        path={path}
+                        path={filteredPath}
                         options={{
                             strokeColor: routeError ? '#ef4444' : '#16a34a',
                             strokeOpacity: 0.7,
@@ -637,5 +766,69 @@ export default function GoogleMapsTracking({
             </GoogleMap>
         </div>
     )
+}
+
+/**
+ * Custom Advanced Marker component that uses the modern google.maps.marker.AdvancedMarkerElement
+ */
+function AdvancedMarker({ map, position, title, content, rotation = 0 }: { 
+    map: any, 
+    position: Location, 
+    title?: string, 
+    content: React.ReactNode,
+    rotation?: number
+}) {
+    const markerRef = useRef<any>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement || !position) return;
+
+        // Create container for the React content
+        const container = document.createElement('div');
+        containerRef.current = container;
+        
+        markerRef.current = new window.google.maps.marker.AdvancedMarkerElement({
+            map,
+            position: { lat: position.lat, lng: position.lng },
+            title,
+            content: container,
+        });
+
+        setIsMounted(true);
+
+        return () => {
+            if (markerRef.current) {
+                markerRef.current.map = null;
+                markerRef.current = null;
+            }
+        };
+    }, [map]);
+
+    // Update position and rotation smoothly
+    useEffect(() => {
+        if (markerRef.current && position) {
+            markerRef.current.position = { lat: position.lat, lng: position.lng };
+        }
+    }, [position.lat, position.lng]);
+
+    // Apply rotation separately via CSS to avoid marker re-renders
+    useEffect(() => {
+        if (containerRef.current) {
+            containerRef.current.style.transition = 'transform 0.1s linear';
+            containerRef.current.style.transform = `rotate(${rotation}deg)`;
+        }
+    }, [rotation]);
+
+    // Import and use createPortal for rendering React content into the DOM element
+    const [Portal, setPortal] = useState<any>(null);
+    useEffect(() => {
+        import('react-dom').then((mod) => setPortal(() => mod.createPortal));
+    }, []);
+
+    if (!isMounted || !containerRef.current || !Portal) return null;
+
+    return Portal(content, containerRef.current);
 }
 
