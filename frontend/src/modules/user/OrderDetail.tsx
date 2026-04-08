@@ -724,6 +724,12 @@ export default function OrderDetail() {
     );
   }
 
+  const rawOrderId = order?.orderNumber || order?.id || order?._id;
+  const rawOrderIdString = rawOrderId ? String(rawOrderId) : "";
+  const displayOrderId = rawOrderIdString.includes("-")
+    ? rawOrderIdString.split("-").slice(-1)[0]
+    : rawOrderIdString || "N/A";
+
   const statusConfig: Record<
     string,
     { title: string; subtitle: string; color: string }
@@ -1095,7 +1101,7 @@ export default function OrderDetail() {
               <ReceiptIcon className="w-5 h-5 text-gray-500 mt-0.5" />
               <div className="flex-1">
                 <p className="font-medium text-gray-900">
-                  Order #{order.id.split("-").slice(-1)[0]}
+                  Order #{displayOrderId}
                 </p>
                 <div className="mt-2 space-y-1">
                   {order.items?.map((item: any, index: number) => (
