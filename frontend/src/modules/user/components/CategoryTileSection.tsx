@@ -23,6 +23,23 @@ interface CategoryTileSectionProps {
   showProductCount?: boolean; // Show product count only for bestsellers
 }
 
+const isProductLikeTile = (tile: CategoryTile) => {
+  const t = tile as any;
+  return (
+    tile.type === "product" ||
+    !!tile.productId ||
+    (typeof t.price === "number" || typeof t.mrp === "number" || typeof t.pack === "string")
+  );
+};
+
+const normalizeId = (value?: string) => {
+  if (!value) return "";
+  const normalized = String(value).trim();
+  const lowered = normalized.toLowerCase();
+  if (!normalized || lowered === "undefined" || lowered === "null") return "";
+  return normalized;
+};
+
 export default function CategoryTileSection({
   title,
   tiles,
@@ -32,34 +49,44 @@ export default function CategoryTileSection({
   const navigate = useNavigate();
 
   const handleTileClick = (tile: CategoryTile) => {
+    const tileId = normalizeId(tile.id);
+    const productId = normalizeId(tile.productId) || tileId;
+    const categoryId = normalizeId(tile.categoryId);
+    const subcategoryId = normalizeId(tile.subcategoryId) || tileId;
+    const slug = normalizeId(tile.slug);
+    const sellerId = normalizeId((tile as any).sellerId);
+
+    if (isProductLikeTile(tile)) {
+      if (productId) {
+        navigate(`/product/${productId}`);
+      }
+      return;
+    }
     if (tile.subcategoryId || tile.type === "subcategory") {
       // Navigate to subcategory page or category with subcategory filter
-      if (tile.categoryId) {
-        navigate(
-          `/category/${tile.categoryId}?subcategory=${tile.subcategoryId || tile.id
-          }`
-        );
-      } else if (tile.slug) {
-        navigate(`/category/${tile.slug}`);
+      if (categoryId) {
+        navigate(`/category/${categoryId}?subcategory=${subcategoryId}`);
+      } else if (slug) {
+        navigate(`/category/${slug}`);
       } else {
-        navigate(`/category/subcategory/${tile.subcategoryId || tile.id}`);
+        navigate(`/category/subcategory/${subcategoryId}`);
       }
       return;
     }
     if (tile.type === "shop" || tile.type === "seller" || (tile as any).sellerId) {
-      navigate(`/store/${tile.categoryId || (tile as any).sellerId || tile.id}`);
+      navigate(`/store/${categoryId || sellerId || tileId}`);
       return;
     }
     if (tile.type === "category") {
-      navigate(`/category/${tile.slug || tile.categoryId || tile.id}`);
+      navigate(`/category/${slug || categoryId || tileId}`);
       return;
     }
-    if (tile.categoryId) {
-      navigate(`/category/${tile.categoryId}`);
+    if (categoryId) {
+      navigate(`/category/${categoryId}`);
       return;
     }
-    if (tile.productId) {
-      navigate(`/product/${tile.productId}`);
+    if (productId) {
+      navigate(`/product/${productId}`);
       return;
     }
     // Otherwise just log for now
@@ -95,6 +122,13 @@ export default function CategoryTileSection({
       <div className="px-4 md:px-6 lg:px-8 overflow-visible">
         <div className={`grid ${gridCols} ${gapClass} overflow-visible auto-rows-fr`}>
           {tiles.map((tile) => {
+            const tileId = normalizeId(tile.id);
+            const productId = normalizeId(tile.productId) || tileId;
+            const categoryId = normalizeId(tile.categoryId);
+            const subcategoryId = normalizeId(tile.subcategoryId) || tileId;
+            const slug = normalizeId(tile.slug);
+            const sellerId = normalizeId((tile as any).sellerId);
+
             // Prioritize the main image (logo/banner) if available, otherwise fallback to product grid
             const images = tile.image
               ? [tile.image]
@@ -116,25 +150,23 @@ export default function CategoryTileSection({
                 <Link
                   to={
                     tile.subcategoryId || tile.type === "subcategory"
-                      ? tile.categoryId
-                        ? `/category/${tile.categoryId}?subcategory=${tile.subcategoryId || tile.id
-                        }`
-                        : tile.slug
-                          ? `/category/${tile.slug}`
-                          : `/category/subcategory/${tile.subcategoryId || tile.id
-                          }`
-                      : tile.productId
-                        ? `/product/${tile.productId}`
+                      ? categoryId
+                        ? `/category/${categoryId}?subcategory=${subcategoryId}`
+                        : slug
+                          ? `/category/${slug}`
+                          : `/category/subcategory/${subcategoryId}`
+                      : isProductLikeTile(tile)
+                        ? `/product/${productId}`
                         : isShopOrSeller
-                          ? `/store/${tile.categoryId || (tile as any).sellerId || tile.id}`
+                          ? `/store/${categoryId || sellerId || tileId}`
                           : tile.type === "category"
-                            ? tile.slug
-                              ? `/category/${tile.slug}`
-                              : tile.categoryId
-                                ? `/category/${tile.categoryId}`
+                            ? slug
+                              ? `/category/${slug}`
+                              : categoryId
+                                ? `/category/${categoryId}`
                                 : "#"
-                            : tile.categoryId
-                              ? `/category/${tile.categoryId}`
+                            : categoryId
+                              ? `/category/${categoryId}`
                               : "#"
                   }
                   onClick={(e) => {

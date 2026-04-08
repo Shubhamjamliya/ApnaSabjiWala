@@ -73,11 +73,13 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
   const heroRef = useRef<HTMLDivElement>(null);
   const topSectionRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
+  const searchBarRef = useRef<HTMLDivElement>(null);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
-  const [, setIsSticky] = useState(false);
+  const [isSticky, setIsSticky] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [searchBarHeight, setSearchBarHeight] = useState(0);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
   // Format location display text - only show if user has provided location
@@ -158,6 +160,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           y: 0,
           duration: 0.6,
           ease: 'power2.out',
+          clearProps: 'transform',
         }
       );
     }, hero);
@@ -175,34 +178,51 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
     return () => clearInterval(interval);
   }, [searchSuggestions.length, activeTab]);
 
-  // Handle scroll to detect when "LOWEST PRICES EVER" section is out of view
+  // Handle scroll for fixed search bar and top transition.
   useEffect(() => {
-    const handleScroll = () => {
-      if (topSectionRef.current && stickyRef.current) {
-        // Find the "LOWEST PRICES EVER" section
-        const lowestPricesSection = document.querySelector('[data-section="lowest-prices"]');
+    const getMainScrollTop = () => {
+      const mainEl = document.querySelector('main');
+      return mainEl instanceof HTMLElement ? mainEl.scrollTop : 0;
+    };
 
-        if (lowestPricesSection) {
-          const sectionBottom = lowestPricesSection.getBoundingClientRect().bottom;
-          // When the section has scrolled up past the viewport, transition to white
-          const progress = Math.min(Math.max(1 - (sectionBottom / 200), 0), 1);
-          setScrollProgress(progress);
-          setIsSticky(sectionBottom <= 100);
-        } else {
-          // Fallback to original logic if section not found
-          const topSectionBottom = topSectionRef.current.getBoundingClientRect().bottom;
-          const topSectionHeight = topSectionRef.current.offsetHeight;
-          const progress = Math.min(Math.max(1 - (topSectionBottom / topSectionHeight), 0), 1);
-          setScrollProgress(progress);
-          setIsSticky(topSectionBottom <= 0);
-        }
+    const getWindowScrollTop = () => window.scrollY || document.documentElement.scrollTop || 0;
+
+    const handleScroll = () => {
+      const scrollTop = Math.max(getMainScrollTop(), getWindowScrollTop());
+
+      setScrollProgress(Math.min(Math.max(scrollTop / 140, 0), 1));
+      setIsSticky(scrollTop > 24);
+    };
+
+    const updateSearchBarHeight = () => {
+      if (searchBarRef.current) {
+        setSearchBarHeight(searchBarRef.current.offsetHeight);
       }
     };
 
+    updateSearchBarHeight();
+    window.addEventListener('resize', updateSearchBarHeight);
+
+    // Listen on both containers because this app uses custom main scrolling on mobile.
+    const mainEl = document.querySelector('main');
+    if (mainEl instanceof HTMLElement) {
+      mainEl.addEventListener('scroll', handleScroll, { passive: true });
+    }
     window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Ensure sticky state is correct after initial layout/paint.
+    const rafId = requestAnimationFrame(handleScroll);
     handleScroll(); // Check initial state
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', updateSearchBarHeight);
+      const cleanupMainEl = document.querySelector('main');
+      if (cleanupMainEl instanceof HTMLElement) {
+        cleanupMainEl.removeEventListener('scroll', handleScroll);
+      }
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   // Update sliding indicator position when activeTab changes and scroll to active tab
@@ -323,23 +343,26 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
         </div>
       </div>
 
-      {/* Sticky section: Search Bar and Category Tabs - Always sticky */}
-      <div
-        ref={stickyRef}
-        className="sticky top-0 z-50"
-        style={{
-          ...(scrollProgress >= 0.1 && {
-            background: `linear-gradient(to bottom right,
-              ${rgbToRgba(theme.primary[0], 1 - scrollProgress)},
-              ${rgbToRgba(theme.primary[1], 1 - scrollProgress)},
-              ${rgbToRgba(theme.primary[2], 1 - scrollProgress)}),
-              rgba(255, 255, 255, ${scrollProgress})`,
-            boxShadow: `0 4px 6px -1px rgba(0, 0, 0, ${scrollProgress * 0.1})`,
-            transition: 'background 0.1s ease-out, box-shadow 0.1s ease-out',
-          }),
-        }}
-      >
-        <div className="px-4 md:px-6 lg:px-8 pt-2 md:pt-2 pb-2 md:pb-2">
+      {/* Sticky section: Search Bar and Category Tabs */}
+      <div ref={stickyRef}>
+        {isSticky && <div style={{ height: searchBarHeight || 52 }} />}
+
+        <div
+          ref={searchBarRef}
+          className={`${isSticky ? 'fixed top-0 left-0 right-0 z-50 md:top-[60px]' : 'relative z-20'}`}
+          style={{
+            ...(scrollProgress >= 0.1 && {
+              background: `linear-gradient(to bottom right,
+                ${rgbToRgba(theme.primary[0], 1 - scrollProgress)},
+                ${rgbToRgba(theme.primary[1], 1 - scrollProgress)},
+                ${rgbToRgba(theme.primary[2], 1 - scrollProgress)}),
+                rgba(255, 255, 255, ${scrollProgress})`,
+              boxShadow: `0 4px 6px -1px rgba(0, 0, 0, ${scrollProgress * 0.1})`,
+              transition: 'background 0.1s ease-out, box-shadow 0.1s ease-out',
+            }),
+          }}
+        >
+          <div className="px-4 md:px-6 lg:px-8 pt-2 md:pt-2 pb-2 md:pb-2">
           {/* Search Bar */}
           <div
             onClick={() => navigate('/search')}
@@ -385,6 +408,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
             </svg>
           </div>
         </div>
+        </div>
 
         {/* Category Tabs Section */}
         <div className="w-full relative" style={{ paddingTop: '12px', paddingBottom: '24px' }}>
@@ -395,7 +419,7 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           </div>
           <div
             ref={tabsContainerRef}
-            className="flex gap-4 md:gap-6 overflow-x-auto scrollbar-hide px-4 md:px-6 lg:px-8 md:justify-center scroll-smooth"
+            className="flex gap-4 md:gap-6 overflow-x-auto overflow-y-visible scrollbar-hide px-4 md:px-6 lg:px-8 md:justify-center scroll-smooth py-2"
           >
 
             {tabs.map((tab) => {

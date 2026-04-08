@@ -1,16 +1,34 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendOTP, verifyOTP } from '../../../services/api/auth/adminAuthService';
 import OTPInput from '../../../components/OTPInput';
 import { useAuth } from '../../../context/AuthContext';
 
 export default function AdminLogin() {
+  const RESEND_OTP_COOLDOWN = 30;
   const navigate = useNavigate();
   const { login } = useAuth();
   const [mobileNumber, setMobileNumber] = useState('');
   const [showOTP, setShowOTP] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+
+    const timerId = window.setInterval(() => {
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(timerId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timerId);
+  }, [resendTimer]);
 
   const handleMobileLogin = async () => {
     if (mobileNumber.length !== 10) return;
@@ -21,6 +39,7 @@ export default function AdminLogin() {
     try {
       await sendOTP(mobileNumber);
       setShowOTP(true);
+      setResendTimer(RESEND_OTP_COOLDOWN);
     } catch (err: any) {
       setError(
         err.response?.data?.message || "Failed to send OTP. Please try again."
@@ -180,6 +199,7 @@ export default function AdminLogin() {
                   onClick={() => {
                     setShowOTP(false);
                     setError("");
+                    setResendTimer(0);
                   }}
                   disabled={loading}
                   className="flex-1 py-2.5 rounded-lg font-semibold text-sm bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors border border-neutral-300">
@@ -187,9 +207,12 @@ export default function AdminLogin() {
                 </button>
                 <button
                   onClick={handleMobileLogin}
-                  disabled={loading}
-                  className="flex-1 py-2.5 rounded-lg font-semibold text-sm bg-teal-600 text-white hover:bg-teal-700 transition-colors">
-                  {loading ? "Verifying..." : "Resend OTP"}
+                  disabled={loading || resendTimer > 0}
+                  className={`flex-1 py-2.5 rounded-lg font-semibold text-sm border transition-colors ${loading || resendTimer > 0
+                      ? "bg-neutral-100 text-neutral-400 border-neutral-300 cursor-not-allowed"
+                      : "bg-teal-600 text-white border-teal-600 hover:bg-teal-700"
+                    }`}>
+                  {loading ? "Sending..." : resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend OTP"}
                 </button>
               </div>
             </div>

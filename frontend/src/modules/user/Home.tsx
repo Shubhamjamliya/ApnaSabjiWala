@@ -34,6 +34,11 @@ export default function Home() {
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollHandledRef = useRef(false);
   const SCROLL_POSITION_KEY = 'home-scroll-position';
+  const isPageReload = useMemo(() => {
+    if (typeof window === 'undefined' || typeof performance === 'undefined') return false;
+    const navEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    return navEntry?.type === 'reload';
+  }, []);
 
   // State for dynamic data
   const [loading, setLoading] = useState(true);
@@ -149,6 +154,21 @@ export default function Home() {
       if (scrollHandledRef.current) return;
       scrollHandledRef.current = true;
 
+      if (isPageReload) {
+        sessionStorage.removeItem(SCROLL_POSITION_KEY);
+        const resetToTop = () => {
+          const mainElement = document.querySelector('main');
+          if (mainElement) {
+            mainElement.scrollTop = 0;
+          }
+          window.scrollTo(0, 0);
+        };
+
+        requestAnimationFrame(resetToTop);
+        setTimeout(resetToTop, 80);
+        return;
+      }
+
       const savedScrollPosition = sessionStorage.getItem(SCROLL_POSITION_KEY);
       if (savedScrollPosition) {
         const scrollY = parseInt(savedScrollPosition, 10);
@@ -190,7 +210,7 @@ export default function Home() {
         setTimeout(performReset, 100);
       }
     }
-  }, [loading, homeData.shops]);
+  }, [loading, homeData.shops, isPageReload]);
 
   // Global click/touch listener to save scroll position before any navigation
   useEffect(() => {
@@ -313,6 +333,7 @@ export default function Home() {
                               product={product}
                               categoryStyle={true}
                               showBadge={true}
+                              showHeartIcon={true}
                               showPackBadge={false}
                               showStockInfo={false}
                               compact={isCompact}
@@ -360,6 +381,7 @@ export default function Home() {
                         product={product}
                         categoryStyle={true}
                         showBadge={true}
+                        showHeartIcon={true}
                       />
                     </div>
                   ))}

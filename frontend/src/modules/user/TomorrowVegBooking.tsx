@@ -107,6 +107,13 @@ export default function TomorrowVegBooking() {
   });
 
   const addToCart = (product: Product | any) => {
+    if (!user || user.userType !== 'Customer') {
+      showToast('Please login to add items to cart', 'info');
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+
     setCart((prev) => {
       const productId = product._id || product.id;
       const variantId = product.variantId || (product.selectedVariant?._id);
@@ -198,6 +205,13 @@ export default function TomorrowVegBooking() {
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
   const handleBooking = async () => {
+    if (!user || user.userType !== 'Customer') {
+      showToast('Please login to place your order', 'info');
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+
     if (!selectedSlot) {
       showToast("Please select a delivery slot", "error");
       return;

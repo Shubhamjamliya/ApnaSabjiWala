@@ -16,6 +16,26 @@ interface BestsellerCardsProps {
 export default function BestsellerCards({ cards }: BestsellerCardsProps) {
   const navigate = useNavigate();
 
+  const hasValidValue = (value?: string) => {
+    if (!value) return false;
+    const normalized = String(value).trim().toLowerCase();
+    return normalized !== '' && normalized !== 'undefined' && normalized !== 'null';
+  };
+
+  const handleCardClick = (card: BestsellerCard) => {
+    if (hasValidValue(card.categorySlug)) {
+      navigate(`/category/${card.categorySlug}`);
+      return;
+    }
+    if (hasValidValue(card.categoryId)) {
+      navigate(`/category/${card.categoryId}`);
+      return;
+    }
+
+    // Fallback: open search results using card name.
+    navigate(`/search?q=${encodeURIComponent(card.name || '')}`);
+  };
+
   if (!cards || cards.length === 0) return null;
 
   return (
@@ -30,7 +50,7 @@ export default function BestsellerCards({ cards }: BestsellerCardsProps) {
         {cards.map((card) => (
           <div
             key={card.id}
-            onClick={() => navigate(`/category/${card.categorySlug || card.categoryId}`)}
+            onClick={() => handleCardClick(card)}
             className="flex-shrink-0 w-[260px] md:w-auto bg-white rounded-2xl p-3 md:p-4 shadow-sm border border-neutral-100 hover:shadow-md transition-all cursor-pointer group flex flex-col h-full"
             style={{ scrollSnapAlign: 'start' }}
           >

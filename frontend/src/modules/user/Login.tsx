@@ -5,15 +5,34 @@ import { useAuth } from '../../context/AuthContext';
 import OTPInput from '../../components/OTPInput';
 
 export default function Login() {
+  const RESEND_OTP_COOLDOWN = 30;
   const navigate = useNavigate();
   const { login } = useAuth();
+  const redirectPath = new URLSearchParams(window.location.search).get('redirect') || '/';
   const [mobileNumber, setMobileNumber] = useState('');
   const [showOTP, setShowOTP] = useState(false);
   const [sessionId, setSessionId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+
+    const timerId = window.setInterval(() => {
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(timerId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timerId);
+  }, [resendTimer]);
 
   const handleContinue = async () => {
     if (mobileNumber.length !== 10) return;
@@ -27,6 +46,7 @@ export default function Login() {
         setSessionId(response.sessionId);
       }
       setShowOTP(true);
+      setResendTimer(RESEND_OTP_COOLDOWN);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to initiate call. Please try again.');
     } finally {
@@ -47,11 +67,13 @@ export default function Login() {
           name: response.data.user.name,
           phone: response.data.user.phone,
           email: response.data.user.email,
+          userType: 'Customer',
           walletAmount: response.data.user.walletAmount,
           refCode: response.data.user.refCode,
           status: response.data.user.status,
         });
-        navigate('/');
+        const safeRedirect = redirectPath.startsWith('/') ? redirectPath : '/';
+        navigate(safeRedirect);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid OTP. Please try again.');
@@ -187,6 +209,7 @@ export default function Login() {
                 onClick={() => {
                   setShowOTP(false);
                   setError('');
+                  setResendTimer(0);
                 }}
                 disabled={loading}
                 className="flex-1 py-2 rounded-lg font-semibold text-xs bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors border border-neutral-300"
@@ -195,10 +218,13 @@ export default function Login() {
               </button>
               <button
                 onClick={handleContinue}
-                disabled={loading}
-                className="flex-1 py-2 rounded-lg font-semibold text-xs bg-orange-50 text-orange-600 border border-orange-500 hover:bg-orange-100 transition-colors"
+                disabled={loading || resendTimer > 0}
+                className={`flex-1 py-2 rounded-lg font-semibold text-xs border transition-colors ${loading || resendTimer > 0
+                    ? 'bg-neutral-100 text-neutral-400 border-neutral-300 cursor-not-allowed'
+                    : 'bg-orange-50 text-orange-600 border-orange-500 hover:bg-orange-100'
+                  }`}
               >
-                {loading ? 'Verifying...' : 'Resend OTP'}
+                {loading ? 'Sending...' : resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
               </button>
             </div>
           </>

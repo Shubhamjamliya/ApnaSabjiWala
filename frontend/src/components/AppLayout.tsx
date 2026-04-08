@@ -130,6 +130,28 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const showHeader = isSearchPage && !isCheckoutPage && !isCartPage;
   const showSearchBar = isSearchPage && !isCheckoutPage && !isCartPage;
   const showFooter = !isCheckoutPage && !isProductDetailPage && !isTomorrowBookingPage;
+  const isLocationModalVisible = showLocationRequest || isLocationModalOpen;
+
+  // Prevent background page scrolling while location modal is open.
+  useEffect(() => {
+    if (!isLocationModalVisible) {
+      return;
+    }
+
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalBodyTouchAction = document.body.style.touchAction;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.touchAction = originalBodyTouchAction;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, [isLocationModalVisible]);
 
   return (
     <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
@@ -307,7 +329,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           )}
 
           {/* Scrollable Main Content */}
-          <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide pb-24 md:pb-8">
+          <main ref={mainRef} className={`flex-1 overflow-x-hidden scrollbar-hide pb-24 md:pb-8 ${isLocationModalVisible ? 'overflow-hidden' : 'overflow-y-auto'}`}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={location.pathname}

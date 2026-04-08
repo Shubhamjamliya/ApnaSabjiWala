@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useJsApiLoader } from '@react-google-maps/api';
+import { GOOGLE_MAPS_LIBRARIES, GOOGLE_MAPS_LOADER_ID, getGoogleMapsApiKey } from '../lib/googleMapsLoader';
 
 interface GoogleMapsAutocompleteProps {
   value: string;
@@ -9,9 +10,6 @@ interface GoogleMapsAutocompleteProps {
   disabled?: boolean;
   required?: boolean;
 }
-
-type Libraries = ("places" | "drawing" | "geometry" | "visualization")[];
-const libraries: Libraries = ['places'];
 
 // Clean address by removing Plus Codes and unwanted identifiers
 const cleanAddress = (address: string): string => {
@@ -55,9 +53,9 @@ export default function GoogleMapsAutocomplete({
 
   // Use the same loader configuration as LocationPickerMap
   const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: libraries,
+    id: GOOGLE_MAPS_LOADER_ID,
+    googleMapsApiKey: getGoogleMapsApiKey(),
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   // Update local input value when prop changes

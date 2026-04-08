@@ -78,6 +78,22 @@ export default function Search() {
 
   return (
     <div className="pb-24 md:pb-8 bg-white min-h-screen">
+      <div className="px-4 md:px-6 lg:px-8 pt-4 pb-2">
+        <button
+          type="button"
+          onClick={() => {
+            if (window.history.length > 1) {
+              navigate(-1);
+            } else {
+              navigate('/');
+            }
+          }}
+          className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-700 hover:text-neutral-900"
+        >
+          <span aria-hidden="true">←</span>
+          <span>Back</span>
+        </button>
+      </div>
 
       {/* Search Results */}
       {searchQuery.trim() && (
@@ -149,13 +165,6 @@ export default function Search() {
               </div>
             </div>
           )}
-
-          {/* See all products - Placeholder or link to popular items */}
-          <div className="px-4 md:px-6 lg:px-8 py-2 md:py-4">
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 cursor-pointer" onClick={() => navigate('/category/all')}>
-              <span className="text-sm md:text-base text-neutral-700 font-medium whitespace-nowrap">Browse all categories ▸</span>
-            </div>
-          </div>
 
           {/* Cooking ideas */}
           {!contentLoading && cookingIdeas.length > 0 && (

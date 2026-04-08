@@ -9,9 +9,7 @@ import { getAddresses, addAddress, updateAddress, Address } from '../../services
 import { appConfig } from '../../services/configService';
 import { calculateProductPrice } from '../../utils/priceUtils';
 import GoogleMapsLocationPicker from '../../components/GoogleMapsLocationPicker';
-
-type Libraries = ("places" | "drawing" | "geometry" | "visualization")[];
-const libraries: Libraries = ['places'];
+import { GOOGLE_MAPS_LIBRARIES, GOOGLE_MAPS_LOADER_ID, getGoogleMapsApiKey } from '../../lib/googleMapsLoader';
 
 export default function CheckoutAddress() {
   const { cart } = useCart();
@@ -45,9 +43,9 @@ export default function CheckoutAddress() {
   const [selectedLongitude, setSelectedLongitude] = useState<number>(0);
 
   const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    libraries: libraries
+    id: GOOGLE_MAPS_LOADER_ID,
+    googleMapsApiKey: getGoogleMapsApiKey(),
+    libraries: GOOGLE_MAPS_LIBRARIES
   });
 
   // Get user's current location on mount
@@ -149,6 +147,11 @@ export default function CheckoutAddress() {
   const platformFee = appConfig.platformFee;
   const deliveryFee = cart.total >= appConfig.freeDeliveryThreshold ? 0 : appConfig.deliveryFee;
   const totalAmount = cart.total + platformFee + deliveryFee;
+  const alphabetWithSpaceRegex = /^[A-Za-z ]+$/;
+
+  const sanitizeAlphabetField = (value: string) => {
+    return value.replace(/[^A-Za-z ]/g, '').replace(/\s+/g, ' ').trimStart();
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof OrderAddress, string>> = {};
@@ -169,9 +172,13 @@ export default function CheckoutAddress() {
     }
     if (!address.city.trim()) {
       newErrors.city = 'City is required';
+    } else if (!alphabetWithSpaceRegex.test(address.city.trim())) {
+      newErrors.city = 'City should contain only alphabets';
     }
     if (!address.state?.trim()) {
         newErrors.state = 'State is required';
+    } else if (!alphabetWithSpaceRegex.test(address.state.trim())) {
+        newErrors.state = 'State should contain only alphabets';
     }
     if (!address.pincode.trim()) {
       newErrors.pincode = 'Pincode is required';
@@ -273,7 +280,9 @@ export default function CheckoutAddress() {
     address.flat.trim() !== '' &&
     address.street.trim() !== '' &&
     address.city.trim() !== '' &&
+    alphabetWithSpaceRegex.test(address.city.trim()) &&
     (address.state?.trim() || '') !== '' &&
+    alphabetWithSpaceRegex.test((address.state || '').trim()) &&
     address.pincode.trim().length >= 6;
 
   return (
@@ -455,7 +464,7 @@ export default function CheckoutAddress() {
           <input
             type="text"
             value={address.city}
-            onChange={(e) => handleInputChange('city', e.target.value)}
+            onChange={(e) => handleInputChange('city', sanitizeAlphabetField(e.target.value))}
             className={`w-full px-3 py-2 bg-white border rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors ${errors.city ? 'border-red-500' : 'border-neutral-200'
               }`}
             placeholder="City"
@@ -470,7 +479,7 @@ export default function CheckoutAddress() {
           <input
             type="text"
             value={address.state || ''}
-            onChange={(e) => handleInputChange('state', e.target.value)}
+            onChange={(e) => handleInputChange('state', sanitizeAlphabetField(e.target.value))}
             className={`w-full px-3 py-2 bg-white border rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors ${errors.state ? 'border-red-500' : 'border-neutral-200'
               }`}
             placeholder="State"

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useEffect, useState } from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { GOOGLE_MAPS_LIBRARIES, GOOGLE_MAPS_LOADER_ID, getGoogleMapsApiKey } from '../lib/googleMapsLoader';
 
 interface GoogleMapsLocationPickerProps {
     initialLat: number;
@@ -13,24 +14,21 @@ const mapContainerStyle = {
     height: '100%'
 };
 
-type Libraries = ("places" | "drawing" | "geometry" | "visualization")[];
-const libraries: Libraries = ['places'];
-
 export default function GoogleMapsLocationPicker({
     initialLat,
     initialLng,
     onLocationSelect,
     height = '200px'
 }: GoogleMapsLocationPickerProps) {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    const apiKey = getGoogleMapsApiKey();
     const mapRef = useRef<google.maps.Map | null>(null);
     const [center, setCenter] = useState({ lat: initialLat, lng: initialLng });
     const isDragging = useRef(false);
 
     const { isLoaded, loadError } = useJsApiLoader({
-        id: 'google-map-script',
-        googleMapsApiKey: apiKey || '',
-        libraries: libraries
+        id: GOOGLE_MAPS_LOADER_ID,
+        googleMapsApiKey: apiKey,
+        libraries: GOOGLE_MAPS_LIBRARIES
     });
 
     // Update center when initial props change significantly

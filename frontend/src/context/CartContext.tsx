@@ -135,7 +135,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (isAuthenticated) {
       fetchCart();
     } else {
-      // Guest cart is already in 'items' from localStorage if it existed
+      // Keep persisted cart unless customer logout explicitly removed it.
+      // If storage key is absent, clear in-memory cart as well.
+      if (!localStorage.getItem(CART_STORAGE_KEY)) {
+        setItems([]);
+        setEstimatedFee(undefined);
+        setPlatformFee(undefined);
+        setFreeDeliveryThreshold(undefined);
+      }
       setLoading(false);
     }
   }, [isAuthenticated, user?.userType, location?.latitude, location?.longitude]);
@@ -166,6 +173,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, estimatedFee, platformFee, freeDeliveryThreshold]);
 
   const addToCart = async (product: Product, sourceElement?: HTMLElement | null) => {
+    if (!isAuthenticated || user?.userType !== 'Customer') {
+      showToast('Please login to add items to cart', 'info');
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+      return;
+    }
+
     // Get consistent product ID - MongoDB returns _id, frontend expects id
     const productId = product._id || product.id;
 
@@ -240,38 +254,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [...validItems, { product: normalizedProduct, quantity: 1 }];
     });
 
-    // Only sync to API if user is authenticated
-    if (isAuthenticated && user?.userType === 'Customer') {
-      try {
-        // Pass variation info to API if available
-        const variation = (product as any).variantId || (product as any).selectedVariant?._id || (product as any).variantTitle || (product as any).pack;
-        const response = await apiAddToCart(
-          productId,
-          1,
-          variation,
-          location?.latitude,
-          location?.longitude
-        );
-        if (response && response.data && response.data.items) {
-          // Atomic update from server response
-          setItems(mapApiItemsToState(response.data.items));
-          setEstimatedFee(response.data.estimatedDeliveryFee);
-          setPlatformFee(response.data.platformFee);
-          setFreeDeliveryThreshold(response.data.freeDeliveryThreshold);
-        }
-      } catch (error: any) {
-        console.error("Add to cart failed", error);
-        // Show error toast
-        showToast(error.response?.data?.message || "Failed to add to cart", 'error');
-        // Revert on error
-        setItems(previousItems);
-      } finally {
-        // Remove from pending operations
-        pendingOperationsRef.current.delete(productId);
+    try {
+      // Pass variation info to API if available
+      const variation = (product as any).variantId || (product as any).selectedVariant?._id || (product as any).variantTitle || (product as any).pack;
+      const response = await apiAddToCart(
+        productId,
+        1,
+        variation,
+        location?.latitude,
+        location?.longitude
+      );
+      if (response && response.data && response.data.items) {
+        // Atomic update from server response
+        setItems(mapApiItemsToState(response.data.items));
+        setEstimatedFee(response.data.estimatedDeliveryFee);
+        setPlatformFee(response.data.platformFee);
+        setFreeDeliveryThreshold(response.data.freeDeliveryThreshold);
       }
-    } else {
-      // For unregistered users, the optimistic update is already saved to localStorage
-      // Remove from pending operations immediately
+    } catch (error: any) {
+      console.error("Add to cart failed", error);
+      // Show error toast
+      showToast(error.response?.data?.message || "Failed to add to cart", 'error');
+      // Revert on error
+      setItems(previousItems);
+    } finally {
+      // Remove from pending operations
       pendingOperationsRef.current.delete(productId);
     }
   };

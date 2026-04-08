@@ -21,6 +21,7 @@ interface ProductCardProps {
   showPackBadge?: boolean;
   showStockInfo?: boolean;
   showHeartIcon?: boolean;
+  showShareIcon?: boolean;
   showRating?: boolean;
   showVegetarianIcon?: boolean;
   showOptionsText?: boolean;
@@ -41,6 +42,7 @@ export default function ProductCard({
   showPackBadge = false,
   showStockInfo = false,
   showHeartIcon = false,
+  showShareIcon = true,
   showRating = false,
   showVegetarianIcon = false,
   showOptionsText = false,
@@ -128,6 +130,40 @@ export default function ProductCard({
       setIsWishlisted(previousState);
       const errorMessage = e.response?.data?.message || e.message || 'Failed to update wishlist';
       showToast(errorMessage, 'error');
+    }
+  };
+
+  const handleShareProduct = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const productId = ((product as any).id || product._id) as string;
+    const productName = product.name || product.productName || 'Product';
+    const shareUrl = `${window.location.origin}/product/${productId}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: productName,
+          text: `Check out this product: ${productName}`,
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        showToast('Product link copied');
+      }
+    } catch (error: any) {
+      // Ignore user-cancelled share action.
+      if (error?.name === 'AbortError') {
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        showToast('Product link copied');
+      } catch {
+        showToast('Unable to share product', 'error');
+      }
     }
   };
 
@@ -492,14 +528,31 @@ export default function ProductCard({
 
               {/* 5. Price with discount */}
               <div className="mt-auto">
-                <div className="flex items-baseline gap-1 flex-wrap">
-                  <span className="text-[11px] font-bold text-neutral-900 leading-tight">
-                    ₹{displayPrice.toLocaleString('en-IN')}
-                  </span>
-                  {mrp && mrp > displayPrice && (
-                    <span className="text-[8px] text-neutral-500 line-through leading-tight">
-                      ₹{mrp.toLocaleString('en-IN')}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-baseline gap-1 flex-wrap min-w-0">
+                    <span className="text-[11px] font-bold text-neutral-900 leading-tight">
+                      ₹{displayPrice.toLocaleString('en-IN')}
                     </span>
+                    {mrp && mrp > displayPrice && (
+                      <span className="text-[8px] text-neutral-500 line-through leading-tight">
+                        ₹{mrp.toLocaleString('en-IN')}
+                      </span>
+                    )}
+                  </div>
+                  {showShareIcon && (
+                    <button
+                      onClick={handleShareProduct}
+                      className="w-6 h-6 rounded-full bg-neutral-100 flex items-center justify-center hover:bg-neutral-200 transition-colors flex-shrink-0"
+                      aria-label="Share product"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-neutral-600">
+                        <circle cx="18" cy="5" r="2.5" stroke="currentColor" strokeWidth="2" />
+                        <circle cx="6" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" />
+                        <circle cx="18" cy="19" r="2.5" stroke="currentColor" strokeWidth="2" />
+                        <path d="M8.2 10.9L15.8 6.1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        <path d="M8.2 13.1L15.8 17.9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                    </button>
                   )}
                 </div>
               </div>
@@ -561,14 +614,31 @@ export default function ProductCard({
               )}
 
               <div className="mt-auto mb-2">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-base font-bold text-neutral-900">
-                    ₹{displayPrice}
-                  </span>
-                  {mrp && mrp > displayPrice && (
-                    <span className="text-xs text-neutral-500 line-through">
-                      ₹{mrp}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                    <span className="text-base font-bold text-neutral-900">
+                      ₹{displayPrice}
                     </span>
+                    {mrp && mrp > displayPrice && (
+                      <span className="text-xs text-neutral-500 line-through">
+                        ₹{mrp}
+                      </span>
+                    )}
+                  </div>
+                  {showShareIcon && (
+                    <button
+                      onClick={handleShareProduct}
+                      className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center hover:bg-neutral-200 transition-colors flex-shrink-0"
+                      aria-label="Share product"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-neutral-600">
+                        <circle cx="18" cy="5" r="2.5" stroke="currentColor" strokeWidth="2" />
+                        <circle cx="6" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" />
+                        <circle cx="18" cy="19" r="2.5" stroke="currentColor" strokeWidth="2" />
+                        <path d="M8.2 10.9L15.8 6.1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        <path d="M8.2 13.1L15.8 17.9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                    </button>
                   )}
                 </div>
               </div>

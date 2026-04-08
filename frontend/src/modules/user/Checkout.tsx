@@ -325,6 +325,12 @@ export default function Checkout() {
     // Only bypass if explicitly passed true (handles event objects from onClick)
     const bypassProfileCheck = arg === true;
 
+    if (!user || user.userType !== 'Customer') {
+      showGlobalToast('Please login to place your order', 'info');
+      navigate('/login');
+      return;
+    }
+
     if (!selectedAddress || cart.items.length === 0) {
       return;
     }
@@ -975,6 +981,16 @@ export default function Checkout() {
               </div>
             ))}
           </div>
+
+          <div className="mt-3 pt-2 border-t border-neutral-200">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="w-full py-2.5 rounded-lg border border-green-600 text-green-700 font-semibold text-sm hover:bg-green-50 transition-colors"
+            >
+              Add More Items
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1207,28 +1223,35 @@ export default function Checkout() {
       {/* Get FREE delivery banner */}
       {deliveryCharge > 0 && (
         <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
-          <div className="flex items-center gap-2 mb-1.5">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5 13h14M5 13l4-4m-4 4l4 4" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="18" cy="5" r="2" fill="#3b82f6" />
-            </svg>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-blue-700">Get FREE delivery</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 18l6-6-6-6" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="w-full text-left"
+            aria-label="Add more items to get free delivery"
+          >
+            <div className="flex items-center gap-2 mb-1.5">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 13h14M5 13l4-4m-4 4l4 4" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="18" cy="5" r="2" fill="#3b82f6" />
+              </svg>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-blue-700">Get FREE delivery</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 18l6-6-6-6" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <p className="text-[10px] text-blue-600 mt-0.5">Add products worth ₹{amountNeededForFreeDelivery} more</p>
               </div>
-              <p className="text-[10px] text-blue-600 mt-0.5">Add products worth ₹{amountNeededForFreeDelivery} more</p>
             </div>
-          </div>
-          {/* Progress bar */}
-          <div className="w-full h-1 bg-blue-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-600 transition-all duration-300"
-              style={{ width: `${Math.min(100, ((199 - amountNeededForFreeDelivery) / 199) * 100)}%` }}
-            />
-          </div>
+            {/* Progress bar */}
+            <div className="w-full h-1 bg-blue-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-600 transition-all duration-300"
+                style={{ width: `${Math.min(100, ((199 - amountNeededForFreeDelivery) / 199) * 100)}%` }}
+              />
+            </div>
+          </button>
         </div>
       )}
 

@@ -563,6 +563,42 @@ export default function PromoStrip({ activeTab = "all", data: initialData }: Pro
     }
   };
 
+  const normalizeValue = (value: unknown): string => {
+    if (value === null || value === undefined) return "";
+    const normalized = String(value).trim();
+    if (!normalized) return "";
+
+    const lower = normalized.toLowerCase();
+    if (lower === "undefined" || lower === "null" || lower === "nan") return "";
+
+    return normalized;
+  };
+
+  const resolvePromoCardRoute = (card: PromoCard): string => {
+    const productId = normalizeValue(card.productId);
+    if (card.type === "product" && productId) {
+      return `/product/${productId}`;
+    }
+
+    const slug = normalizeValue(card.slug);
+    const categoryId = normalizeValue(card.categoryId);
+
+    if (slug) {
+      const normalizedSlug = slug.startsWith("/") ? slug.slice(1) : slug;
+      if (normalizedSlug.startsWith("product/")) {
+        return `/${normalizedSlug}`;
+      }
+      return `/category/${normalizedSlug}`;
+    }
+
+    if (categoryId) {
+      return `/category/${categoryId}`;
+    }
+
+    const fallbackQuery = encodeURIComponent(normalizeValue(card.title) || "offers");
+    return `/search?q=${fallbackQuery}`;
+  };
+
   return (
     <div
       className="relative"
@@ -865,11 +901,12 @@ export default function PromoStrip({ activeTab = "all", data: initialData }: Pro
               const subcategoryImages = subcategoryImagesMap[card.id] || card.subcategoryImages || [];
               const hasSubcategoryImages = subcategoryImages.length > 0;
               const categoryIcons = getCategoryIcons(card.categoryId || "");
+              const cardRoute = resolvePromoCardRoute(card);
 
               return (
                 <div key={`${card.id || 'promo-card'}-${index}`} className="promo-card">
                   <Link
-                    to={card.type === 'product' ? `/product/${card.productId}` : (card.slug || card.categoryId ? `/category/${card.slug || card.categoryId}` : "#")}
+                    to={cardRoute}
                     className="group rounded-lg transition-all duration-300 hover:shadow-md active:scale-[0.98] h-full flex flex-col overflow-hidden relative"
                     style={{
                       minHeight: "90px",

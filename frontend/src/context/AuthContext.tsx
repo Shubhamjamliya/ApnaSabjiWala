@@ -116,6 +116,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
     removeAuthToken(role);
 
+    // Clear only role-scoped extra persisted data.
+    if (role === "customer") {
+      localStorage.removeItem("saved_cart");
+    }
+    if (role === "delivery") {
+      localStorage.removeItem("delivery_user_name");
+    }
+
     // Remove FCM token on logout
     if (currentToken) {
       removeFCMToken(currentToken).catch((error) => {
