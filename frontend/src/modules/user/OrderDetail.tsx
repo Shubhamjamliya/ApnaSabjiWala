@@ -735,7 +735,7 @@ export default function OrderDetail() {
     { title: string; subtitle: string; color: string }
   > = {
     Received: {
-      title: "Order received",
+      title: "Order placed",
       subtitle: "Order will reach you shortly",
       color: "bg-green-700",
     },
