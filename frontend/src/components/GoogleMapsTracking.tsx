@@ -1,15 +1,23 @@
 import { useCallback, useRef, useEffect, useState } from 'react'
 // @ts-ignore - @react-google-maps/api types may not be available
-import { GoogleMap, useJsApiLoader, Marker, Polyline } from '@react-google-maps/api'
+import { GoogleMap, useJsApiLoader, OverlayViewF as OverlayView, Polyline } from '@react-google-maps/api'
 import { motion } from 'framer-motion'
 import { GOOGLE_MAPS_LIBRARIES, GOOGLE_MAPS_LOADER_ID, getGoogleMapsApiKey } from '../lib/googleMapsLoader'
-// Use direct public path which is more reliable in this setup
-const getDeliveryIconUrl = () => '/assets/deliveryboy/deliveryIcon.png';
+import { SHOW_DEV_MODE } from '../config/appMode'
 
 interface Location {
     lat: number
     lng: number
     name?: string
+}
+
+const normalizeLocation = (loc?: Location | null): Location | null => {
+    if (!loc) return null
+    const lat = Number(loc.lat)
+    const lng = Number(loc.lng)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+    if (lat === 0 && lng === 0) return null
+    return { lat, lng, name: loc.name }
 }
 
 interface GoogleMapsTrackingProps {
@@ -51,6 +59,8 @@ export default function GoogleMapsTracking({
     onRouteInfoUpdate,
     lastUpdate
 }: GoogleMapsTrackingProps) {
+    const isValidLocation = useCallback((loc?: Location | null) => !!normalizeLocation(loc), []);
+
     const apiKey = getGoogleMapsApiKey()
     const mapRef = useRef<any>(null)
     const directionsServiceRef = useRef<any>(null)
@@ -101,23 +111,31 @@ export default function GoogleMapsTracking({
         libraries: GOOGLE_MAPS_LIBRARIES
     })
 
+    const normalizedStore = normalizeLocation(storeLocation)
+    const normalizedSellers = sellerLocations
+        .map((s) => normalizeLocation(s))
+        .filter((s): s is Location => !!s)
+    const normalizedCustomer = normalizeLocation(customerLocation)
+
     // Combine storeLocation with sellerLocations
-    const allSellers = storeLocation ? [storeLocation, ...sellerLocations] : sellerLocations;
+    const allSellers = normalizedStore ? [normalizedStore, ...normalizedSellers] : normalizedSellers;
 
     // Center will be updated dynamically based on deliveryLocation
     const currentDeliveryLocation = isSimulating ? simulatedLocation : deliveryLocation;
 
-    const center = currentDeliveryLocation || (allSellers.length > 0 ? {
-        lat: (allSellers[0].lat + customerLocation.lat) / 2,
-        lng: (allSellers[0].lng + customerLocation.lng) / 2
-    } : customerLocation)
+    const center = currentDeliveryLocation || (allSellers.length > 0 && normalizedCustomer ? {
+        lat: (allSellers[0].lat + normalizedCustomer.lat) / 2,
+        lng: (allSellers[0].lng + normalizedCustomer.lng) / 2
+    } : normalizedCustomer || { lat: 21.1702, lng: 72.8311 })
+
+    const validWaypoints = routeWaypoints.filter((wp) => isValidLocation(wp));
 
     // Logical path for fallback polyline: Rider -> Next Waypoints -> Customer
     const path = currentDeliveryLocation 
-        ? [currentDeliveryLocation, ...routeWaypoints, customerLocation]
-        : [...allSellers, customerLocation];
+        ? [currentDeliveryLocation, ...validWaypoints, ...(normalizedCustomer ? [normalizedCustomer] : [])]
+        : [...allSellers, ...(normalizedCustomer ? [normalizedCustomer] : [])];
     
-    const filteredPath = path.filter(loc => loc && (loc.lat !== 0 || loc.lng !== 0))
+    const filteredPath = path.filter((loc) => isValidLocation(loc))
 
     // Auto-center and fit bounds when location or route changes
     useEffect(() => {
@@ -140,16 +158,18 @@ export default function GoogleMapsTracking({
             hasPoints = true;
         } else {
             // Add other locations if route not showing
-            if (storeLocation) {
-                bounds.extend(storeLocation);
+            if (normalizedStore) {
+                bounds.extend(normalizedStore);
                 hasPoints = true;
             }
-            sellerLocations.forEach(s => {
+            normalizedSellers.forEach(s => {
                 bounds.extend(s);
                 hasPoints = true;
             });
-            bounds.extend(customerLocation);
-            hasPoints = true;
+            if (normalizedCustomer) {
+                bounds.extend(normalizedCustomer);
+                hasPoints = true;
+            }
         }
 
         if (hasPoints) {
@@ -179,7 +199,7 @@ export default function GoogleMapsTracking({
                 setTimeout(() => mapRef.current._setProgrammaticChange(false), 500);
             }
         }
-    }, [isLoaded, deliveryLocation, showRoute, routeOrigin, routeDestination, routeWaypoints, storeLocation, sellerLocations, customerLocation, userHasInteracted, isFullScreen]);
+    }, [isLoaded, deliveryLocation, showRoute, routeOrigin, routeDestination, routeWaypoints, normalizedStore, normalizedSellers, normalizedCustomer, userHasInteracted, isFullScreen]);
 
     const handleRecenter = () => {
         setUserHasInteracted(false);
@@ -197,9 +217,9 @@ export default function GoogleMapsTracking({
                     bounds.extend(routeDestination);
                     routeWaypoints.forEach(wp => bounds.extend(wp));
                 } else {
-                    if (storeLocation) bounds.extend(storeLocation);
-                    sellerLocations.forEach(s => bounds.extend(s));
-                    bounds.extend(customerLocation);
+                    if (normalizedStore) bounds.extend(normalizedStore);
+                    normalizedSellers.forEach(s => bounds.extend(s));
+                    if (normalizedCustomer) bounds.extend(normalizedCustomer);
                 }
                 mapRef.current.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
                 hasInitialBoundsFitted.current = true;
@@ -251,8 +271,11 @@ export default function GoogleMapsTracking({
             return
         }
 
+        const normalizedOrigin = normalizeLocation(origin)
+        const normalizedDestination = normalizeLocation(destination)
+
         // Validate origin and destination
-        if (!origin || !destination || !origin.lat || !origin.lng || !destination.lat || !destination.lng) {
+        if (!normalizedOrigin || !normalizedDestination) {
             console.log('⚠️ Cannot calculate route: invalid origin or destination', { origin, destination })
             return
         }
@@ -265,15 +288,15 @@ export default function GoogleMapsTracking({
 
         if (timeDiff < 5000) {
             // Check if origin moved significantly
-            const latDiff = Math.abs(origin.lat - lastCalc.origin.lat)
-            const lngDiff = Math.abs(origin.lng - lastCalc.origin.lng)
+            const latDiff = Math.abs(normalizedOrigin.lat - lastCalc.origin.lat)
+            const lngDiff = Math.abs(normalizedOrigin.lng - lastCalc.origin.lng)
             // Rough approximation: 0.0005 degrees is ~50m
             if (latDiff < 0.0005 && lngDiff < 0.0005) {
                 return // Skip calculation
             }
         }
 
-        lastRouteCalcRef.current = { time: now, origin: { ...origin } }
+        lastRouteCalcRef.current = { time: now, origin: { ...normalizedOrigin } }
 
         // Initialize DirectionsService if not already initialized
         if (!directionsServiceRef.current) {
@@ -297,18 +320,29 @@ export default function GoogleMapsTracking({
             directionsRendererRef.current.setOptions({ preserveViewport: true })
         }
 
+        const normalizedWaypoints = waypoints
+            .filter((wp) => isValidLocation(wp))
+            .filter((wp) => {
+                const nearOrigin = Math.abs(wp.lat - normalizedOrigin.lat) < 0.0001 && Math.abs(wp.lng - normalizedOrigin.lng) < 0.0001;
+                const nearDestination = Math.abs(wp.lat - normalizedDestination.lat) < 0.0001 && Math.abs(wp.lng - normalizedDestination.lng) < 0.0001;
+                return !nearOrigin && !nearDestination;
+            })
+            .filter((wp, idx, arr) => {
+                return arr.findIndex((x) => Math.abs(x.lat - wp.lat) < 0.00005 && Math.abs(x.lng - wp.lng) < 0.00005) === idx;
+            })
+            .slice(0, 23);
+
         // Prepare waypoints
-        const googleWaypoints = waypoints.map(wp => ({
+        const googleWaypoints = normalizedWaypoints.map(wp => ({
             location: new window.google.maps.LatLng(wp.lat, wp.lng),
             stopover: true
         }));
 
-        // Calculate route
-        directionsServiceRef.current.route(
+        const runDirections = (withWaypoints: boolean) => directionsServiceRef.current.route(
             {
-                origin: origin,
-                destination: destination,
-                waypoints: googleWaypoints,
+                origin: normalizedOrigin,
+                destination: normalizedDestination,
+                waypoints: withWaypoints ? googleWaypoints : [],
                 travelMode: window.google.maps.TravelMode.DRIVING,
                 drivingOptions: {
                     departureTime: new Date(),
@@ -358,21 +392,28 @@ export default function GoogleMapsTracking({
 
                     directionsRendererRef.current.setDirections(result);
                 } else {
-                    console.error('❌ Directions request failed:', status, { origin, destination })
+                    // Retry once without waypoints before falling back.
+                    if (withWaypoints && googleWaypoints.length > 0) {
+                        runDirections(false)
+                        return
+                    }
+
+                    console.error('❌ Directions request failed:', status, { origin: normalizedOrigin, destination: normalizedDestination, withWaypoints })
                     setRouteInfo(null)
 
-                    // Fallback to straight line if route fails
                     if (status === 'ZERO_RESULTS') {
-                        setRouteError('No road route found. Showing straight line.')
+                        setRouteError('No road route found for this destination.')
                     } else if (status === 'OVER_QUERY_LIMIT') {
-                        setRouteError('Map service busy. Showing straight line.')
+                        setRouteError('Map service busy. Please retry.')
                     } else {
-                        setRouteError('Navigation error. Showing straight line.')
+                        setRouteError('Navigation error. Please retry.')
                     }
                 }
             }
         )
-    }, [isLoaded])
+
+        runDirections(true)
+    }, [isLoaded, isValidLocation])
 
     // Handle route calculation when routeOrigin and routeDestination are provided
     useEffect(() => {
@@ -386,7 +427,7 @@ export default function GoogleMapsTracking({
             lastDirectionsResultRef.current = null
             setRouteInfo(null)
         }
-    }, [showRoute, routeOrigin, routeDestination, routeWaypoints, isLoaded, calculateAndDisplayRoute])
+    }, [showRoute, routeOrigin, routeDestination, validWaypoints, isLoaded, calculateAndDisplayRoute])
 
     // Interpolation State
     const [animatedDeliveryLocation, setAnimatedDeliveryLocation] = useState<Location | undefined>(deliveryLocation);
@@ -444,7 +485,11 @@ export default function GoogleMapsTracking({
         // Calculate heading for rotation
         const newHeading = calculateBearing(startLocation, targetLocation);
         if (Math.abs(newHeading) > 0.1) {
-            setHeading(newHeading);
+            // Rotate using shortest turn direction to avoid sudden 359 -> 0 jumps.
+            setHeading((prev) => {
+                const delta = ((newHeading - prev + 540) % 360) - 180;
+                return (prev + delta + 360) % 360;
+            });
         }
 
         const startTime = performance.now();
@@ -637,7 +682,7 @@ export default function GoogleMapsTracking({
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M3 12h3m12 0h3M12 3v3m0 12v3" /></svg>
                 </button>
 
-                {import.meta.env.DEV && (
+                {SHOW_DEV_MODE && (
                     <button
                         onClick={toggleSimulation}
                         className={`p-2 rounded-full shadow-md transition-colors ${isSimulating ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
@@ -658,7 +703,7 @@ export default function GoogleMapsTracking({
             )}
 
             {/* Warning when customer location is missing */}
-            {isTracking && (!customerLocation || customerLocation.lat === 0) && (
+            {isTracking && !normalizedCustomer && (
                 <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 w-max max-w-[90%]">
                     <div className="bg-orange-50 border border-orange-200 text-orange-800 px-4 py-3 rounded-lg text-xs font-medium shadow-lg flex flex-col items-center gap-1 text-center">
                         <div className="flex items-center gap-2">
@@ -682,75 +727,58 @@ export default function GoogleMapsTracking({
                     mapTypeControl: false,
                     fullscreenControl: false,
                     disableDefaultUI: true,
-                    mapId: '4504f8b37365c3d0', // Required for AdvancedMarkerElement
                 }}
             >
                 {/* Customer Marker */}
-                {customerLocation && (customerLocation.lat !== 0 || customerLocation.lng !== 0) && (
-                    <AdvancedMarker
-                        map={mapRef.current}
-                        position={customerLocation}
-                        title="Delivery Address"
-                        content={
-                            <div style={{ fontSize: '30px' }}>📍</div>
-                        }
-                    />
+                {normalizedCustomer && (
+                    <OverlayView
+                        position={normalizedCustomer}
+                        mapPaneName="overlayMouseTarget"
+                    >
+                        <img
+                            src="/assets/user.png"
+                            alt="Customer"
+                            style={{ width: '42px', height: '42px', transform: 'translate(-50%, -100%)' }}
+                        />
+                    </OverlayView>
                 )}
 
                 {/* Seller Markers */}
                 {allSellers.map((seller, index) => (
-                    <AdvancedMarker
+                    <OverlayView
                         key={`seller-${index}`}
-                        map={mapRef.current}
                         position={seller}
-                        title={seller.name || "Seller Shop"}
-                        content={
-                            showRoute && routeDestination?.lat === seller.lat ? (
-                                <div style={{ 
-                                    width: '20px', 
-                                    height: '20px', 
-                                    backgroundColor: '#ef4444', 
-                                    borderRadius: '50%', 
-                                    border: '3px solid white',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                                }} />
-                            ) : (
-                                <div style={{ fontSize: '30px' }}>🏪</div>
-                            )
-                        }
-                    />
+                        mapPaneName="overlayMouseTarget"
+                    >
+                        <img
+                            src="/assets/seller.png"
+                            alt={seller.name || 'Seller'}
+                            style={{ width: '42px', height: '42px', transform: 'translate(-50%, -100%)' }}
+                        />
+                    </OverlayView>
                 ))}
 
-                {/* Delivery Partner Marker (Animated & Rotated) */}
+                {/* Delivery Marker */}
                 {animatedDeliveryLocation && (
-                    <AdvancedMarker
-                        map={mapRef.current}
+                    <OverlayView
                         position={animatedDeliveryLocation}
-                        title="Delivery Partner"
-                        rotation={heading}
-                        content={
-                            <div style={{ 
-                                width: '60px', 
-                                height: '60px', 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center',
-                                backgroundColor: 'white',
-                                borderRadius: '50%',
-                                border: '2px solid #16a34a',
-                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                                overflow: 'hidden'
-                            }}>
-                                <img 
-                                    src={getDeliveryIconUrl()} 
-                                    alt="Rider"
-                                    style={{ width: '40px', height: '40px', margin: 'auto' }}
-                                />
-                            </div>
-                        }
-                    />
+                        mapPaneName="overlayMouseTarget"
+                    >
+                        <img
+                            src="/assets/delivery.png"
+                            alt="Delivery Partner"
+                            style={{
+                                width: '46px',
+                                height: '46px',
+                                transform: `translate(-50%, -100%) rotate(${heading}deg)`,
+                                transformOrigin: '50% 78%'
+                            }}
+                        />
+                    </OverlayView>
                 )}
-                {(!showRoute || routeError) && (
+
+                {/* Polyline for route */}
+                {!showRoute && filteredPath.length >= 2 && (
                     <Polyline
                         path={filteredPath}
                         options={{
@@ -764,69 +792,5 @@ export default function GoogleMapsTracking({
             </GoogleMap>
         </div>
     )
-}
-
-/**
- * Custom Advanced Marker component that uses the modern google.maps.marker.AdvancedMarkerElement
- */
-function AdvancedMarker({ map, position, title, content, rotation = 0 }: { 
-    map: any, 
-    position: Location, 
-    title?: string, 
-    content: React.ReactNode,
-    rotation?: number
-}) {
-    const markerRef = useRef<any>(null);
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    const [isMounted, setIsMounted] = useState(false);
-
-    useEffect(() => {
-        if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement || !position) return;
-
-        // Create container for the React content
-        const container = document.createElement('div');
-        containerRef.current = container;
-        
-        markerRef.current = new window.google.maps.marker.AdvancedMarkerElement({
-            map,
-            position: { lat: position.lat, lng: position.lng },
-            title,
-            content: container,
-        });
-
-        setIsMounted(true);
-
-        return () => {
-            if (markerRef.current) {
-                markerRef.current.map = null;
-                markerRef.current = null;
-            }
-        };
-    }, [map]);
-
-    // Update position and rotation smoothly
-    useEffect(() => {
-        if (markerRef.current && position) {
-            markerRef.current.position = { lat: position.lat, lng: position.lng };
-        }
-    }, [position.lat, position.lng]);
-
-    // Apply rotation separately via CSS to avoid marker re-renders
-    useEffect(() => {
-        if (containerRef.current) {
-            containerRef.current.style.transition = 'transform 0.1s linear';
-            containerRef.current.style.transform = `rotate(${rotation}deg)`;
-        }
-    }, [rotation]);
-
-    // Import and use createPortal for rendering React content into the DOM element
-    const [Portal, setPortal] = useState<any>(null);
-    useEffect(() => {
-        import('react-dom').then((mod) => setPortal(() => mod.createPortal));
-    }, []);
-
-    if (!isMounted || !containerRef.current || !Portal) return null;
-
-    return Portal(content, containerRef.current);
 }
 

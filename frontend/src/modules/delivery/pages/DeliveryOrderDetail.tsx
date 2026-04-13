@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getOrderDetails, updateOrderStatus, getSellerLocationsForOrder, sendDeliveryOtp, verifyDeliveryOtp, updateDeliveryLocation, checkSellerProximity, confirmSellerPickup, checkCustomerProximity } from '../../../services/api/delivery/deliveryService';
 import deliveryIcon from '@assets/deliveryboy/deliveryIcon.png';
 import GoogleMapsTracking from '../../../components/GoogleMapsTracking';
-import { SHOW_DEV_MODE } from '../../../config/appMode';
+import { SHOW_DEV_MODE } from '@/config/appMode';
 
 // Helper to get delivery icon URL (works in both dev and production)
 const getDeliveryIconUrl = () => {
@@ -563,11 +563,6 @@ export default function DeliveryOrderDetail() {
         return null;
     };
 
-    const nextStatus = getNextStatus();
-    const isMapVisible = order.status === 'Out for Delivery' || order.status === 'Picked up' || (sellerLocations.length > 0 && order.status !== 'Delivered');
-    const showSellerLocations = sellerLocations.length > 0 && order.status !== 'Picked up' && order.status !== 'Out for Delivery' && order.status !== 'Delivered';
-    const showCustomerLocation = order.status === 'Picked up' || order.status === 'Out for Delivery';
-
     // Check if we have valid customer coordinates (direct fields + GeoJSON fallback)
     const toNum = (value: any): number => {
         const n = Number(value)
@@ -584,6 +579,15 @@ export default function DeliveryOrderDetail() {
         toNum(order?.deliveryAddress?.location?.coordinates?.[0]) ||
         toNum(order?.address?.location?.coordinates?.[0])
     const hasValidCustomerLocation = !!(customerLat && customerLng)
+
+    const nextStatus = getNextStatus();
+    const isMapVisible = order.status !== 'Delivered' && order.status !== 'Cancelled' && order.status !== 'Returned' && (
+        hasValidCustomerLocation ||
+        sellerLocations.length > 0 ||
+        !!deliveryBoyLocation
+    );
+    const showSellerLocations = sellerLocations.length > 0 && order.status !== 'Picked up' && order.status !== 'Out for Delivery' && order.status !== 'Delivered';
+    const showCustomerLocation = order.status === 'Picked up' || order.status === 'Out for Delivery';
 
     return (
         <div className="min-h-screen bg-neutral-50 pb-32 relative">
@@ -623,15 +627,11 @@ export default function DeliveryOrderDetail() {
             {/* Google Maps View - Shared Component for Parity */}
             {isMapVisible && (
                 <GoogleMapsTracking
-                    sellerLocations={
-                        (order.status === 'Out for Delivery' || order.status === 'Picked up')
-                            ? []  // Hide seller markers when delivering to customer
-                            : sellerLocations.map(s => ({
-                                lat: Number(s.latitude),
-                                lng: Number(s.longitude),
-                                name: s.storeName
-                            }))
-                    }
+                    sellerLocations={sellerLocations.map(s => ({
+                        lat: Number(s.latitude),
+                        lng: Number(s.longitude),
+                        name: s.storeName
+                    }))}
                     customerLocation={{
                         lat: customerLat || 0,
                         lng: customerLng || 0

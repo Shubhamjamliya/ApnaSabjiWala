@@ -475,6 +475,8 @@ export default function OrderDetail() {
   const [selectedTip, setSelectedTip] = useState<number | "other" | null>(null);
   const [customTip, setCustomTip] = useState("");
   const previousOrderStatusRef = useRef<OrderStatus | string>(order?.status || "Received");
+  const isTerminalStatus = (status?: string | null) =>
+    ["Delivered", "Cancelled", "Returned", "Rejected"].includes(String(status || ""));
 
   // Real-time delivery tracking via WebSocket
   const {
@@ -559,6 +561,14 @@ export default function OrderDetail() {
   // Real-time order status updates from socket
   useEffect(() => {
     if (socketOrderStatus && socketOrderStatus !== orderStatus) {
+      // Do not downgrade from terminal statuses due to stale socket events.
+      if (
+        (isTerminalStatus(String(orderStatus)) || isTerminalStatus(String(order?.status))) &&
+        !isTerminalStatus(String(socketOrderStatus))
+      ) {
+        return;
+      }
+
       console.log('🔄 Real-time status update:', socketOrderStatus);
       setOrderStatus(socketOrderStatus as OrderStatus);
 
@@ -582,6 +592,10 @@ export default function OrderDetail() {
       if (refreshed) {
         setOrder(refreshed);
         if (refreshed.status && refreshed.status !== orderStatus) {
+          // Prevent terminal -> non-terminal flicker caused by eventual consistency.
+          if (isTerminalStatus(String(orderStatus)) && !isTerminalStatus(String(refreshed.status))) {
+            return;
+          }
           setOrderStatus(refreshed.status as OrderStatus);
         }
       }
@@ -593,6 +607,9 @@ export default function OrderDetail() {
   useEffect(() => {
     if (!trackingStatus) return;
 
+    // Never allow tracking events to downgrade a terminal order status.
+    if (isTerminalStatus(String(orderStatus)) || isTerminalStatus(String(order?.status))) return;
+
     if (trackingStatus === 'picked_up' && orderStatus !== 'Picked up') {
       setOrderStatus('Picked up' as OrderStatus);
     } else if ((trackingStatus === 'in_transit' || trackingStatus === 'nearby') && orderStatus !== 'Out for Delivery') {
@@ -601,6 +618,31 @@ export default function OrderDetail() {
       setOrderStatus('Delivered' as OrderStatus);
     }
   }, [trackingStatus, orderStatus]);
+
+  // Stabilize ETA shown in the top status pill to avoid rapid +/-1 min fluctuations.
+  useEffect(() => {
+    const routeEtaMins = routeInfo ? Math.max(1, Math.ceil(routeInfo.durationValue / 60)) : null;
+    const trackingEtaMins = Number.isFinite(eta as number)
+      ? Math.max(1, Math.ceil(eta as number))
+      : null;
+    const nextEta = routeEtaMins ?? trackingEtaMins;
+
+    if (!nextEta) return;
+
+    setEstimatedTime((prev) => {
+      if (!Number.isFinite(prev) || prev <= 0) return nextEta;
+
+      const diff = nextEta - prev;
+
+      // Ignore tiny jitter.
+      if (Math.abs(diff) <= 1) return prev;
+
+      // Ignore small upward bumps (usually traffic API noise).
+      if (diff > 0 && diff <= 3) return prev;
+
+      return nextEta;
+    });
+  }, [routeInfo?.durationValue, eta]);
 
   // Simulate order status progression
   useEffect(() => {
@@ -615,13 +657,14 @@ export default function OrderDetail() {
 
   // Countdown timer
   useEffect(() => {
-    if (orderStatus === "Accepted" || orderStatus === "On the way") {
+    const hasLiveEta = !!routeInfo || Number.isFinite(eta as number);
+    if ((orderStatus === "Accepted" || orderStatus === "On the way") && !hasLiveEta) {
       const timer = setInterval(() => {
         setEstimatedTime((prev) => Math.max(0, prev - 1));
       }, 60000);
       return () => clearInterval(timer);
     }
-  }, [orderStatus]);
+  }, [orderStatus, routeInfo, eta]);
 
   // Auto-redirect to home if seller cancels or rejects while user is on this page
   useEffect(() => {
