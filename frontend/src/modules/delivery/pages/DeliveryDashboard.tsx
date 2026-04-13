@@ -4,7 +4,10 @@ import DeliveryHeader from "../components/DeliveryHeader";
 import SummaryBar from "../components/SummaryBar";
 import DashboardCard from "../components/DashboardCard";
 import DeliveryBottomNav from "../components/DeliveryBottomNav";
-import { getDashboardStats } from "../../../services/api/delivery/deliveryService";
+import {
+  getDashboardStats,
+  getDeliveryProfile,
+} from "../../../services/api/delivery/deliveryService";
 import { useDeliveryStatus } from "../context/DeliveryStatusContext";
 
 export default function DeliveryDashboard() {
@@ -13,12 +16,18 @@ export default function DeliveryDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deliveryStatus, setDeliveryStatus] = useState("");
+  const [locationAreaName, setLocationAreaName] = useState("Locating area...");
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const data = await getDashboardStats();
-        setStats(data);
+        const [dashboardData, profileData] = await Promise.all([
+          getDashboardStats(),
+          getDeliveryProfile(),
+        ]);
+        setStats(dashboardData);
+        setDeliveryStatus(profileData?.status || "");
       } catch (err: any) {
         setError(err.message || "Failed to load dashboard data");
       } finally {
@@ -28,6 +37,56 @@ export default function DeliveryDashboard() {
 
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    if (!currentLocation) {
+      setLocationAreaName("Locating area...");
+      return;
+    }
+
+    const reverseGeocodeArea = async () => {
+      const { latitude, longitude } = currentLocation;
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+      if (!apiKey) {
+        setLocationAreaName("Area unavailable");
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
+        );
+        const data = await response.json();
+
+        if (data.status !== "OK" || !Array.isArray(data.results) || data.results.length === 0) {
+          setLocationAreaName("Area unavailable");
+          return;
+        }
+
+        const components = data.results[0]?.address_components || [];
+        const areaComponent =
+          components.find((c: any) => c.types?.includes("sublocality_level_1")) ||
+          components.find((c: any) => c.types?.includes("sublocality")) ||
+          components.find((c: any) => c.types?.includes("neighborhood")) ||
+          components.find((c: any) => c.types?.includes("locality")) ||
+          components.find((c: any) => c.types?.includes("administrative_area_level_2"));
+
+        setLocationAreaName(
+          areaComponent?.long_name || data.results[0]?.formatted_address || "Area unavailable"
+        );
+      } catch {
+        setLocationAreaName("Area unavailable");
+      }
+    };
+
+    reverseGeocodeArea();
+  }, [currentLocation]);
+
+  const normalizedDeliveryStatus = (deliveryStatus || "").toLowerCase().replace(/\s+/g, "_");
+  const isPendingApproval = ["inactive", "pending", "under_review", "in_review", "awaiting_approval"].includes(
+    normalizedDeliveryStatus
+  );
 
   // Icons for dashboard cards (Keep existing SVGs)
   const pendingOrderIcon = (
@@ -277,6 +336,15 @@ export default function DeliveryDashboard() {
       <DeliveryHeader />
 
       <div className="px-4 py-4 space-y-4">
+        {isPendingApproval && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-sm font-semibold text-amber-800">Pending for approval</p>
+            <p className="mt-1 text-xs text-amber-700">
+              Your delivery account is under admin review. You will get full access after approval.
+            </p>
+          </div>
+        )}
+
         {/* Daily Collection & Cash Balance Bar */}
         <SummaryBar
           leftIcon={dailyCollectionIcon}
@@ -342,14 +410,10 @@ export default function DeliveryDashboard() {
             </div>
             
             {currentLocation ? (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <div className="bg-neutral-800/50 p-2 rounded border border-neutral-700/50">
-                  <p className="text-[9px] text-neutral-500 uppercase mb-0.5">Latitude</p>
-                  <p className="text-xs text-white font-bold">{currentLocation.latitude.toFixed(6)}</p>
-                </div>
-                <div className="bg-neutral-800/50 p-2 rounded border border-neutral-700/50">
-                  <p className="text-[9px] text-neutral-500 uppercase mb-0.5">Longitude</p>
-                  <p className="text-xs text-white font-bold">{currentLocation.longitude.toFixed(6)}</p>
+                  <p className="text-[9px] text-neutral-500 uppercase mb-0.5">Current Area</p>
+                  <p className="text-xs text-white font-bold break-words">{locationAreaName}</p>
                 </div>
               </div>
             ) : (

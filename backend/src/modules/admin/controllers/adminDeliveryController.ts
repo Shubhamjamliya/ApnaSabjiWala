@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import Delivery from "../../../models/Delivery";
+import Seller from "../../../models/Seller";
 import DeliveryAssignment from "../../../models/DeliveryAssignment";
 import CashCollection from "../../../models/CashCollection";
 
@@ -32,6 +33,23 @@ export const createDeliveryBoy = asyncHandler(
         success: false,
         message:
           "Name, mobile, email, password, address, and city are required",
+      });
+    }
+
+    const existingDelivery = await Delivery.findOne({ $or: [{ mobile }, { email }] });
+    if (existingDelivery) {
+      return res.status(409).json({
+        success: false,
+        message: "Delivery boy already exists with this mobile or email",
+      });
+    }
+
+    const existingSellerWithSameMobile = await Seller.findOne({ mobile });
+    if (existingSellerWithSameMobile) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "This mobile number is already registered as a seller. Please use a different mobile number.",
       });
     }
 

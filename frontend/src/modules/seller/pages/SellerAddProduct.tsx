@@ -42,10 +42,6 @@ export default function SellerAddProduct() {
     brand: "",
     tags: "",
     smallDescription: "",
-    seoTitle: "",
-    seoKeywords: "",
-    seoImageAlt: "",
-    seoDescription: "",
     variationType: "",
     manufacturer: "",
     madeIn: "",
@@ -167,10 +163,6 @@ export default function SellerAddProduct() {
               brand: (product.brand as any)?._id || product.brandId || "",
               tags: product.tags.join(", "),
               smallDescription: product.smallDescription || "",
-              seoTitle: product.seoTitle || "",
-              seoKeywords: product.seoKeywords || "",
-              seoImageAlt: product.seoImageAlt || "",
-              seoDescription: product.seoDescription || "",
               variationType: product.variationType || "",
               manufacturer: product.manufacturer || "",
               madeIn: product.madeIn || "",
@@ -186,7 +178,21 @@ export default function SellerAddProduct() {
               shopId: (product as any).shopId?._id || (product as any).shopId || "",
               nextDayEnabled: product.nextDay?.enabled ? "Yes" : "No",
             });
-            setVariations(product.variations);
+            setVariations(
+              (product.variations || []).map((variation: any) => {
+                const normalizedStock = Number(variation.stock) || 0;
+                return {
+                  ...variation,
+                  title:
+                    variation.title || variation.value || variation.name || "",
+                  stock: normalizedStock,
+                  status:
+                    normalizedStock === 0
+                      ? "Sold out"
+                      : variation.status || "Available",
+                };
+              })
+            );
             if (product.mainImageUrl || product.mainImage) {
               setMainImagePreview(
                 product.mainImageUrl || product.mainImage || ""
@@ -272,6 +278,19 @@ export default function SellerAddProduct() {
     >
   ) => {
     const { name, value } = e.target;
+
+    if (name === "madeIn") {
+      const alphabetsOnly = value.replace(/[^A-Za-z\s]/g, "");
+      setFormData((prev) => ({ ...prev, [name]: alphabetsOnly }));
+      return;
+    }
+
+    if (name === "fssaiLicNo") {
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 14);
+      setFormData((prev) => ({ ...prev, [name]: digitsOnly }));
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -339,7 +358,12 @@ export default function SellerAddProduct() {
 
     const price = parseFloat(variationForm.price);
     const discPrice = parseFloat(variationForm.discPrice || "0");
-    const stock = parseInt(variationForm.stock || "0");
+    const stock = parseInt(variationForm.stock || "0", 10);
+
+    if (!Number.isFinite(stock) || stock < 0) {
+      setUploadError("Stock must be a valid non-negative number");
+      return;
+    }
 
     if (discPrice > price) {
       setUploadError("Discounted price cannot be greater than price");
@@ -351,7 +375,7 @@ export default function SellerAddProduct() {
       price,
       discPrice,
       stock,
-      status: variationForm.status,
+      status: stock === 0 ? "Sold out" : "Available",
     };
 
     setVariations([...variations, newVariation]);
@@ -376,6 +400,16 @@ export default function SellerAddProduct() {
     // Basic validation
     if (!formData.productName.trim()) {
       setUploadError("Please enter a product name.");
+      return;
+    }
+
+    if (formData.madeIn && !/^[A-Za-z\s]+$/.test(formData.madeIn.trim())) {
+      setUploadError("Made In should contain alphabets only.");
+      return;
+    }
+
+    if (formData.fssaiLicNo && !/^\d{14}$/.test(formData.fssaiLicNo)) {
+      setUploadError("FSSAI Lic. No. must be exactly 14 digits.");
       return;
     }
 
@@ -445,10 +479,6 @@ export default function SellerAddProduct() {
         publish: formData.publish === "Yes",
         popular: formData.popular === "Yes",
         dealOfDay: formData.dealOfDay === "Yes",
-        seoTitle: formData.seoTitle || undefined,
-        seoKeywords: formData.seoKeywords || undefined,
-        seoImageAlt: formData.seoImageAlt || undefined,
-        seoDescription: formData.seoDescription || undefined,
         smallDescription: formData.smallDescription || undefined,
         tags: tagsArray,
         manufacturer: formData.manufacturer || undefined,
@@ -497,10 +527,6 @@ export default function SellerAddProduct() {
               brand: "",
               tags: "",
               smallDescription: "",
-              seoTitle: "",
-              seoKeywords: "",
-              seoImageAlt: "",
-              seoDescription: "",
               variationType: "",
               manufacturer: "",
               madeIn: "",
@@ -762,67 +788,6 @@ export default function SellerAddProduct() {
             </div>
           </div>
 
-          {/* SEO Content Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
-            <div className="bg-teal-600 text-white px-4 sm:px-6 py-3">
-              <h2 className="text-lg font-semibold">SEO Content</h2>
-            </div>
-            <div className="p-4 sm:p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  name="seoTitle"
-                  value={formData.seoTitle}
-                  onChange={handleChange}
-                  placeholder="Enter SEO Title"
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  SEO Keywords
-                </label>
-                <input
-                  type="text"
-                  name="seoKeywords"
-                  value={formData.seoKeywords}
-                  onChange={handleChange}
-                  placeholder="Enter SEO Keywords"
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  SEO Image Alt Text
-                </label>
-                <input
-                  type="text"
-                  name="seoImageAlt"
-                  value={formData.seoImageAlt}
-                  onChange={handleChange}
-                  placeholder="Enter SEO Image Alt Text"
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  SEO Description
-                </label>
-                <textarea
-                  name="seoDescription"
-                  value={formData.seoDescription}
-                  onChange={handleChange}
-                  placeholder="Enter SEO Description"
-                  rows={4}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Add Variation Section */}
           <div className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
             <div className="bg-teal-600 text-white px-4 sm:px-6 py-3">
@@ -901,7 +866,7 @@ export default function SellerAddProduct() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Stock (0 = Unlimited)
+                    Stock (0 = Out of stock)
                   </label>
                   <input
                     type="number"
@@ -913,6 +878,8 @@ export default function SellerAddProduct() {
                       })
                     }
                     placeholder="0"
+                    min="0"
+                    step="1"
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
@@ -948,7 +915,7 @@ export default function SellerAddProduct() {
                           <span className="ml-4 text-sm text-neutral-600">
                             Stock:{" "}
                             {variation.stock === 0
-                              ? "Unlimited"
+                              ? "Out of stock"
                               : variation.stock}{" "}
                             | Status: {variation.status}
                           </span>
@@ -997,6 +964,7 @@ export default function SellerAddProduct() {
                     value={formData.madeIn}
                     onChange={handleChange}
                     placeholder="Enter Made In"
+                    pattern="[A-Za-z ]+"
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   />
                 </div>
@@ -1053,8 +1021,11 @@ export default function SellerAddProduct() {
                     value={formData.fssaiLicNo}
                     onChange={handleChange}
                     placeholder="Enter FSSAI Lic. No."
+                    inputMode="numeric"
+                    maxLength={14}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   />
+                  <p className="text-xs text-neutral-500 mt-1">Enter 14 digit FSSAI number.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -1145,7 +1116,9 @@ export default function SellerAddProduct() {
                   <input
                     type="file"
                     accept="image/*"
+                    capture="environment"
                     onChange={handleMainImageChange}
+                    onClick={(e) => e.stopPropagation()}
                     className="hidden"
                     disabled={uploading}
                   />
@@ -1219,7 +1192,9 @@ export default function SellerAddProduct() {
                     type="file"
                     accept="image/*"
                     multiple
+                    capture="environment"
                     onChange={handleGalleryImagesChange}
+                    onClick={(e) => e.stopPropagation()}
                     className="hidden"
                     disabled={uploading}
                   />

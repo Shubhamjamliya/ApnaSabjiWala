@@ -11,13 +11,19 @@ import { validateDocumentFile } from "../../../utils/imageUpload";
 import OTPInput from "../../../components/OTPInput";
 
 export default function DeliverySignUp() {
+  const ALPHABET_ONLY_REGEX = /^[A-Za-z ]+$/;
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const DOB_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+  const PINCODE_REGEX = /^\d{6}$/;
+  const ACCOUNT_NUMBER_REGEX = /^\d{9,15}$/;
+  const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     mobile: "",
     email: "",
     dateOfBirth: "",
-    password: "",
     address: "",
     city: "",
     pincode: "",
@@ -43,6 +49,9 @@ export default function DeliverySignUp() {
   const [error, setError] = useState("");
   const [isCityLoading, setIsCityLoading] = useState(false);
 
+  const sanitizeAlphabetValue = (value: string) =>
+    value.replace(/[^A-Za-z ]/g, "").replace(/\s+/g, " ").trimStart();
+
   const bonusTypes = [
     "Select Bonus Type",
     "Fixed or Salaried",
@@ -60,10 +69,30 @@ export default function DeliverySignUp() {
         ...prev,
         [name]: value.replace(/\D/g, "").slice(0, 10),
       }));
+    } else if (name === "name" || name === "city" || name === "accountName" || name === "bankName") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: sanitizeAlphabetValue(value),
+      }));
+    } else if (name === "pincode") {
+      setFormData((prev) => ({
+        ...prev,
+        pincode: value.replace(/\D/g, "").slice(0, 6),
+      }));
+    } else if (name === "accountNumber") {
+      setFormData((prev) => ({
+        ...prev,
+        accountNumber: value.replace(/\D/g, "").slice(0, 15),
+      }));
+    } else if (name === "ifscCode") {
+      setFormData((prev) => ({
+        ...prev,
+        ifscCode: value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11),
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: name === "email" ? value.trim() : value,
       }));
     }
   };
@@ -139,11 +168,56 @@ export default function DeliverySignUp() {
       !formData.name ||
       !formData.mobile ||
       !formData.email ||
-      !formData.password ||
       !formData.address ||
-      !formData.city
+      !formData.city ||
+      !formData.pincode
     ) {
       setError("Please fill all required fields");
+      return;
+    }
+
+    if (!ALPHABET_ONLY_REGEX.test(formData.name.trim())) {
+      setError("Name should contain only alphabets");
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(formData.email)) {
+      setError("Please enter a valid email address (e.g. ags@gmail.com)");
+      return;
+    }
+
+    if (formData.dateOfBirth && !DOB_REGEX.test(formData.dateOfBirth)) {
+      setError("DOB year should be 4 digits");
+      return;
+    }
+
+    if (!ALPHABET_ONLY_REGEX.test(formData.city.trim())) {
+      setError("City should contain only alphabets");
+      return;
+    }
+
+    if (!PINCODE_REGEX.test(formData.pincode)) {
+      setError("Pincode should be 6 digits");
+      return;
+    }
+
+    if (formData.accountName && !ALPHABET_ONLY_REGEX.test(formData.accountName.trim())) {
+      setError("Account name should contain only alphabets");
+      return;
+    }
+
+    if (formData.accountNumber && !ACCOUNT_NUMBER_REGEX.test(formData.accountNumber)) {
+      setError("Account number should be 9 to 15 digits");
+      return;
+    }
+
+    if (formData.bankName && !ALPHABET_ONLY_REGEX.test(formData.bankName.trim())) {
+      setError("Bank name should contain only alphabets");
+      return;
+    }
+
+    if (formData.ifscCode && !IFSC_REGEX.test(formData.ifscCode)) {
+      setError("IFSC Code should be in format SBIN0001234");
       return;
     }
 
@@ -152,8 +226,8 @@ export default function DeliverySignUp() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (!drivingLicenseFile || !nationalIdentityCardFile) {
+      setError("Please upload both required documents");
       return;
     }
 
@@ -161,42 +235,39 @@ export default function DeliverySignUp() {
     setError("");
 
     try {
-      // Upload documents if provided
+      // Upload required documents
       let drivingLicenseUrl = formData.drivingLicenseUrl;
       let nationalIdentityCardUrl = formData.nationalIdentityCardUrl;
 
-      if (drivingLicenseFile || nationalIdentityCardFile) {
-        setUploadingDocs(true);
-        try {
-          if (drivingLicenseFile) {
-            const drivingLicenseResult = await uploadDocument(
-              drivingLicenseFile,
-              "apnasabjiwala/delivery/documents"
-            );
-            drivingLicenseUrl = drivingLicenseResult.secureUrl;
-          }
+      setUploadingDocs(true);
+      try {
+        const drivingLicenseResult = await uploadDocument(
+          drivingLicenseFile,
+          "apnasabjiwala/delivery/documents"
+        );
+        drivingLicenseUrl = drivingLicenseResult.secureUrl;
 
-          if (nationalIdentityCardFile) {
-            const nationalIdResult = await uploadDocument(
-              nationalIdentityCardFile,
-              "apnasabjiwala/delivery/documents"
-            );
-            nationalIdentityCardUrl = nationalIdResult.secureUrl;
-          }
-        } finally {
-          setUploadingDocs(false);
-        }
+        const nationalIdResult = await uploadDocument(
+          nationalIdentityCardFile,
+          "apnasabjiwala/delivery/documents"
+        );
+        nationalIdentityCardUrl = nationalIdResult.secureUrl;
+      } finally {
+        setUploadingDocs(false);
       }
+
+      // Keep password in payload for backend compatibility, but hide it from UI.
+      const generatedPassword = `Delivery@${formData.mobile}`;
 
       const response = await register({
         name: formData.name,
         mobile: formData.mobile,
         email: formData.email,
         dateOfBirth: formData.dateOfBirth || undefined,
-        password: formData.password,
+        password: generatedPassword,
         address: formData.address,
         city: formData.city,
-        pincode: formData.pincode || undefined,
+        pincode: formData.pincode,
         drivingLicense: drivingLicenseUrl || undefined,
         nationalIdentityCard: nationalIdentityCardUrl || undefined,
         accountName: formData.accountName || undefined,
@@ -274,21 +345,21 @@ export default function DeliverySignUp() {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
         {/* Header Section */}
         <div
-          className="px-6 py-4 text-center border-b border-green-700"
+          className="px-6 pt-3 pb-4 text-center border-b border-green-700"
           style={{
             backgroundColor: "rgb(21 178 74 / var(--tw-bg-opacity, 1))",
           }}>
-          <div className="mb-0 -mt-4">
+          <div className="mb-2">
             <img
               src="/assets/apnasabjiwala.png"
               alt="Apna Sabji Wala Delivery"
-              className="h-44 w-full max-w-xs mx-auto object-fill object-bottom"
+              className="h-32 w-full max-w-xs mx-auto object-contain"
             />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-1 -mt-12">
+          <h1 className="text-2xl font-bold text-white mb-1">
             Delivery Sign Up
           </h1>
-          <p className="text-green-50 text-sm -mt-2">
+          <p className="text-green-50 text-sm">
             Create your delivery partner account
           </p>
         </div>
@@ -378,23 +449,7 @@ export default function DeliverySignUp() {
                     name="dateOfBirth"
                     value={formData.dateOfBirth}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-                    disabled={loading}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Password <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    placeholder="Enter password (min 6 characters)"
-                    required
-                    minLength={4}
+                    max={new Date().toISOString().split('T')[0]}
                     className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                     disabled={loading}
                   />
@@ -452,14 +507,16 @@ export default function DeliverySignUp() {
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Pincode
+                    Pincode <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="pincode"
                     value={formData.pincode}
                     onChange={handleInputChange}
-                    placeholder="Enter pincode"
+                    placeholder="Enter 6-digit pincode"
+                    required
+                    maxLength={6}
                     className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                     disabled={loading}
                   />
@@ -469,7 +526,7 @@ export default function DeliverySignUp() {
               {/* Bank Information */}
               <div className="space-y-4 pt-4 border-t">
                 <h3 className="text-sm font-semibold text-neutral-700 border-b pb-2">
-                  Bank Account Information (Optional)
+                  Bank Account Information
                 </h3>
 
                 <div>
@@ -511,7 +568,7 @@ export default function DeliverySignUp() {
                     name="accountNumber"
                     value={formData.accountNumber}
                     onChange={handleInputChange}
-                    placeholder="Account number"
+                    placeholder="Enter 9-15 digit account number"
                     className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                     disabled={loading}
                   />
@@ -526,7 +583,7 @@ export default function DeliverySignUp() {
                     name="ifscCode"
                     value={formData.ifscCode}
                     onChange={handleInputChange}
-                    placeholder="IFSC code"
+                    placeholder="SBIN0001234"
                     className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                     disabled={loading}
                   />
@@ -556,12 +613,12 @@ export default function DeliverySignUp() {
               {/* Documents Section */}
               <div className="space-y-4 pt-4 border-t">
                 <h3 className="text-sm font-semibold text-neutral-700 border-b pb-2">
-                  Documents (Optional - Can be uploaded later)
+                  Documents (Mandatory)
                 </h3>
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Driving License
+                    Driving License <span className="text-red-500">*</span>
                   </label>
                   <div className="space-y-2">
                     <input
@@ -582,7 +639,7 @@ export default function DeliverySignUp() {
 
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    National Identity Card
+                    National Identity Card <span className="text-red-500">*</span>
                   </label>
                   <div className="space-y-2">
                     <input

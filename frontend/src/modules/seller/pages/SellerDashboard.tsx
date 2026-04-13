@@ -5,6 +5,7 @@ import OrderChart from '../components/OrderChart';
 import AlertCard from '../components/AlertCard';
 import { getSellerDashboardStats, DashboardStats, NewOrder } from '../../../services/api/dashboardService';
 import { getSellerProfile, toggleShopStatus } from '../../../services/api/auth/sellerAuthService';
+import { SellerNotification } from '../hooks/useSellerSocket';
 
 export default function SellerDashboard() {
   const navigate = useNavigate();
@@ -16,6 +17,57 @@ export default function SellerDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isShopOpen, setIsShopOpen] = useState(true);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [sellerStatus, setSellerStatus] = useState<string>('');
+
+  const refreshDashboardData = async () => {
+    try {
+      const [statsResponse, profileResponse] = await Promise.all([
+        getSellerDashboardStats(),
+        getSellerProfile()
+      ]);
+
+      if (statsResponse.success) {
+        setStats(statsResponse.data.stats);
+        setNewOrders(statsResponse.data.newOrders);
+      }
+
+      if (profileResponse.success) {
+        const shopStatus = profileResponse.data.isShopOpen ?? true;
+        setIsShopOpen(shopStatus);
+        setSellerStatus(profileResponse.data.status || '');
+      }
+    } catch (err: any) {
+      console.error('Failed to refresh dashboard data:', err?.message || err);
+    }
+  };
+
+  const handleRealtimeNotification = (notification: SellerNotification) => {
+    if (!notification) return;
+
+    // Optimistic update for NEW_ORDER so table changes instantly.
+    if (notification.type === 'NEW_ORDER') {
+      const fallbackId = String(notification.orderId || notification.orderNumber || `order-${Date.now()}`);
+      const fallbackDate = new Date(notification.timestamp || Date.now()).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+
+      setNewOrders((prev) => {
+        if (prev.some((o) => String(o.id) === fallbackId)) return prev;
+        const nextOrder: NewOrder = {
+          id: fallbackId,
+          orderDate: fallbackDate,
+          status: 'Received',
+          amount: Number(notification.totalAmount || 0),
+        };
+        return [nextOrder, ...prev];
+      });
+    }
+
+    // Pull canonical data immediately for consistency in KPI + list.
+    refreshDashboardData();
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -38,6 +90,7 @@ export default function SellerDashboard() {
           const shopStatus = profileResponse.data.isShopOpen ?? true;
           console.log('Initial shop status from profile:', shopStatus, 'Raw value:', profileResponse.data.isShopOpen);
           setIsShopOpen(shopStatus);
+          setSellerStatus(profileResponse.data.status || '');
         }
       } catch (err: any) {
         setError(err.response?.data?.message || 'Error loading dashboard data');
@@ -47,6 +100,24 @@ export default function SellerDashboard() {
     };
 
     fetchDashboardData();
+  }, []);
+
+  useEffect(() => {
+    const onSellerNotification = (event: Event) => {
+      const customEvent = event as CustomEvent<SellerNotification>;
+      handleRealtimeNotification(customEvent.detail);
+    };
+
+    window.addEventListener('seller-notification', onSellerNotification as EventListener);
+
+    const interval = setInterval(() => {
+      refreshDashboardData();
+    }, 12000);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('seller-notification', onSellerNotification as EventListener);
+    };
   }, []);
 
   const handleToggleShop = async () => {
@@ -96,6 +167,8 @@ export default function SellerDashboard() {
   const startIndex = (currentPage - 1) * entriesPerPage;
   const endIndex = startIndex + entriesPerPage;
   const displayedOrders = newOrders.slice(startIndex, endIndex);
+  const normalizedSellerStatus = (sellerStatus || '').toLowerCase().replace(/\s+/g, '_');
+  const isPendingApproval = ['pending', 'under_review', 'in_review', 'awaiting_approval'].includes(normalizedSellerStatus);
 
   // Icons for KPI cards
   const userIcon = (
@@ -251,6 +324,13 @@ export default function SellerDashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {isPendingApproval && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+          <p className="text-sm font-semibold text-amber-800">Pending for approval</p>
+          <p className="text-xs text-amber-700 mt-1">Your seller account is under review. You can browse the dashboard while approval is in progress.</p>
+        </div>
+      )}
+
       {/* Header with Shop Status Toggle */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200 gap-4 sm:gap-0">
         <div>
@@ -278,14 +358,14 @@ export default function SellerDashboard() {
       </div>
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <DashboardCard icon={userIcon} title="Total User" value={stats.totalUser} accentColor="#3b82f6" />
-        <DashboardCard icon={categoryIcon} title="Total Category" value={stats.totalCategory} accentColor="#eab308" />
-        <DashboardCard icon={subcategoryIcon} title="Total Subcategory" value={stats.totalSubcategory} accentColor="#ec4899" />
-        <DashboardCard icon={productIcon} title="Total Product" value={stats.totalProduct} accentColor="#f97316" />
-        <DashboardCard icon={ordersIcon} title="Total Orders" value={stats.totalOrders} accentColor="#3b82f6" />
-        <DashboardCard icon={completedOrdersIcon} title="Completed Orders" value={stats.completedOrders} accentColor="#16a34a" />
-        <DashboardCard icon={pendingOrdersIcon} title="Pending Orders" value={stats.pendingOrders} accentColor="#a855f7" />
-        <DashboardCard icon={cancelledOrdersIcon} title="Cancelled Orders" value={stats.cancelledOrders} accentColor="#ef4444" />
+        <DashboardCard icon={userIcon} title="Total User" value={stats.totalUser} accentColor="#3b82f6" onClick={() => navigate('/seller/orders')} />
+        <DashboardCard icon={categoryIcon} title="Total Category" value={stats.totalCategory} accentColor="#eab308" onClick={() => navigate('/seller/category')} />
+        <DashboardCard icon={subcategoryIcon} title="Total Subcategory" value={stats.totalSubcategory} accentColor="#ec4899" onClick={() => navigate('/seller/subcategory')} />
+        <DashboardCard icon={productIcon} title="Total Product" value={stats.totalProduct} accentColor="#f97316" onClick={() => navigate('/seller/product/list')} />
+        <DashboardCard icon={ordersIcon} title="Total Orders" value={stats.totalOrders} accentColor="#3b82f6" onClick={() => navigate('/seller/orders')} />
+        <DashboardCard icon={completedOrdersIcon} title="Completed Orders" value={stats.completedOrders} accentColor="#16a34a" onClick={() => navigate('/seller/orders')} />
+        <DashboardCard icon={pendingOrdersIcon} title="Pending Orders" value={stats.pendingOrders} accentColor="#a855f7" onClick={() => navigate('/seller/orders')} />
+        <DashboardCard icon={cancelledOrdersIcon} title="Cancelled Orders" value={stats.cancelledOrders} accentColor="#ef4444" onClick={() => navigate('/seller/orders')} />
       </div>
 
       {/* Charts Row */}
@@ -297,8 +377,8 @@ export default function SellerDashboard() {
       {/* Alerts and Button Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Alert Cards - Side by Side */}
-        <AlertCard icon={soldOutIcon} title="Product Sold Out" value={stats.soldOutProducts} accentColor="#ec4899" />
-        <AlertCard icon={lowStockIcon} title="Product low on Stock" value={stats.lowStockProducts} accentColor="#eab308" />
+        <AlertCard icon={soldOutIcon} title="Product Sold Out" value={stats.soldOutProducts} accentColor="#ec4899" onClick={() => navigate('/seller/product/stock')} />
+        <AlertCard icon={lowStockIcon} title="Product low on Stock" value={stats.lowStockProducts} accentColor="#eab308" onClick={() => navigate('/seller/product/stock')} />
       </div>
 
       {/* View New Orders Table Section */}

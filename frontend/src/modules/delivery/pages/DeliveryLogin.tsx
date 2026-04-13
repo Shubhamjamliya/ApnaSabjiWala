@@ -16,6 +16,7 @@ export default function DeliveryLogin() {
   const [error, setError] = useState('');
   const [isNotRegistered, setIsNotRegistered] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
+  const [otpResetSignal, setOtpResetSignal] = useState(0);
 
   // Clear any existing token on mount to prevent role conflicts
   useEffect(() => {
@@ -40,6 +41,10 @@ export default function DeliveryLogin() {
 
   const handleMobileLogin = async () => {
     if (mobileNumber.length !== 10) return;
+
+    if (showOTP) {
+      setOtpResetSignal((prev) => prev + 1);
+    }
 
     setLoading(true);
     setError('');
@@ -87,6 +92,7 @@ export default function DeliveryLogin() {
       // Also handle 401 Unauthorized for verify step
       const message = err.response?.data?.message || 'Invalid OTP. Please try again.';
       setError(message);
+      setOtpResetSignal((prev) => prev + 1);
     } finally {
       setLoading(false);
     }
@@ -192,7 +198,7 @@ export default function DeliveryLogin() {
                 <p className="text-sm font-semibold text-neutral-800">+91 {mobileNumber}</p>
               </div>
 
-              <OTPInput onComplete={handleOTPComplete} disabled={loading} />
+              <OTPInput onComplete={handleOTPComplete} disabled={loading} resetSignal={otpResetSignal} />
 
               {error && (
                 <div className="text-sm text-red-600 bg-red-50 p-2 rounded text-center">

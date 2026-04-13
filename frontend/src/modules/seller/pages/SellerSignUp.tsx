@@ -10,6 +10,12 @@ import LocationPickerMap from '../../../components/LocationPickerMap';
 import { useEffect } from 'react';
 
 export default function SellerSignUp() {
+  const ALPHABET_ONLY_REGEX = /^[A-Za-z ]+$/;
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+  const TAX_NUMBER_REGEX = /^[0-9]{9,15}$/;
+  const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+
   const navigate = useNavigate();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
@@ -39,6 +45,17 @@ export default function SellerSignUp() {
   const [error, setError] = useState('');
   const [categories, setCategories] = useState<HeaderCategory[]>([]);
 
+  const sanitizeAlphabetValue = (value: string) => value.replace(/[^A-Za-z ]/g, '').replace(/\s+/g, ' ').trimStart();
+
+  const extractCityFromAddressComponents = (components: google.maps.GeocoderAddressComponent[]): string => {
+    const cityComponent = components.find((component) =>
+      component.types.includes('locality') ||
+      component.types.includes('administrative_area_level_2') ||
+      component.types.includes('sublocality')
+    );
+    return cityComponent?.long_name || '';
+  };
+
   useEffect(() => {
     const fetchCats = async () => {
       try {
@@ -61,6 +78,26 @@ export default function SellerSignUp() {
         ...prev,
         [name]: value.replace(/\D/g, '').slice(0, 10),
       }));
+    } else if (name === 'sellerName' || name === 'city' || name === 'taxName') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: sanitizeAlphabetValue(value),
+      }));
+    } else if (name === 'panCard') {
+      setFormData(prev => ({
+        ...prev,
+        panCard: value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10),
+      }));
+    } else if (name === 'taxNumber') {
+      setFormData(prev => ({
+        ...prev,
+        taxNumber: value.replace(/\D/g, '').slice(0, 15),
+      }));
+    } else if (name === 'ifsc') {
+      setFormData(prev => ({
+        ...prev,
+        ifsc: value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11),
+      }));
     } else if (name === 'serviceRadiusKm') {
       // Allow only numbers and a single decimal point
       const cleanedValue = value.replace(/[^0-9.]/g, '');
@@ -75,23 +112,17 @@ export default function SellerSignUp() {
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: value,
+        [name]: name === 'email' ? value.trim() : value,
       }));
     }
   };
 
-  const toggleCategory = (cat: string) => {
-    setFormData(prev => {
-      const exists = prev.categories.includes(cat);
-      const nextCategories = exists
-        ? prev.categories.filter(c => c !== cat)
-        : [...prev.categories, cat];
-      return {
-        ...prev,
-        categories: nextCategories,
-        category: nextCategories[0] || '',
-      };
-    });
+  const handleCategoryChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      category: value,
+      categories: value ? [value] : [],
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,6 +141,14 @@ export default function SellerSignUp() {
       setError('Please enter your email address');
       return;
     }
+    if (!EMAIL_REGEX.test(formData.email)) {
+      setError('Please enter a valid email address (e.g. ags@gmail.com)');
+      return;
+    }
+    if (!ALPHABET_ONLY_REGEX.test(formData.sellerName.trim())) {
+      setError('Seller name should contain only alphabets');
+      return;
+    }
     if (!formData.storeName) {
       setError('Please enter your store name');
       return;
@@ -124,6 +163,30 @@ export default function SellerSignUp() {
     }
     if (!formData.city) {
       setError('Please enter your city');
+      return;
+    }
+    if (!ALPHABET_ONLY_REGEX.test(formData.city.trim())) {
+      setError('City should contain only alphabets');
+      return;
+    }
+
+    if (formData.panCard && !PAN_REGEX.test(formData.panCard)) {
+      setError('PAN Card number should be in format ASDFR1234R');
+      return;
+    }
+
+    if (formData.taxNumber && !TAX_NUMBER_REGEX.test(formData.taxNumber)) {
+      setError('Tax number should contain 9 to 15 digits');
+      return;
+    }
+
+    if (formData.taxName && !ALPHABET_ONLY_REGEX.test(formData.taxName.trim())) {
+      setError('Tax name should contain only alphabets');
+      return;
+    }
+
+    if (formData.ifsc && !IFSC_REGEX.test(formData.ifsc)) {
+      setError('IFSC Code should be in format SBIN0001234');
       return;
     }
 
@@ -227,16 +290,16 @@ export default function SellerSignUp() {
       {/* Sign Up Card */}
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
         {/* Header Section */}
-        <div className="px-6 py-4 text-center border-b border-green-700" style={{ backgroundColor: 'rgb(21 178 74 / var(--tw-bg-opacity, 1))' }}>
-          <div className="mb-0 -mt-4">
+        <div className="px-6 pt-3 pb-4 text-center border-b border-green-700" style={{ backgroundColor: 'rgb(21 178 74 / var(--tw-bg-opacity, 1))' }}>
+          <div className="mb-2">
             <img
               src="/assets/apnasabjiwala.png"
               alt="Apna Sabji Wala"
-              className="h-44 w-full max-w-xs mx-auto object-fill object-bottom"
+              className="h-32 w-full max-w-xs mx-auto object-contain"
             />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-1 -mt-12">Seller Sign Up</h1>
-          <p className="text-green-50 text-sm -mt-2">Create your seller account</p>
+          <h1 className="text-2xl font-bold text-white mb-1">Seller Sign Up</h1>
+          <p className="text-green-50 text-sm">Create your seller account</p>
         </div>
 
         {/* Sign Up Form */}
@@ -331,23 +394,21 @@ export default function SellerSignUp() {
                       Loading categories...
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border border-neutral-200 rounded-lg">
-                      {categories.map((cat) => {
-                        const checked = formData.categories.includes(cat.name);
-                        return (
-                          <label key={cat._id} className="flex items-center gap-2 text-sm text-neutral-700">
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleCategory(cat.name)}
-                              disabled={loading}
-                              className="h-4 w-4 text-teal-600 border-neutral-300 rounded focus:ring-teal-500"
-                            />
-                            <span>{cat.name}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={(e) => handleCategoryChange(e.target.value)}
+                      required
+                      disabled={loading}
+                      className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 bg-white"
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map((cat) => (
+                        <option key={cat._id} value={cat.name}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
                   )}
                   {formData.categories.length === 0 && categories.length > 0 && (
                     <p className="text-xs text-red-600 mt-1">Select at least one category</p>
@@ -383,16 +444,41 @@ export default function SellerSignUp() {
                         if (navigator.geolocation) {
                           setLoading(true);
                           navigator.geolocation.getCurrentPosition(
-                            (position) => {
+                            async (position) => {
                               const lat = position.coords.latitude;
                               const lng = position.coords.longitude;
-                              const locationStr = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                              let locationStr = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                              let detectedCity = '';
+
+                              try {
+                                if (window.google?.maps?.Geocoder) {
+                                  const geocoder = new window.google.maps.Geocoder();
+                                  const geocodeResult = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+                                    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                                      if (status === 'OK' && results && results.length > 0) {
+                                        resolve(results);
+                                      } else {
+                                        reject(status);
+                                      }
+                                    });
+                                  });
+
+                                  if (geocodeResult[0]) {
+                                    locationStr = geocodeResult[0].formatted_address;
+                                    detectedCity = extractCityFromAddressComponents(geocodeResult[0].address_components || []);
+                                  }
+                                }
+                              } catch (geocodeErr) {
+                                console.warn('Reverse geocoding failed, falling back to coordinates', geocodeErr);
+                              }
+
                               setFormData(prev => ({
                                 ...prev,
                                 latitude: lat.toString(),
                                 longitude: lng.toString(),
                                 searchLocation: locationStr,
-                                address: prev.address || locationStr // Ensure address is not empty
+                                address: locationStr,
+                                city: detectedCity || prev.city,
                               }));
                               setLoading(false);
                             },
@@ -434,7 +520,7 @@ export default function SellerSignUp() {
                         }}
                       />
                       <p className="mt-1 text-xs text-neutral-500 text-center">
-                        Selected Coordinates: {formData.latitude}, {formData.longitude}
+                        Selected Area: {formData.searchLocation || `${formData.latitude}, ${formData.longitude}`}
                       </p>
                     </div>
                   ) : (
@@ -508,7 +594,7 @@ export default function SellerSignUp() {
                       name="panCard"
                       value={formData.panCard}
                       onChange={handleInputChange}
-                      placeholder="PAN Card Number"
+                      placeholder="ASDFR1234R"
                       className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                       disabled={loading}
                     />
@@ -521,7 +607,7 @@ export default function SellerSignUp() {
                       name="taxName"
                       value={formData.taxName}
                       onChange={handleInputChange}
-                      placeholder="Tax Name"
+                      placeholder="Enter tax name"
                       className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                       disabled={loading}
                     />
@@ -534,7 +620,7 @@ export default function SellerSignUp() {
                       name="taxNumber"
                       value={formData.taxNumber}
                       onChange={handleInputChange}
-                      placeholder="Tax Number"
+                      placeholder="Enter 9-15 digit tax number"
                       className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                       disabled={loading}
                     />
@@ -547,7 +633,7 @@ export default function SellerSignUp() {
                       name="ifsc"
                       value={formData.ifsc}
                       onChange={handleInputChange}
-                      placeholder="IFSC Code"
+                      placeholder="SBIN0001234"
                       className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                       disabled={loading}
                     />

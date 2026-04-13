@@ -1,25 +1,14 @@
 ﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardCard from "../components/DashboardCard";
-import OrderChart from "../components/OrderChart";
-import SalesLineChart from "../components/SalesLineChart";
-import GaugeChart from "../components/GaugeChart";
-import ErrorBoundary from "../../../components/ErrorBoundary";
 import { useAuth } from "../../../context/AuthContext";
 import {
   getDashboardStats,
-  getSalesAnalytics,
-  getOrderAnalytics,
-  getTodaySales,
   getTopSellers,
   getRecentOrders,
-  getSalesByLocation,
   type DashboardStats,
   type TopSeller,
   type RecentOrder,
-  type SalesByLocation,
-  type SalesAnalytics,
-  type TodaySales,
 } from "../../../services/api/admin/adminDashboardService";
 
 export default function AdminDashboard() {
@@ -28,17 +17,6 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [newOrders, setNewOrders] = useState<RecentOrder[]>([]);
   const [topSellers, setTopSellers] = useState<TopSeller[]>([]);
-  const [salesByLocation, setSalesByLocation] = useState<SalesByLocation[]>([]);
-  const [salesAnalytics, setSalesAnalytics] = useState<SalesAnalytics | null>(
-    null
-  );
-  const [orderAnalytics, setOrderAnalytics] = useState<SalesAnalytics | null>(
-    null
-  );
-  const [orderAnalyticsDaily, setOrderAnalyticsDaily] = useState<SalesAnalytics | null>(
-    null
-  );
-  const [todaySales, setTodaySales] = useState<TodaySales | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
@@ -62,20 +40,10 @@ export default function AdminDashboard() {
           statsResponse,
           ordersResponse,
           sellersResponse,
-          locationResponse,
-          analyticsResponse,
-          orderAnalyticsResponse,
-          orderAnalyticsDailyResponse,
-          todaySalesResponse,
         ] = await Promise.all([
           getDashboardStats(),
           getRecentOrders(10),
           getTopSellers(10),
-          getSalesByLocation(),
-          getSalesAnalytics("day"), // Use daily data for the sales line chart
-          getOrderAnalytics("month"),
-          getOrderAnalytics("day"),
-          getTodaySales(),
         ]);
 
         if (statsResponse.success) {
@@ -93,25 +61,6 @@ export default function AdminDashboard() {
           setTopSellers(sellersResponse.data);
         }
 
-        if (locationResponse.success) {
-          setSalesByLocation(locationResponse.data);
-        }
-
-        if (analyticsResponse.success) {
-          setSalesAnalytics(analyticsResponse.data);
-        }
-
-        if (orderAnalyticsResponse.success) {
-          setOrderAnalytics(orderAnalyticsResponse.data);
-        }
-
-        if (orderAnalyticsDailyResponse.success) {
-          setOrderAnalyticsDaily(orderAnalyticsDailyResponse.data);
-        }
-
-        if (todaySalesResponse.success) {
-          setTodaySales(todaySalesResponse.data);
-        }
       } catch (err: any) {
         console.error("Error fetching dashboard data:", err);
         setError(
@@ -352,14 +301,6 @@ export default function AdminDashboard() {
     </svg>
   );
 
-  // Transform sales analytics data for charts
-  const salesThisMonth = salesAnalytics?.thisPeriod || [];
-  const salesLastMonth = salesAnalytics?.lastPeriod || [];
-
-  // Transform order analytics data for charts (real data from backend)
-  const orderDataDec2025 = orderAnalyticsDaily?.thisPeriod || [];
-  const orderData2025 = orderAnalytics?.thisPeriod || [];
-
   const totalPagesNewOrders = Math.ceil(newOrders.length / entriesPerPage);
   const startIndexNewOrders = (currentPage - 1) * entriesPerPage;
   const endIndexNewOrders = startIndexNewOrders + entriesPerPage;
@@ -375,15 +316,6 @@ export default function AdminDashboard() {
     startIndexTopSellers,
     endIndexTopSellers
   );
-
-  // Calculate sales today and comparison from today's sales data
-  const salesToday = todaySales?.salesToday || 0;
-  const salesLastWeekSameDay = todaySales?.salesLastWeekSameDay || 0;
-  const salesDifference = salesToday - salesLastWeekSameDay;
-  const salesPercentChange =
-    salesLastWeekSameDay > 0
-      ? ((salesDifference / salesLastWeekSameDay) * 100).toFixed(0)
-      : salesToday > 0 ? "100" : "0";
 
   // Loading state
   if (loading) {
@@ -516,99 +448,6 @@ export default function AdminDashboard() {
           accentColor="#eab308"
           onClick={() => navigate('/admin/product/list')}
         />
-      </div>
-
-      {/* Sales Section - Top Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Total Sales Today */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-neutral-200 p-4 sm:p-6">
-          <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-            Total Sales Today
-          </h3>
-          <div className="mb-4">
-            <p className="text-3xl font-bold text-neutral-900">
-              ₹{salesToday.toFixed(2)}
-            </p>
-            {salesDifference >= 0 ? (
-              <p className="text-sm text-green-600 mt-1">
-                â–² ₹{Math.abs(salesDifference).toFixed(2)} (+{salesPercentChange}%)
-                vs same day last week
-              </p>
-            ) : (
-              <p className="text-sm text-red-600 mt-1">
-                â–¼ ₹{Math.abs(salesDifference).toFixed(2)} ({salesPercentChange}%)
-                vs same day last week
-              </p>
-            )}
-          </div>
-          <SalesLineChart
-            thisMonthData={salesThisMonth}
-            lastMonthData={salesLastMonth}
-            height={200}
-          />
-        </div>
-
-        {/* Sales by Location & Gauge */}
-        <div className="space-y-4 sm:space-y-6">
-          {/* Sales by Location */}
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4 sm:p-6">
-            <h3 className="text-lg font-semibold text-neutral-900 mb-4">
-              Sales by Location
-            </h3>
-            <div className="space-y-3">
-              {salesByLocation.length > 0 ? (
-                salesByLocation.map((location, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-600">
-                      {location.location}
-                    </span>
-                    <span className="text-sm font-semibold text-neutral-900">
-                      ₹{(location.amount / 1000).toFixed(1)}K
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-neutral-500">
-                  No location data available
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Avg. Completed Order Value */}
-          <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-4 sm:p-6">
-            <h3 className="text-lg font-semibold text-neutral-900 mb-4">
-              Avg. Completed Order Value
-            </h3>
-            <GaugeChart
-              value={stats.avgCompletedOrderValue}
-              maxValue={521}
-              label="Average Order Value"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <ErrorBoundary fallback={<div className="text-sm text-red-600 p-4">Chart failed to load</div>}>
-          <OrderChart
-            title="Order - Dec 2025"
-            data={orderDataDec2025}
-            maxValue={3}
-            height={400}
-          />
-        </ErrorBoundary>
-        <ErrorBoundary fallback={<div className="text-sm text-red-600 p-4">Chart failed to load</div>}>
-          <OrderChart
-            title="Order - 2025"
-            data={orderData2025}
-            maxValue={80}
-            height={400}
-          />
-        </ErrorBoundary>
       </div>
 
       {/* Tables Row */}

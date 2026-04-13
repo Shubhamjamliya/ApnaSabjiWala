@@ -1,5 +1,5 @@
-import { useParams, Link, useSearchParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Button from "../../components/ui/button";
 import { useOrders } from "../../hooks/useOrders";
@@ -442,6 +442,7 @@ const SectionItem = ({
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const confirmed = searchParams.get("confirmed") === "true";
   const { getOrderById, fetchOrderById, loading: contextLoading } = useOrders();
   const [order, setOrder] = useState<any>(id ? getOrderById(id) : undefined);
@@ -473,6 +474,7 @@ export default function OrderDetail() {
   const [cancellationReason, setCancellationReason] = useState("");
   const [selectedTip, setSelectedTip] = useState<number | "other" | null>(null);
   const [customTip, setCustomTip] = useState("");
+  const previousOrderStatusRef = useRef<OrderStatus | string>(order?.status || "Received");
 
   // Real-time delivery tracking via WebSocket
   const {
@@ -571,6 +573,35 @@ export default function OrderDetail() {
     }
   }, [socketOrderStatus, orderStatus, id, fetchOrderById]);
 
+  useEffect(() => {
+    if (!id) return;
+    if (['Delivered', 'Cancelled', 'Returned'].includes(String(orderStatus))) return;
+
+    const interval = setInterval(async () => {
+      const refreshed = await fetchOrderById(id);
+      if (refreshed) {
+        setOrder(refreshed);
+        if (refreshed.status && refreshed.status !== orderStatus) {
+          setOrderStatus(refreshed.status as OrderStatus);
+        }
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [id, orderStatus, fetchOrderById]);
+
+  useEffect(() => {
+    if (!trackingStatus) return;
+
+    if (trackingStatus === 'picked_up' && orderStatus !== 'Picked up') {
+      setOrderStatus('Picked up' as OrderStatus);
+    } else if ((trackingStatus === 'in_transit' || trackingStatus === 'nearby') && orderStatus !== 'Out for Delivery') {
+      setOrderStatus('Out for Delivery' as OrderStatus);
+    } else if (trackingStatus === 'delivered' && orderStatus !== 'Delivered') {
+      setOrderStatus('Delivered' as OrderStatus);
+    }
+  }, [trackingStatus, orderStatus]);
+
   // Simulate order status progression
   useEffect(() => {
     if (confirmed && order) {
@@ -591,6 +622,28 @@ export default function OrderDetail() {
       return () => clearInterval(timer);
     }
   }, [orderStatus]);
+
+  // Auto-redirect to home if seller cancels or rejects while user is on this page
+  useEffect(() => {
+    const previousStatus = previousOrderStatusRef.current;
+    const currentStatus = String(orderStatus || "");
+    const isCurrentTerminalStatus = currentStatus === "Cancelled" || currentStatus === "Rejected";
+    const wasPreviouslyTerminalStatus = previousStatus === "Cancelled" || previousStatus === "Rejected";
+
+    if (isCurrentTerminalStatus && !wasPreviouslyTerminalStatus) {
+      const cancellationReasonText = String(order?.cancellationReason || "").toLowerCase();
+      const cancelledBySeller =
+        currentStatus === "Cancelled" &&
+        (cancellationReasonText.includes("seller") || cancellationReasonText.includes("cancelled by seller"));
+
+      if (cancelledBySeller) {
+        alert("Order cancelled by seller");
+      }
+      navigate("/", { replace: true });
+    }
+
+    previousOrderStatusRef.current = currentStatus;
+  }, [orderStatus, navigate]);
 
   // Handler functions
   const handleRefresh = async () => {
@@ -730,6 +783,10 @@ export default function OrderDetail() {
     ? rawOrderIdString.split("-").slice(-1)[0]
     : rawOrderIdString || "N/A";
 
+  const cancelledBySeller =
+    String(order?.status || "") === "Cancelled" &&
+    String(order?.cancellationReason || "").toLowerCase().includes("seller");
+
   const statusConfig: Record<
     string,
     { title: string; subtitle: string; color: string }
@@ -777,7 +834,7 @@ export default function OrderDetail() {
     },
     Cancelled: {
       title: "Order cancelled",
-      subtitle: "This order has been cancelled",
+      subtitle: cancelledBySeller ? "Order cancelled by seller" : "This order has been cancelled",
       color: "bg-red-600",
     },
     Returned: {
@@ -788,6 +845,22 @@ export default function OrderDetail() {
   };
 
   const currentStatus = statusConfig[orderStatus] || statusConfig["Received"];
+
+  const toNumberOrZero = (value: any): number => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
+  };
+
+  const customerLatFromCoords = toNumberOrZero(order?.deliveryAddress?.location?.coordinates?.[1] ?? order?.address?.location?.coordinates?.[1]);
+  const customerLngFromCoords = toNumberOrZero(order?.deliveryAddress?.location?.coordinates?.[0] ?? order?.address?.location?.coordinates?.[0]);
+  const customerLatDirect = toNumberOrZero(order?.deliveryAddress?.latitude ?? order?.address?.latitude);
+  const customerLngDirect = toNumberOrZero(order?.deliveryAddress?.longitude ?? order?.address?.longitude);
+
+  const customerLocation = {
+    lat: customerLatDirect || customerLatFromCoords,
+    lng: customerLngDirect || customerLngFromCoords,
+  };
+  const hasValidCustomerLocation = !(customerLocation.lat === 0 && customerLocation.lng === 0);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -899,24 +972,18 @@ export default function OrderDetail() {
             lng: s.longitude,
             name: s.storeName
           }))}
-          customerLocation={{
-            lat: order?.deliveryAddress?.latitude || order?.address?.latitude || 0,
-            lng: order?.deliveryAddress?.longitude || order?.address?.longitude || 0,
-          }}
+          customerLocation={customerLocation}
           deliveryLocation={deliveryLocation || undefined}
           isTracking={isConnected && !!deliveryLocation}
           showRoute={
-            isConnected &&
             !!deliveryLocation &&
+            hasValidCustomerLocation &&
             order?.status !== 'Delivered' &&
             order?.status !== 'Cancelled' &&
             order?.status !== 'Returned'
           }
           routeOrigin={deliveryLocation || undefined}
-          routeDestination={{
-            lat: order?.deliveryAddress?.latitude || order?.address?.latitude || 0,
-            lng: order?.deliveryAddress?.longitude || order?.address?.longitude || 0,
-          }}
+          routeDestination={hasValidCustomerLocation ? customerLocation : undefined}
           routeWaypoints={
             order?.status === 'Picked up' || order?.status === 'Out for Delivery'
               ? []

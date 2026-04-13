@@ -34,12 +34,34 @@ export interface CreateOrderData {
         deliveryFee: number;
         platformFee: number;
     };
+    tipAmount?: number;
 }
 
 export interface OrderResponse {
     success: boolean;
     message?: string;
     data: any;
+}
+
+export interface TrackingResponse {
+    success: boolean;
+    message?: string;
+    data: {
+        orderId: string;
+        orderNumber: string;
+        status: string;
+        tracking: {
+            currentLocation?: {
+                latitude: number;
+                longitude: number;
+                timestamp?: string | Date;
+            };
+            eta?: number;
+            distance?: number;
+            status?: string;
+            lastUpdated?: string | Date;
+        };
+    };
 }
 
 export interface MyOrdersParams {
@@ -69,6 +91,14 @@ export const getMyOrders = async (params?: MyOrdersParams): Promise<any> => {
  */
 export const getOrderById = async (id: string): Promise<any> => {
     const response = await api.get(`/customer/orders/${id}`);
+    return response.data;
+};
+
+/**
+ * Get live tracking info for an order
+ */
+export const getOrderTracking = async (id: string): Promise<TrackingResponse> => {
+    const response = await api.get<TrackingResponse>(`/customer/orders/${id}/tracking`);
     return response.data;
 };
 

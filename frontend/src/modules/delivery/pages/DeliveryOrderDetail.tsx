@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getOrderDetails, updateOrderStatus, getSellerLocationsForOrder, sendDeliveryOtp, verifyDeliveryOtp, updateDeliveryLocation, checkSellerProximity, confirmSellerPickup, checkCustomerProximity } from '../../../services/api/delivery/deliveryService';
 import deliveryIcon from '@assets/deliveryboy/deliveryIcon.png';
 import GoogleMapsTracking from '../../../components/GoogleMapsTracking';
+import { SHOW_DEV_MODE } from '../../../config/appMode';
 
 // Helper to get delivery icon URL (works in both dev and production)
 const getDeliveryIconUrl = () => {
@@ -98,7 +99,8 @@ export default function DeliveryOrderDetail() {
     const [otpValue, setOtpValue] = useState('');
     const [otpSending, setOtpSending] = useState(false);
     const [otpVerifying, setOtpVerifying] = useState(false);
-    const locationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const otpInputRef = useRef<HTMLInputElement | null>(null);
+    const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [deliveryBoyLocation, setDeliveryBoyLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
     const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
     const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string } | null>(null);
@@ -158,6 +160,10 @@ export default function DeliveryOrderDetail() {
 
     const handleSendOtp = async () => {
         if (!id) return;
+        if (!SHOW_DEV_MODE && !getOtpEnabled) {
+            alert('You must be near the customer to request OTP.');
+            return;
+        }
         try {
             setOtpSending(true);
             await sendDeliveryOtp(id);
@@ -169,6 +175,14 @@ export default function DeliveryOrderDetail() {
             setOtpSending(false);
         }
     };
+
+    useEffect(() => {
+        if (showOtpInput) {
+            window.setTimeout(() => {
+                otpInputRef.current?.focus();
+            }, 0);
+        }
+    }, [showOtpInput]);
 
     const handleVerifyOtp = async () => {
         if (!id || !otpValue) {
@@ -194,6 +208,14 @@ export default function DeliveryOrderDetail() {
         if (!id || !deliveryBoyLocation) {
             alert('Location not available');
             return;
+        }
+
+        if (!SHOW_DEV_MODE) {
+            const proximity = sellerProximity[sellerId];
+            if (!proximity?.withinRange) {
+                alert('You must be near the seller to confirm pickup.');
+                return;
+            }
         }
 
         try {
@@ -389,6 +411,16 @@ export default function DeliveryOrderDetail() {
                     }
                 });
 
+                socket.on('order-status-updated', (data: any) => {
+                    if (isMounted && data.orderId === id) {
+                        console.log('Order status updated event received:', data);
+                        if (data.status) {
+                            setOrder((prev: any) => prev ? { ...prev, status: data.status } : prev);
+                        }
+                        fetchOrder();
+                    }
+                });
+
                 socketRef.current = socket;
             } catch (err) {
                 console.error('Failed to initialize socket:', err);
@@ -536,10 +568,22 @@ export default function DeliveryOrderDetail() {
     const showSellerLocations = sellerLocations.length > 0 && order.status !== 'Picked up' && order.status !== 'Out for Delivery' && order.status !== 'Delivered';
     const showCustomerLocation = order.status === 'Picked up' || order.status === 'Out for Delivery';
 
-    // Check if we have valid customer coordinates
-    const customerLat = order.deliveryAddress?.latitude || order.address?.latitude;
-    const customerLng = order.deliveryAddress?.longitude || order.address?.longitude;
-    const hasValidCustomerLocation = !!(customerLat && customerLng && customerLat !== 0 && customerLng !== 0);
+    // Check if we have valid customer coordinates (direct fields + GeoJSON fallback)
+    const toNum = (value: any): number => {
+        const n = Number(value)
+        return Number.isFinite(n) ? n : 0
+    }
+    const customerLat =
+        toNum(order?.deliveryAddress?.latitude) ||
+        toNum(order?.address?.latitude) ||
+        toNum(order?.deliveryAddress?.location?.coordinates?.[1]) ||
+        toNum(order?.address?.location?.coordinates?.[1])
+    const customerLng =
+        toNum(order?.deliveryAddress?.longitude) ||
+        toNum(order?.address?.longitude) ||
+        toNum(order?.deliveryAddress?.location?.coordinates?.[0]) ||
+        toNum(order?.address?.location?.coordinates?.[0])
+    const hasValidCustomerLocation = !!(customerLat && customerLng)
 
     return (
         <div className="min-h-screen bg-neutral-50 pb-32 relative">
@@ -583,14 +627,14 @@ export default function DeliveryOrderDetail() {
                         (order.status === 'Out for Delivery' || order.status === 'Picked up')
                             ? []  // Hide seller markers when delivering to customer
                             : sellerLocations.map(s => ({
-                                lat: s.latitude,
-                                lng: s.longitude,
+                                lat: Number(s.latitude),
+                                lng: Number(s.longitude),
                                 name: s.storeName
                             }))
                     }
                     customerLocation={{
-                        lat: order.deliveryAddress?.latitude || order.address?.latitude || 0,
-                        lng: order.deliveryAddress?.longitude || order.address?.longitude || 0
+                        lat: customerLat || 0,
+                        lng: customerLng || 0
                     }}
                     deliveryLocation={deliveryBoyLocation || undefined}
                     isTracking={!!deliveryBoyLocation}
@@ -606,14 +650,17 @@ export default function DeliveryOrderDetail() {
                                 lng: customerLng!
                             } : undefined)
                             : sellerLocations.length > 0
-                                ? { lat: sellerLocations[sellerLocations.length - 1].latitude, lng: sellerLocations[sellerLocations.length - 1].longitude }
+                                ? {
+                                    lat: Number(sellerLocations[sellerLocations.length - 1].latitude),
+                                    lng: Number(sellerLocations[sellerLocations.length - 1].longitude)
+                                }
                                 : undefined
                     }
                     routeWaypoints={
                         order.status === 'Picked up' || order.status === 'Out for Delivery'
                             ? []
                             : sellerLocations.length > 1
-                                ? sellerLocations.slice(0, -1).map(s => ({ lat: s.latitude, lng: s.longitude }))
+                                ? sellerLocations.slice(0, -1).map(s => ({ lat: Number(s.latitude), lng: Number(s.longitude) }))
                                 : []
                     }
                     destinationName={
@@ -645,6 +692,7 @@ export default function DeliveryOrderDetail() {
                                 const withinRange = proximity?.withinRange || false;
                                 const distance = proximity?.distance;
                                 const isLoading = pickupLoading[seller.sellerId] || false;
+                                const canConfirmPickup = SHOW_DEV_MODE || withinRange;
 
                                 return (
                                     <div key={idx} className="p-4 bg-neutral-50 rounded-xl border border-neutral-200">
@@ -673,13 +721,19 @@ export default function DeliveryOrderDetail() {
                                         {!isPickedUp && (
                                             <button
                                                 onClick={() => handleSellerPickup(seller.sellerId)}
-                                                disabled={isLoading}
+                                                disabled={isLoading || !canConfirmPickup}
                                                 className={`w-full py-2.5 rounded-lg font-semibold text-sm transition-all ${!isLoading
-                                                        ? 'bg-green-600 text-white hover:bg-green-700 active:scale-[0.98]'
+                                                        ? canConfirmPickup
+                                                            ? 'bg-green-600 text-white hover:bg-green-700 active:scale-[0.98]'
+                                                            : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
                                                         : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
                                                     }`}
                                             >
-                                                {isLoading ? 'Confirming...' : 'Confirm Pickup (Dev Mode: Range Free)'}
+                                                {isLoading
+                                                    ? 'Confirming...'
+                                                    : SHOW_DEV_MODE
+                                                        ? 'Confirm Pickup (Dev Mode: Range Free)'
+                                                        : 'Confirm Pickup'}
                                             </button>
                                         )}
                                     </div>
@@ -870,11 +924,18 @@ export default function DeliveryOrderDetail() {
 
                         {/* 4-digit OTP Input - Always visible but disabled until OTP is sent */}
                         <input
+                            ref={otpInputRef}
                             type="text"
                             value={otpValue}
                             onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                            onClick={() => {
+                                if (showOtpInput) otpInputRef.current?.focus();
+                            }}
                             placeholder="Enter 4-digit OTP"
-                            disabled={!showOtpInput}
+                            disabled={!showOtpInput || otpSending || otpVerifying}
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            aria-label="Enter customer delivery OTP"
                             className={`w-full px-4 py-3 border rounded-xl text-lg font-semibold text-center mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 ${showOtpInput ? 'border-neutral-300 bg-white' : 'border-neutral-200 bg-neutral-100 text-neutral-400'
                                 }`}
                             maxLength={4}
@@ -884,13 +945,19 @@ export default function DeliveryOrderDetail() {
                             {!showOtpInput ? (
                                 <button
                                     onClick={handleSendOtp}
-                                    disabled={otpSending}
+                                    disabled={otpSending || (!SHOW_DEV_MODE && !getOtpEnabled)}
                                     className={`flex-1 py-3 rounded-xl font-semibold transition-all ${!otpSending
-                                            ? 'bg-green-600 text-white hover:bg-green-700 active:scale-[0.98]'
+                                            ? (!SHOW_DEV_MODE && !getOtpEnabled)
+                                                ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                                                : 'bg-green-600 text-white hover:bg-green-700 active:scale-[0.98]'
                                             : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
                                         }`}
                                 >
-                                    {otpSending ? 'Sending...' : 'Get OTP (Dev Mode: Range Free)'}
+                                    {otpSending
+                                        ? 'Sending...'
+                                        : SHOW_DEV_MODE
+                                            ? 'Get OTP (Dev Mode: Range Free)'
+                                            : 'Get OTP'}
                                 </button>
                             ) : (
                                 <>

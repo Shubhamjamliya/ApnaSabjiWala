@@ -10,9 +10,15 @@ interface SellerNotificationAlertProps {
 
 const SellerNotificationAlert: React.FC<SellerNotificationAlertProps> = ({ notification, onClose }) => {
   const [volume, setVolume] = useState(0.8);
+  const [timeLeft, setTimeLeft] = useState(120);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+
+  const totalQuantity = notification
+    ? notification.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+    : 0;
+  const productCount = notification?.items?.length || 0;
 
   const handleStatusUpdate = async (status: string) => {
     if (!notification) return;
@@ -48,6 +54,45 @@ const SellerNotificationAlert: React.FC<SellerNotificationAlertProps> = ({ notif
     }
   }, [volume]);
 
+  useEffect(() => {
+    if (!notification) return;
+    setTimeLeft(120);
+  }, [notification]);
+
+  useEffect(() => {
+    if (!notification || notification.type !== 'NEW_ORDER') return;
+    if (timeLeft <= 0) return;
+
+    const timer = window.setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [notification, timeLeft]);
+
+  useEffect(() => {
+    if (!notification) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [notification]);
+
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
   if (!notification) return null;
 
   return (
@@ -73,6 +118,11 @@ const SellerNotificationAlert: React.FC<SellerNotificationAlertProps> = ({ notif
                 {notification.type === 'NEW_ORDER' ? 'New Order Received!' : 'Order Status Updated'}
               </h2>
               <p className="text-sm opacity-90">#{notification.orderNumber}</p>
+              {notification.type === 'NEW_ORDER' && (
+                <p className="text-sm mt-1 font-semibold">
+                  Time left: {formatTimer(timeLeft)}
+                </p>
+              )}
             </div>
           </div>
           <button
@@ -134,6 +184,10 @@ const SellerNotificationAlert: React.FC<SellerNotificationAlertProps> = ({ notif
           {/* Order Details */}
           <section>
             <h3 className="text-sm font-semibold text-neutral-500 uppercase tracking-wider mb-3">Order Details</h3>
+            <div className="mb-3 bg-teal-50 border border-teal-100 rounded-lg p-3 flex items-center justify-between">
+              <span className="text-sm text-neutral-700">Product count: <span className="font-bold">{productCount}</span></span>
+              <span className="text-sm text-neutral-700">Total quantity: <span className="font-bold">{totalQuantity}</span></span>
+            </div>
             <div className="space-y-3">
               {notification.items.map((item, index) => (
                 <div key={index} className="flex justify-between items-start py-2 border-b border-neutral-100 last:border-0">

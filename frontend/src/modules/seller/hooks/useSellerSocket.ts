@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../../../context/AuthContext';
-import { getSocketBaseURL } from '../../../services/api/config';
+import { getSocketBaseURL, getAuthToken } from '../../../services/api/config';
 
 export interface SellerNotification {
-    type: 'NEW_ORDER' | 'STATUS_UPDATE';
+    type: 'NEW_ORDER' | 'STATUS_UPDATE' | 'ORDER_CANCELLED';
     orderId: string;
     orderNumber: string;
     status: string;
@@ -37,8 +37,32 @@ export const useSellerSocket = (onNotificationReceived?: (notification: SellerNo
     const [socket, setSocket] = useState<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
 
+    const getSellerIdFromStorage = () => {
+        try {
+            const raw = localStorage.getItem('sellerUserData');
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            return parsed?.id || parsed?._id || parsed?.sellerId || parsed?.userId || parsed?.seller?._id || null;
+        } catch {
+            return null;
+        }
+    };
+
+    const sellerId =
+        user?.id ||
+        (user as any)?._id ||
+        (user as any)?.userId ||
+        (user as any)?.sellerId ||
+        (user as any)?.seller?._id ||
+        (user as any)?.seller?.id ||
+        getSellerIdFromStorage();
+
     useEffect(() => {
-        if (!isAuthenticated || !token || !user || user.userType !== 'Seller') {
+        const resolvedToken = token || getAuthToken('seller') || getAuthToken();
+        const normalizedUserType = String((user as any)?.userType || '').toLowerCase();
+        const isSellerUser = normalizedUserType === 'seller' || window.location.pathname.startsWith('/seller');
+
+        if (!isSellerUser || !sellerId || (!isAuthenticated && !window.location.pathname.startsWith('/seller'))) {
             if (socket) {
                 socket.disconnect();
                 setSocket(null);
@@ -48,7 +72,7 @@ export const useSellerSocket = (onNotificationReceived?: (notification: SellerNo
 
         const socketUrl = getSocketBaseURL();
         const newSocket = io(socketUrl, {
-            auth: { token },
+            auth: resolvedToken ? { token: resolvedToken } : {},
             transports: ['websocket', 'polling'],
         });
 
@@ -57,8 +81,12 @@ export const useSellerSocket = (onNotificationReceived?: (notification: SellerNo
             setIsConnected(true);
 
             // Join seller room
-            console.log('📤 Emitting join-seller-room for seller:', user.id);
-            newSocket.emit('join-seller-room', user.id);
+            if (!sellerId) {
+                console.warn('⚠️ Seller ID missing. Unable to join seller room.');
+                return;
+            }
+            console.log('📤 Emitting join-seller-room for seller:', sellerId);
+            newSocket.emit('join-seller-room', String(sellerId));
         });
 
         newSocket.on('joined-seller-room', (data) => {
@@ -67,6 +95,7 @@ export const useSellerSocket = (onNotificationReceived?: (notification: SellerNo
 
         newSocket.on('seller-notification', (notification: SellerNotification) => {
             console.log('🔔 New seller notification received:', notification);
+            window.dispatchEvent(new CustomEvent('seller-notification', { detail: notification }));
             if (onNotificationReceived) {
                 onNotificationReceived(notification);
             }
@@ -77,12 +106,16 @@ export const useSellerSocket = (onNotificationReceived?: (notification: SellerNo
             setIsConnected(false);
         });
 
+        newSocket.on('connect_error', (error) => {
+            console.error('❌ Seller socket connect_error:', error?.message || error);
+        });
+
         setSocket(newSocket);
 
         return () => {
             newSocket.disconnect();
         };
-    }, [isAuthenticated, token, user?.id, user?.userType]);
+    }, [isAuthenticated, token, sellerId, user, onNotificationReceived]);
 
     return { socket, isConnected };
 };

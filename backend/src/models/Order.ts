@@ -36,6 +36,7 @@ export interface IOrder extends Document {
   tax: number;
   shipping: number;
   platformFee: number;
+  tipAmount: number;
   discount: number;
   couponCode?: string;
   total: number;
@@ -209,6 +210,11 @@ const OrderSchema = new Schema<IOrder>(
       type: Number,
       default: 0,
       min: [0, "Platform fee cannot be negative"],
+    },
+    tipAmount: {
+      type: Number,
+      default: 0,
+      min: [0, "Tip amount cannot be negative"],
     },
     discount: {
       type: Number,

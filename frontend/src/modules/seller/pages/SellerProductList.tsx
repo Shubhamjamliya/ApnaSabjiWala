@@ -48,6 +48,13 @@ export default function SellerProductList() {
   const [newDiscPrice, setNewDiscPrice] = useState<number>(0);
   const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
 
+  const formatShortId = (id: string) => {
+    if (!id) return "-";
+    const compact = id.replace(/[^a-zA-Z0-9]/g, "");
+    if (compact.length <= 8) return compact;
+    return compact.slice(-8);
+  };
+
   // Fetch categories
   useEffect(() => {
     const fetchCats = async () => {
@@ -328,7 +335,7 @@ export default function SellerProductList() {
         </div>
 
         {/* Filters and Controls */}
-        <div className="p-4 flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-center justify-between border-b border-neutral-100">
+        <div className="p-4 flex flex-col xl:flex-row flex-wrap gap-4 items-start xl:items-center justify-between border-b border-neutral-100">
           <div className="flex flex-wrap gap-3">
             <div>
               <label className="block text-xs text-neutral-600 mb-1">
@@ -373,7 +380,7 @@ export default function SellerProductList() {
               </select>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-sm text-neutral-600">Show</span>
               <select
@@ -403,8 +410,8 @@ export default function SellerProductList() {
                   headers.join(","),
                   ...filteredVariations.map((v) =>
                     [
-                      v.productId,
-                      v.variationId,
+                      formatShortId(v.productId),
+                      formatShortId(v.variationId),
                       `"${v.productName}"`,
                       `"${v.sellerName}"`,
                       `"${v.brandName}"`,
@@ -458,13 +465,13 @@ export default function SellerProductList() {
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </button>
-            <div className="relative">
+            <div className="relative w-full sm:w-64 max-w-full">
               <span className="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-400 text-xs">
                 Search:
               </span>
               <input
                 type="text"
-                className="pl-14 pr-3 py-1.5 bg-neutral-100 border-none rounded text-sm focus:ring-1 focus:ring-teal-500 w-48"
+                className="pl-14 pr-3 py-1.5 bg-neutral-100 border-none rounded text-sm focus:ring-1 focus:ring-teal-500 w-full"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder=""
@@ -617,11 +624,11 @@ export default function SellerProductList() {
                             </svg>
                           </button>
                         )}
-                        <span>{variation.productId}</span>
+                        <span>{formatShortId(variation.productId)}</span>
                       </div>
                     </td>
                     <td className="p-4 align-middle border border-neutral-200">
-                      {variation.variationId}
+                      {formatShortId(variation.variationId)}
                     </td>
                     <td className="p-4 align-middle border border-neutral-200">
                       <div 

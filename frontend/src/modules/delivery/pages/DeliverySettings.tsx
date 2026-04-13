@@ -15,7 +15,7 @@ export default function DeliverySettings() {
       try {
         const profile = await getDeliveryProfile();
         if (profile.settings) {
-          setNotificationsEnabled(profile.settings.notifications ?? true);
+          setNotificationsEnabled(true);
           setLocationEnabled(profile.settings.location ?? true);
           setSoundEnabled(profile.settings.sound ?? true);
         }
@@ -27,6 +27,11 @@ export default function DeliverySettings() {
   }, []);
 
   const handleSettingChange = async (key: string, value: boolean) => {
+    if (key === 'notifications' && !value) {
+      // Push notifications are enforced globally and cannot be disabled.
+      return;
+    }
+
     // Optimistic update
     if (key === 'notifications') setNotificationsEnabled(value);
     if (key === 'location') setLocationEnabled(value);
@@ -44,9 +49,9 @@ export default function DeliverySettings() {
     {
       id: 'notifications',
       title: 'Push Notifications',
-      description: 'Receive notifications for new orders',
+      description: 'Receive notifications for new orders (always enabled)',
       value: notificationsEnabled,
-      onChange: (val: boolean) => handleSettingChange('notifications', val),
+      onChange: () => undefined,
     },
     {
       id: 'location',
@@ -100,8 +105,9 @@ export default function DeliverySettings() {
                 </div>
                 <button
                   onClick={() => option.onChange(!option.value)}
+                  disabled={option.id === 'notifications'}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${option.value ? 'bg-orange-500' : 'bg-neutral-300'
-                    }`}
+                    } ${option.id === 'notifications' ? 'cursor-not-allowed opacity-80' : ''}`}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${option.value ? 'translate-x-6' : 'translate-x-1'

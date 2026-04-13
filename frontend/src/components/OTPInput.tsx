@@ -4,9 +4,15 @@ interface OTPInputProps {
   length?: number;
   onComplete: (otp: string) => void;
   disabled?: boolean;
+  resetSignal?: number;
 }
 
-export default function OTPInput({ length = 4, onComplete, disabled = false }: OTPInputProps) {
+export default function OTPInput({
+  length = 4,
+  onComplete,
+  disabled = false,
+  resetSignal = 0,
+}: OTPInputProps) {
   const [otp, setOtp] = useState<string[]>(Array(length).fill(''));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -14,6 +20,11 @@ export default function OTPInput({ length = 4, onComplete, disabled = false }: O
     // Focus first input on mount
     inputRefs.current[0]?.focus();
   }, []);
+
+  useEffect(() => {
+    setOtp(Array(length).fill(''));
+    inputRefs.current[0]?.focus();
+  }, [length, resetSignal]);
 
   const handleChange = (index: number, value: string) => {
     if (disabled) return;
