@@ -39,17 +39,55 @@ export interface TopSeller {
  */
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   try {
+    const activeProducts = await Product.find({ status: "Active" })
+      .select("stock variations")
+      .lean()
+      .catch(() => []);
+
+    let soldOutProducts = 0;
+    let lowStockProducts = 0;
+
+    for (const product of activeProducts as any[]) {
+      let isSoldOut = true;
+      let isLowStock = false;
+
+      if (Array.isArray(product.variations) && product.variations.length > 0) {
+        for (const variation of product.variations) {
+          const vStock = Number(variation?.stock || 0);
+          if (vStock > 0) {
+            isSoldOut = false;
+          }
+          if (vStock > 0 && vStock <= 10) {
+            isLowStock = true;
+          }
+        }
+      } else {
+        const stockVal = Number(product.stock || 0);
+        if (stockVal > 0) {
+          isSoldOut = false;
+        }
+        if (stockVal > 0 && stockVal <= 10) {
+          isLowStock = true;
+        }
+      }
+
+      if (isSoldOut) {
+        soldOutProducts += 1;
+      } else if (isLowStock) {
+        lowStockProducts += 1;
+      }
+    }
+
     const [
       totalUser,
       totalCategory,
-      totalSubcategory,
+      totalSubcategoryLegacy,
+      totalSubcategoryNested,
       totalProduct,
       totalOrders,
       completedOrders,
       pendingOrders,
       cancelledOrders,
-      soldOutProducts,
-      lowStockProducts,
       revenueData,
       avgOrderValue,
     ] = await Promise.all([
@@ -59,6 +97,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
         console.error("Error counting subcategories:", err);
         return 0;
       }),
+      Category.countDocuments({ parentId: { $ne: null } }).catch(() => 0),
       Product.countDocuments({ status: "Active" }).catch(() => 0),
       Order.countDocuments().catch(() => 0),
       Order.countDocuments({ status: "Delivered" }).catch(() => 0),
@@ -66,8 +105,6 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
         status: { $in: ["Received", "Pending", "Processed"] },
       }).catch(() => 0),
       Order.countDocuments({ status: "Cancelled" }).catch(() => 0),
-      Product.countDocuments({ stock: 0, status: "Active" }).catch(() => 0),
-      Product.countDocuments({ stock: { $lte: 10, $gt: 0 }, status: "Active" }).catch(() => 0),
       Order.aggregate([
         { $match: { status: "Delivered", paymentStatus: "Paid" } },
         { $group: { _id: null, total: { $sum: { $ifNull: ["$total", 0] } } } },
@@ -80,6 +117,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
 
     const totalRevenue = revenueData[0]?.total || 0;
     const avgCompletedOrderValue = avgOrderValue[0]?.avg || 0;
+    const totalSubcategory = (totalSubcategoryLegacy || 0) + (totalSubcategoryNested || 0);
 
     return {
       totalUser: totalUser || 0,
@@ -90,8 +128,8 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
       completedOrders: completedOrders || 0,
       pendingOrders: pendingOrders || 0,
       cancelledOrders: cancelledOrders || 0,
-      soldOutProducts: soldOutProducts || 0,
-      lowStockProducts: lowStockProducts || 0,
+      soldOutProducts,
+      lowStockProducts,
       totalRevenue: totalRevenue || 0,
       avgCompletedOrderValue: Math.round((avgCompletedOrderValue || 0) * 100) / 100,
     };

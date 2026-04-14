@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { authenticate, requireUserType } from "../middleware/auth";
 import {
   uploadSingleImage,
@@ -26,7 +26,7 @@ const router = Router();
 router.post(
   "/image",
   // Optional: authenticate if possible, but allow public for registration
-  (req, res, next) => {
+  (req: Request, res: Response, next: NextFunction) => {
     if (req.headers.authorization) {
       return authenticate(req, res, next);
     }
@@ -99,7 +99,7 @@ router.post(
 router.post(
   "/document",
   // Make authenticate optional for registration
-  (req, res, next) => {
+  (req: Request, res: Response, next: NextFunction) => {
     if (req.headers.authorization) {
       return authenticate(req, res, next);
     }

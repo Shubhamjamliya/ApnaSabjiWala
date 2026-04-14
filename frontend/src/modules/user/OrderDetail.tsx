@@ -610,9 +610,9 @@ export default function OrderDetail() {
     // Never allow tracking events to downgrade a terminal order status.
     if (isTerminalStatus(String(orderStatus)) || isTerminalStatus(String(order?.status))) return;
 
-    if (trackingStatus === 'picked_up' && orderStatus !== 'Picked up') {
+    if (trackingStatus === 'picked_up' && String(orderStatus) !== 'Picked up') {
       setOrderStatus('Picked up' as OrderStatus);
-    } else if ((trackingStatus === 'in_transit' || trackingStatus === 'nearby') && orderStatus !== 'Out for Delivery') {
+    } else if ((trackingStatus === 'in_transit' || trackingStatus === 'nearby') && String(orderStatus) !== 'Out for Delivery') {
       setOrderStatus('Out for Delivery' as OrderStatus);
     } else if (trackingStatus === 'delivered' && orderStatus !== 'Delivered') {
       setOrderStatus('Delivered' as OrderStatus);

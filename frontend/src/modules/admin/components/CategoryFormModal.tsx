@@ -281,6 +281,10 @@ export default function CategoryFormModal({
       newErrors.order = "Display order must be a positive number";
     }
 
+    if (!isEditMode && !imageFile && !formData.image) {
+      newErrors.image = "Category image is required";
+    }
+
     // Validate header category (required for root categories, inherited for subcategories)
     if (isSubcategoryMode) {
       // For subcategories, header category should be inherited from parent
@@ -587,7 +591,7 @@ export default function CategoryFormModal({
           {/* Category Image */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-neutral-700 mb-2">
-              Category Image
+              Category Image {!isEditMode && <span className="text-red-500">*</span>}
             </label>
             <label
               className={`block border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${isDragging

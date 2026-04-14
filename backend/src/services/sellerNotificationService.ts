@@ -32,7 +32,7 @@ export async function notifySellersOfOrderUpdate(
                     if (!item.seller) return null;
                     return item.seller._id ? item.seller._id.toString() : item.seller.toString();
                 })
-                .filter(id => !!id)
+                .filter((id: string | null) => !!id)
         )] as string[];
 
         console.log(`🔔 Notifying ${sellerIds.length} sellers about ${type} for order ${order.orderNumber}`);

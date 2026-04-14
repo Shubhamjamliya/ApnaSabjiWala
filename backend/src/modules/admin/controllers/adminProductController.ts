@@ -35,6 +35,13 @@ export const createCategory = asyncHandler(
       });
     }
 
+    if (!image || !String(image).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Category image is required",
+      });
+    }
+
     let finalHeaderCategoryId = headerCategoryId;
 
     // Validate parent if provided
@@ -364,43 +371,56 @@ export const deleteCategory = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    // Check if category has child categories (using parentId)
-    const childrenCount = await Category.countDocuments({ parentId: id });
-    if (childrenCount > 0) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Cannot delete category with subcategories. Please delete or move subcategories first.",
-      });
-    }
-
-    // Check if category has old-style subcategories (backward compatibility)
-    const subcategoryCount = await SubCategory.countDocuments({ category: id });
-    if (subcategoryCount > 0) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Cannot delete category with subcategories. Please delete or move subcategories first.",
-      });
-    }
-
-    // Check if category has products
-    const productCount = await Product.countDocuments({ category: id });
-    if (productCount > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Cannot delete category with products",
-      });
-    }
-
-    const category = await Category.findByIdAndDelete(id);
-
+    const category = await Category.findById(id);
     if (!category) {
       return res.status(404).json({
         success: false,
         message: "Category not found",
       });
     }
+
+    // Collect full recursive category tree (category + all descendants)
+    const categoryIds = [id];
+    let queue = [id];
+    while (queue.length > 0) {
+      const children = await Category.find({ parentId: { $in: queue } })
+        .select("_id")
+        .lean();
+      const childIds = children.map((child: any) => String(child._id));
+      if (childIds.length === 0) break;
+      categoryIds.push(...childIds);
+      queue = childIds;
+    }
+
+    // Include legacy SubCategory IDs so product references can be validated safely
+    const legacySubcategories = await SubCategory.find({
+      category: { $in: categoryIds },
+    })
+      .select("_id")
+      .lean();
+    const legacySubcategoryIds = legacySubcategories.map((sub: any) => sub._id);
+
+    // Block delete if any products exist in this entire category tree
+    const productCount = await Product.countDocuments({
+      $or: [
+        { category: { $in: categoryIds } },
+        { subcategory: { $in: [...categoryIds, ...legacySubcategoryIds] } },
+        { subSubCategory: { $in: categoryIds } },
+      ],
+    });
+
+    if (productCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Cannot delete category because products are linked to this category/subcategory tree",
+      });
+    }
+
+    const [deletedSubcategories, deletedCategories] = await Promise.all([
+      SubCategory.deleteMany({ category: { $in: categoryIds } }),
+      Category.deleteMany({ _id: { $in: categoryIds } }),
+    ]);
 
     // Invalidate category caches
     cache.delete("customer-categories-list");
@@ -410,6 +430,10 @@ export const deleteCategory = asyncHandler(
     return res.status(200).json({
       success: true,
       message: "Category deleted successfully",
+      data: {
+        deletedCategories: deletedCategories.deletedCount || 0,
+        deletedSubcategories: deletedSubcategories.deletedCount || 0,
+      },
     });
   }
 );

@@ -233,8 +233,8 @@ export default function AdminCategory() {
         // alert("Category deleted successfully!");
         fetchCategories();
       }
-    } catch (error) {
-      alert("Failed to delete category");
+    } catch (error: any) {
+      alert(error?.response?.data?.message || "Failed to delete category");
     }
   };
 

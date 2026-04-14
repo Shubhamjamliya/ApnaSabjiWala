@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardCard from "../components/DashboardCard";
 import { useAuth } from "../../../context/AuthContext";
@@ -19,8 +19,14 @@ export default function AdminDashboard() {
   const [topSellers, setTopSellers] = useState<TopSeller[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [newOrdersEntriesPerPage, setNewOrdersEntriesPerPage] = useState(10);
+  const [newOrdersPage, setNewOrdersPage] = useState(1);
+  const [topSellersEntriesPerPage, setTopSellersEntriesPerPage] = useState(10);
+  const [topSellersPage, setTopSellersPage] = useState(1);
+  const [newOrdersSortBy, setNewOrdersSortBy] = useState<"id" | "orderDate" | "status" | "amount">("orderDate");
+  const [newOrdersSortOrder, setNewOrdersSortOrder] = useState<"asc" | "desc">("desc");
+  const [topSellersSortBy, setTopSellersSortBy] = useState<"sellerId" | "sellerName" | "storeName" | "totalRevenue">("totalRevenue");
+  const [topSellersSortOrder, setTopSellersSortOrder] = useState<"asc" | "desc">("desc");
 
   // Fetch dashboard data on component mount
   useEffect(() => {
@@ -301,21 +307,71 @@ export default function AdminDashboard() {
     </svg>
   );
 
-  const totalPagesNewOrders = Math.ceil(newOrders.length / entriesPerPage);
-  const startIndexNewOrders = (currentPage - 1) * entriesPerPage;
-  const endIndexNewOrders = startIndexNewOrders + entriesPerPage;
-  const displayedNewOrders = newOrders.slice(
-    startIndexNewOrders,
-    endIndexNewOrders
-  );
+  const sortedNewOrders = useMemo(() => {
+    const cloned = [...newOrders];
+    cloned.sort((a, b) => {
+      let comparison = 0;
+      if (newOrdersSortBy === "id") {
+        comparison = String(a.orderNumber || a.id).localeCompare(String(b.orderNumber || b.id));
+      } else if (newOrdersSortBy === "orderDate") {
+        comparison = new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime();
+      } else if (newOrdersSortBy === "status") {
+        comparison = String(a.status).localeCompare(String(b.status));
+      } else if (newOrdersSortBy === "amount") {
+        comparison = (a.amount || 0) - (b.amount || 0);
+      }
+      return newOrdersSortOrder === "asc" ? comparison : -comparison;
+    });
+    return cloned;
+  }, [newOrders, newOrdersSortBy, newOrdersSortOrder]);
 
-  const totalPagesTopSellers = Math.ceil(topSellers.length / entriesPerPage);
-  const startIndexTopSellers = (currentPage - 1) * entriesPerPage;
-  const endIndexTopSellers = startIndexTopSellers + entriesPerPage;
-  const displayedTopSellers = topSellers.slice(
-    startIndexTopSellers,
-    endIndexTopSellers
-  );
+  const sortedTopSellers = useMemo(() => {
+    const cloned = [...topSellers];
+    cloned.sort((a, b) => {
+      let comparison = 0;
+      if (topSellersSortBy === "sellerId") {
+        comparison = String(a.sellerId).localeCompare(String(b.sellerId));
+      } else if (topSellersSortBy === "sellerName") {
+        comparison = String(a.sellerName).localeCompare(String(b.sellerName));
+      } else if (topSellersSortBy === "storeName") {
+        comparison = String(a.storeName).localeCompare(String(b.storeName));
+      } else if (topSellersSortBy === "totalRevenue") {
+        comparison = (a.totalRevenue || 0) - (b.totalRevenue || 0);
+      }
+      return topSellersSortOrder === "asc" ? comparison : -comparison;
+    });
+    return cloned;
+  }, [topSellers, topSellersSortBy, topSellersSortOrder]);
+
+  const totalPagesNewOrders = Math.max(1, Math.ceil(sortedNewOrders.length / newOrdersEntriesPerPage));
+  const startIndexNewOrders = (newOrdersPage - 1) * newOrdersEntriesPerPage;
+  const endIndexNewOrders = startIndexNewOrders + newOrdersEntriesPerPage;
+  const displayedNewOrders = sortedNewOrders.slice(startIndexNewOrders, endIndexNewOrders);
+
+  const totalPagesTopSellers = Math.max(1, Math.ceil(sortedTopSellers.length / topSellersEntriesPerPage));
+  const startIndexTopSellers = (topSellersPage - 1) * topSellersEntriesPerPage;
+  const endIndexTopSellers = startIndexTopSellers + topSellersEntriesPerPage;
+  const displayedTopSellers = sortedTopSellers.slice(startIndexTopSellers, endIndexTopSellers);
+
+  const handleNewOrderSort = (field: "id" | "orderDate" | "status" | "amount") => {
+    if (newOrdersSortBy === field) {
+      setNewOrdersSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setNewOrdersSortBy(field);
+      setNewOrdersSortOrder("asc");
+    }
+    setNewOrdersPage(1);
+  };
+
+  const handleTopSellerSort = (field: "sellerId" | "sellerName" | "storeName" | "totalRevenue") => {
+    if (topSellersSortBy === field) {
+      setTopSellersSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setTopSellersSortBy(field);
+      setTopSellersSortOrder("asc");
+    }
+    setTopSellersPage(1);
+  };
 
   // Loading state
   if (loading) {
@@ -434,20 +490,6 @@ export default function AdminDashboard() {
           accentColor="#ef4444"
           onClick={() => navigate('/admin/orders/cancelled')}
         />
-        <DashboardCard
-          icon={soldOutIcon}
-          title="Product Sold Out"
-          value={stats.soldOutProducts}
-          accentColor="#ec4899"
-          onClick={() => navigate('/admin/product/list')}
-        />
-        <DashboardCard
-          icon={lowStockIcon}
-          title="Product low on Stock"
-          value={stats.lowStockProducts}
-          accentColor="#eab308"
-          onClick={() => navigate('/admin/product/list')}
-        />
       </div>
 
       {/* Tables Row */}
@@ -465,11 +507,11 @@ export default function AdminDashboard() {
               <span className="text-sm text-neutral-700">Show</span>
               <input
                 type="number"
-                value={entriesPerPage}
+                value={newOrdersEntriesPerPage}
                 onChange={(e) => {
                   const value = parseInt(e.target.value) || 10;
-                  setEntriesPerPage(Math.max(1, Math.min(100, value)));
-                  setCurrentPage(1);
+                  setNewOrdersEntriesPerPage(Math.max(1, Math.min(100, value)));
+                  setNewOrdersPage(1);
                 }}
                 className="w-16 px-2 py-1 border border-neutral-300 rounded text-sm text-neutral-900 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
                 min="1"
@@ -487,6 +529,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-2">
                       ID
                       <svg
+                        onClick={() => handleNewOrderSort("id")}
                         width="12"
                         height="12"
                         viewBox="0 0 24 24"
@@ -509,6 +552,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-2">
                       O. Date
                       <svg
+                        onClick={() => handleNewOrderSort("orderDate")}
                         width="12"
                         height="12"
                         viewBox="0 0 24 24"
@@ -528,6 +572,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-2">
                       Status
                       <svg
+                        onClick={() => handleNewOrderSort("status")}
                         width="12"
                         height="12"
                         viewBox="0 0 24 24"
@@ -547,6 +592,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-2">
                       Amount
                       <svg
+                        onClick={() => handleNewOrderSort("amount")}
                         width="12"
                         height="12"
                         viewBox="0 0 24 24"
@@ -598,6 +644,7 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-4 sm:px-6 py-3">
                         <button
+                          onClick={() => navigate(`/admin/orders/${order.id}`)}
                           className="bg-teal-600 hover:bg-teal-700 text-white p-2 rounded transition-colors"
                           aria-label="View order">
                           <svg
@@ -634,15 +681,15 @@ export default function AdminDashboard() {
 
           <div className="px-4 sm:px-6 py-3 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
             <div className="text-xs sm:text-sm text-neutral-700">
-              Showing {startIndexNewOrders + 1} to{" "}
+              Showing {newOrders.length ? startIndexNewOrders + 1 : 0} to{" "}
               {Math.min(endIndexNewOrders, newOrders.length)} of{" "}
               {newOrders.length} entries
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className={`p-2 border border-neutral-300 rounded ${currentPage === 1
+                onClick={() => setNewOrdersPage((prev) => Math.max(1, prev - 1))}
+                disabled={newOrdersPage === 1}
+                className={`p-2 border border-neutral-300 rounded ${newOrdersPage === 1
                   ? "text-neutral-400 cursor-not-allowed bg-neutral-50"
                   : "text-neutral-700 hover:bg-neutral-50"
                   }`}
@@ -664,12 +711,12 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() =>
-                  setCurrentPage((prev) =>
+                  setNewOrdersPage((prev) =>
                     Math.min(totalPagesNewOrders, prev + 1)
                   )
                 }
-                disabled={currentPage === totalPagesNewOrders}
-                className={`p-2 border border-neutral-300 rounded ${currentPage === totalPagesNewOrders
+                disabled={newOrdersPage === totalPagesNewOrders}
+                className={`p-2 border border-neutral-300 rounded ${newOrdersPage === totalPagesNewOrders
                   ? "text-neutral-400 cursor-not-allowed bg-neutral-50"
                   : "text-neutral-700 hover:bg-neutral-50"
                   }`}
@@ -706,11 +753,11 @@ export default function AdminDashboard() {
               <span className="text-sm text-neutral-700">Show</span>
               <input
                 type="number"
-                value={entriesPerPage}
+                value={topSellersEntriesPerPage}
                 onChange={(e) => {
                   const value = parseInt(e.target.value) || 10;
-                  setEntriesPerPage(Math.max(1, Math.min(100, value)));
-                  setCurrentPage(1);
+                  setTopSellersEntriesPerPage(Math.max(1, Math.min(100, value)));
+                  setTopSellersPage(1);
                 }}
                 className="w-16 px-2 py-1 border border-neutral-300 rounded text-sm text-neutral-900 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
                 min="1"
@@ -728,6 +775,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-2">
                       ID
                       <svg
+                        onClick={() => handleTopSellerSort("sellerId")}
                         width="12"
                         height="12"
                         viewBox="0 0 24 24"
@@ -744,15 +792,50 @@ export default function AdminDashboard() {
                     </div>
                   </th>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                    Seller Name
+                    <div className="flex items-center gap-2">
+                      Seller Name
+                      <svg
+                        onClick={() => handleTopSellerSort("sellerName")}
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        className="text-neutral-400 cursor-pointer">
+                        <path
+                          d="M7 10L12 5L17 10M7 14L12 19L17 14"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
                   </th>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                    Store Name
+                    <div className="flex items-center gap-2">
+                      Store Name
+                      <svg
+                        onClick={() => handleTopSellerSort("storeName")}
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        className="text-neutral-400 cursor-pointer">
+                        <path
+                          d="M7 10L12 5L17 10M7 14L12 19L17 14"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
                   </th>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">
                     <div className="flex items-center gap-2">
                       Total Revenue
                       <svg
+                        onClick={() => handleTopSellerSort("totalRevenue")}
                         width="12"
                         height="12"
                         viewBox="0 0 24 24"
@@ -799,6 +882,7 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-4 sm:px-6 py-3">
                         <button
+                          onClick={() => navigate('/admin/manage-seller/list')}
                           className="bg-teal-600 hover:bg-teal-700 text-white p-2 rounded transition-colors"
                           aria-label="View seller">
                           <svg
@@ -835,15 +919,15 @@ export default function AdminDashboard() {
 
           <div className="px-4 sm:px-6 py-3 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
             <div className="text-xs sm:text-sm text-neutral-700">
-              Showing {startIndexTopSellers + 1} to{" "}
+              Showing {topSellers.length ? startIndexTopSellers + 1 : 0} to{" "}
               {Math.min(endIndexTopSellers, topSellers.length)} of{" "}
               {topSellers.length} entries
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className={`p-2 border border-neutral-300 rounded ${currentPage === 1
+                onClick={() => setTopSellersPage((prev) => Math.max(1, prev - 1))}
+                disabled={topSellersPage === 1}
+                className={`p-2 border border-neutral-300 rounded ${topSellersPage === 1
                   ? "text-neutral-400 cursor-not-allowed bg-neutral-50"
                   : "text-neutral-700 hover:bg-neutral-50"
                   }`}
@@ -864,16 +948,16 @@ export default function AdminDashboard() {
                 </svg>
               </button>
               <span className="px-3 py-2 border border-neutral-300 rounded text-sm text-neutral-700 bg-white">
-                {currentPage}
+                {topSellersPage}
               </span>
               <button
                 onClick={() =>
-                  setCurrentPage((prev) =>
+                  setTopSellersPage((prev) =>
                     Math.min(totalPagesTopSellers, prev + 1)
                   )
                 }
-                disabled={currentPage === totalPagesTopSellers}
-                className={`p-2 border border-neutral-300 rounded ${currentPage === totalPagesTopSellers
+                disabled={topSellersPage === totalPagesTopSellers}
+                className={`p-2 border border-neutral-300 rounded ${topSellersPage === totalPagesTopSellers
                   ? "text-neutral-400 cursor-not-allowed bg-neutral-50"
                   : "text-neutral-700 hover:bg-neutral-50"
                   }`}

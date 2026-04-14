@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   getProducts,
   getCategories,
@@ -53,10 +53,11 @@ const FilterIcon = () => (
 );
 
 const STATUS_OPTIONS = ["All Status", "Published", "Unpublished"];
-const STOCK_OPTIONS = ["All Stock", "In Stock", "Out of Stock", "Unlimited"];
+const STOCK_OPTIONS = ["All Stock", "In Stock", "Out of Stock", "Low Stock", "Unlimited"];
 
 export default function AdminStockManagement() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isAuthenticated, token } = useAuth();
 
   // Data States
@@ -77,6 +78,15 @@ export default function AdminStockManagement() {
   const [loadingSubCategories, setLoadingSubCategories] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
+
+  useEffect(() => {
+    const stockParam = (searchParams.get("stock") || "").toLowerCase();
+    if (stockParam === "out-of-stock" || stockParam === "sold-out") {
+      setFilterStock("Out of Stock");
+    } else if (stockParam === "low-stock") {
+      setFilterStock("Low Stock");
+    }
+  }, [searchParams]);
 
   // Initial Load
   useEffect(() => {
@@ -243,6 +253,9 @@ export default function AdminStockManagement() {
         } else if (filterStock === "Out of Stock") {
           const stockVal = Number(product.stock);
           if (product.stock === "Unlimited" || (!isNaN(stockVal) && stockVal > 0)) return false;
+        } else if (filterStock === "Low Stock") {
+          const stockVal = Number(product.stock);
+          if (product.stock === "Unlimited" || isNaN(stockVal) || stockVal <= 0 || stockVal > 10) return false;
         }
       }
 
