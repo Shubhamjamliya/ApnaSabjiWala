@@ -16,7 +16,6 @@ export default function AdminManageDeliveryBoy() {
     const [processing, setProcessing] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
-    const [availabilityFilter, setAvailabilityFilter] = useState('All');
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [sortColumn, setSortColumn] = useState<string | null>('createdAt');
@@ -49,10 +48,6 @@ export default function AdminManageDeliveryBoy() {
                     params.status = statusFilter;
                 }
 
-                if (availabilityFilter !== 'All') {
-                    params.available = availabilityFilter;
-                }
-
                 const response = await getDeliveryBoys(params);
 
                 if (response.success) {
@@ -80,7 +75,7 @@ export default function AdminManageDeliveryBoy() {
 
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAuthenticated, token, currentPage, rowsPerPage, searchTerm, statusFilter, availabilityFilter, sortColumn, sortDirection]);
+    }, [isAuthenticated, token, currentPage, rowsPerPage, searchTerm, statusFilter, sortColumn, sortDirection]);
 
     const handleSort = (column: string) => {
         // Map frontend column names to backend field names
@@ -127,7 +122,6 @@ export default function AdminManageDeliveryBoy() {
                     sortOrder: sortDirection,
                 };
                 if (statusFilter !== 'All') params.status = statusFilter;
-                if (availabilityFilter !== 'All') params.available = availabilityFilter;
                 const refreshResponse = await getDeliveryBoys(params);
                 if (refreshResponse.success && refreshResponse.data) {
                     setDeliveryBoys(refreshResponse.data);
@@ -143,49 +137,6 @@ export default function AdminManageDeliveryBoy() {
         } catch (err: any) {
             console.error('Error updating delivery boy status:', err);
             setError('Failed to update delivery boy status: ' + (err.response?.data?.message || 'Please try again.'));
-            setSuccessMessage('');
-        } finally {
-            setProcessing(null);
-        }
-    };
-
-    const handleAvailabilityChange = async (deliveryBoyId: string, newAvailability: 'Available' | 'Not Available') => {
-        try {
-            setProcessing(deliveryBoyId);
-            const response = await updateDeliveryBoyAvailability(deliveryBoyId, newAvailability);
-
-            if (response.success) {
-                // Update local state
-                setDeliveryBoys(deliveryBoys.map(deliveryBoy =>
-                    deliveryBoy._id === deliveryBoyId ? { ...deliveryBoy, available: newAvailability } : deliveryBoy
-                ));
-                setSuccessMessage(`Delivery boy availability updated to ${newAvailability} successfully!`);
-                setError('');
-                // Refresh list to get updated data
-                const params: any = {
-                    page: currentPage,
-                    limit: rowsPerPage,
-                    search: searchTerm,
-                    sortBy: sortColumn || undefined,
-                    sortOrder: sortDirection,
-                };
-                if (statusFilter !== 'All') params.status = statusFilter;
-                if (availabilityFilter !== 'All') params.available = availabilityFilter;
-                const refreshResponse = await getDeliveryBoys(params);
-                if (refreshResponse.success && refreshResponse.data) {
-                    setDeliveryBoys(refreshResponse.data);
-                    if (refreshResponse.pagination) {
-                        setTotalPages(refreshResponse.pagination.pages);
-                        setTotalDeliveryBoys(refreshResponse.pagination.total);
-                    }
-                }
-            } else {
-                setError('Failed to update delivery boy availability: ' + (response.message || 'Unknown error'));
-                setSuccessMessage('');
-            }
-        } catch (err: any) {
-            console.error('Error updating delivery boy availability:', err);
-            setError('Failed to update delivery boy availability: ' + (err.response?.data?.message || 'Please try again.'));
             setSuccessMessage('');
         } finally {
             setProcessing(null);
@@ -213,7 +164,6 @@ export default function AdminManageDeliveryBoy() {
                     sortOrder: sortDirection,
                 };
                 if (statusFilter !== 'All') params.status = statusFilter;
-                if (availabilityFilter !== 'All') params.available = availabilityFilter;
                 const refreshResponse = await getDeliveryBoys(params);
                 if (refreshResponse.success && refreshResponse.data) {
                     setDeliveryBoys(refreshResponse.data);
@@ -292,9 +242,9 @@ export default function AdminManageDeliveryBoy() {
     const startIndex = (currentPage - 1) * rowsPerPage;
 
     return (
-        <div className="flex flex-col h-full bg-gray-50">
+        <div className="flex flex-col min-h-full bg-gray-50">
             {/* Page Content */}
-            <div className="flex-1 p-6">
+            <div className="flex-1 p-6 overflow-auto">
                 {/* Main Panel */}
                 <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
                     {/* Header */}
@@ -348,23 +298,6 @@ export default function AdminManageDeliveryBoy() {
                                     <option value="All">All Status</option>
                                     <option value="Active">Active</option>
                                     <option value="Inactive">Inactive</option>
-                                </select>
-                            </div>
-
-                            {/* Availability Filter */}
-                            <div className="flex items-center gap-2">
-                                <label className="text-sm text-neutral-700 whitespace-nowrap">Availability:</label>
-                                <select
-                                    value={availabilityFilter}
-                                    onChange={(e) => {
-                                        setAvailabilityFilter(e.target.value);
-                                        setCurrentPage(1);
-                                    }}
-                                    className="px-3 py-2 border border-neutral-300 rounded text-sm bg-white focus:ring-1 focus:ring-teal-500 focus:outline-none"
-                                >
-                                    <option value="All">All Availability</option>
-                                    <option value="Available">Available</option>
-                                    <option value="Not Available">Not Available</option>
                                 </select>
                             </div>
 
@@ -484,12 +417,11 @@ export default function AdminManageDeliveryBoy() {
                                         </div>
                                     </th>
                                     <th
-                                        className="p-4 cursor-pointer hover:bg-neutral-100 transition-colors"
-                                        onClick={() => handleSort('available')}
-                                    >
-                                        <div className="flex items-center">
-                                            Available <SortIcon column="available" />
-                                        </div>
+                                        className="p-4">
+                                        Driving License
+                                    </th>
+                                    <th className="p-4">
+                                        National ID
                                     </th>
                                     <th className="p-4">
                                         Action
@@ -499,7 +431,7 @@ export default function AdminManageDeliveryBoy() {
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={11} className="p-8 text-center">
+                                        <td colSpan={12} className="p-8 text-center">
                                             <div className="flex items-center justify-center">
                                                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-teal-600 mr-2"></div>
                                                 Loading delivery boys...
@@ -508,13 +440,13 @@ export default function AdminManageDeliveryBoy() {
                                     </tr>
                                 ) : error ? (
                                     <tr>
-                                        <td colSpan={11} className="p-8 text-center text-red-600">
+                                        <td colSpan={12} className="p-8 text-center text-red-600">
                                             {error}
                                         </td>
                                     </tr>
                                 ) : displayedDeliveryBoys.length === 0 ? (
                                     <tr>
-                                        <td colSpan={11} className="p-8 text-center text-neutral-400">
+                                        <td colSpan={12} className="p-8 text-center text-neutral-400">
                                             No delivery boys found.
                                         </td>
                                     </tr>
@@ -552,12 +484,32 @@ export default function AdminManageDeliveryBoy() {
                                                 </span>
                                             </td>
                                             <td className="p-4 align-middle">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${deliveryBoy.available === 'Available'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-red-100 text-red-800'
-                                                    }`}>
-                                                    {deliveryBoy.available}
-                                                </span>
+                                                {deliveryBoy.drivingLicense ? (
+                                                    <a
+                                                        href={deliveryBoy.drivingLicense}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-teal-600 hover:text-teal-700 text-xs font-medium"
+                                                    >
+                                                        View
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-xs text-neutral-400">Not Uploaded</span>
+                                                )}
+                                            </td>
+                                            <td className="p-4 align-middle">
+                                                {deliveryBoy.nationalIdentityCard ? (
+                                                    <a
+                                                        href={deliveryBoy.nationalIdentityCard}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-teal-600 hover:text-teal-700 text-xs font-medium"
+                                                    >
+                                                        View
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-xs text-neutral-400">Not Uploaded</span>
+                                                )}
                                             </td>
                                             <td className="p-4 align-middle">
                                                 <div className="flex items-center gap-2">
@@ -568,7 +520,7 @@ export default function AdminManageDeliveryBoy() {
                                                             ? 'text-red-600 hover:bg-red-50'
                                                             : 'text-green-600 hover:bg-green-50'
                                                             }`}
-                                                        title={deliveryBoy.status === 'Active' ? 'Deactivate' : 'Activate'}
+                                                        title={deliveryBoy.status === 'Active' ? 'Deactivate' : 'Verify & Activate'}
                                                     >
                                                         {deliveryBoy.status === 'Active' ? (
                                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -580,20 +532,6 @@ export default function AdminManageDeliveryBoy() {
                                                                 <polyline points="20 6 9 17 4 12"></polyline>
                                                             </svg>
                                                         )}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleAvailabilityChange(deliveryBoy._id, deliveryBoy.available === 'Available' ? 'Not Available' : 'Available')}
-                                                        disabled={processing === deliveryBoy._id}
-                                                        className={`p-1.5 rounded transition-colors ${deliveryBoy.available === 'Available'
-                                                            ? 'text-yellow-600 hover:bg-yellow-50'
-                                                            : 'text-green-600 hover:bg-green-50'
-                                                            }`}
-                                                        title={deliveryBoy.available === 'Available' ? 'Mark as Not Available' : 'Mark as Available'}
-                                                    >
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <circle cx="12" cy="12" r="10"></circle>
-                                                            <path d="M9 12l2 2 4-4"></path>
-                                                        </svg>
                                                     </button>
                                                     <button
                                                         onClick={() => handleDelete(deliveryBoy._id)}

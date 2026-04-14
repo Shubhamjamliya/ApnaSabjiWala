@@ -19,11 +19,14 @@ export default function DeliveryProfile() {
     phone: '',
     email: '',
     address: '',
+    status: 'Inactive',
     vehicleNumber: '',
     vehicleType: 'Bike',
     joinDate: '',
     totalDeliveries: 0,
     rating: 0,
+    drivingLicense: '',
+    nationalIdentityCard: '',
     accountName: '',
     bankName: '',
     accountNumber: '',
@@ -39,12 +42,15 @@ export default function DeliveryProfile() {
           name: data.name,
           phone: data.mobile,
           email: data.email,
-          address: data.address,
+          address: data.location?.address || data.address || '',
+          status: data.status || 'Inactive',
           vehicleNumber: data.vehicleNumber || '',
           vehicleType: data.vehicleType || 'Bike',
           joinDate: new Date(data.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
           totalDeliveries: data.totalDeliveredCount || 0, // Assuming backend sends this or we need to fetch dashboard stats
           rating: 4.8, // Mock for now
+          drivingLicense: data.drivingLicense || '',
+          nationalIdentityCard: data.nationalIdentityCard || '',
           accountName: data.accountName || '',
           bankName: data.bankName || '',
           accountNumber: data.accountNumber || '',
@@ -161,6 +167,12 @@ export default function DeliveryProfile() {
               <>
                 <h3 className="text-neutral-900 text-xl font-semibold mb-1">{profileData.name}</h3>
                 <p className="text-neutral-600 text-sm">{profileData.phone}</p>
+                <span className={`mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${profileData.status === 'Active'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                  {profileData.status === 'Active' ? 'Verified' : 'Pending Verification'}
+                </span>
               </>
             )}
             <div className="flex items-center gap-1 mt-2">
@@ -236,6 +248,51 @@ export default function DeliveryProfile() {
               ) : (
                 <p className="text-neutral-900 text-sm">{profileData.vehicleType}</p>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* Document Details */}
+        <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden mt-4">
+          <div className="p-4 border-b border-neutral-200">
+            <h3 className="text-neutral-900 font-semibold">Verification Documents</h3>
+          </div>
+          <div className="divide-y divide-neutral-200">
+            <div className="p-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-neutral-500 text-xs mb-1">Driving License</p>
+                <p className="text-neutral-900 text-sm">
+                  {profileData.drivingLicense ? 'Uploaded' : 'Not Uploaded'}
+                </p>
+              </div>
+              {profileData.drivingLicense ? (
+                <a
+                  href={profileData.drivingLicense}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-orange-600 hover:text-orange-700"
+                >
+                  View
+                </a>
+              ) : null}
+            </div>
+            <div className="p-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-neutral-500 text-xs mb-1">National Identity Card</p>
+                <p className="text-neutral-900 text-sm">
+                  {profileData.nationalIdentityCard ? 'Uploaded' : 'Not Uploaded'}
+                </p>
+              </div>
+              {profileData.nationalIdentityCard ? (
+                <a
+                  href={profileData.nationalIdentityCard}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-orange-600 hover:text-orange-700"
+                >
+                  View
+                </a>
+              ) : null}
             </div>
           </div>
         </div>
