@@ -141,29 +141,18 @@ export default function ProductCard({
     const productName = product.name || product.productName || 'Product';
     const shareUrl = `${window.location.origin}/product/${productId}`;
 
-    try {
-      if (navigator.share) {
+    if (navigator.share) {
+      try {
         await navigator.share({
           title: productName,
           text: `Check out this product: ${productName}`,
           url: shareUrl,
         });
-      } else {
-        await navigator.clipboard.writeText(shareUrl);
-        showToast('Product link copied');
+      } catch (error: any) {
+        // Ignore user-cancelled share action.
       }
-    } catch (error: any) {
-      // Ignore user-cancelled share action.
-      if (error?.name === 'AbortError') {
-        return;
-      }
-
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        showToast('Product link copied');
-      } catch {
-        showToast('Unable to share product', 'error');
-      }
+    } else {
+      showToast('Sharing is not supported on this device', 'error');
     }
   };
 
