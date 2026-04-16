@@ -38,6 +38,7 @@ import adminWithdrawalRoutes from "./adminWithdrawalRoutes";
 import nextDayRoutes from "./nextDay.routes";
 import adminRewardRoutes from "./adminRewardRoutes";
 import customerRewardRoutes from "./customerRewardRoutes";
+import customerNotificationRoutes from "../modules/customer/routes/notificationRoutes";
 // import pageConfigRoutes from "./pageConfig.routes";
 import {
   createOrder,
@@ -117,6 +118,7 @@ router.use("/customer/cart", customerCartRoutes);
 router.use("/customer/wishlist", wishlistRoutes);
 router.use("/customer/reviews", productReviewRoutes);
 router.use("/customer/rewards", customerRewardRoutes);
+router.use("/customer/notifications", customerNotificationRoutes);
 // General customer route (must be last to avoid intercepting specific routes)
 router.use("/customer", customerRoutes);
 

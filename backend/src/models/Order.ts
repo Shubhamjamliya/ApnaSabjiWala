@@ -55,6 +55,7 @@ export interface IOrder extends Document {
   | "Out for Delivery"
   | "Delivered"
   | "Cancelled"
+  | "Cancelled by Seller"
   | "Rejected"
   | "Returned";
 
@@ -259,6 +260,7 @@ const OrderSchema = new Schema<IOrder>(
         "Out for Delivery",
         "Delivered",
         "Cancelled",
+        "Cancelled by Seller",
         "Rejected",
         "Returned",
       ],

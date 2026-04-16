@@ -12,7 +12,7 @@ import { getHeaderCategoriesPublic } from '../../../services/api/headerCategoryS
 import { getIconByName } from '../../../utils/iconLibrary';
 import homeIcon from '@assets/category/home_v2.png';
 
-gsap.registerPlugin(ScrollTrigger);
+import { getAuthToken } from '../../../services/api/config';
 
 interface HomeHeroProps {
   activeTab?: string;
@@ -81,6 +81,29 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
   const [scrollProgress, setScrollProgress] = useState(0);
   const [searchBarHeight, setSearchBarHeight] = useState(0);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const { getMyNotifications } = await import('../../../services/api/customerNotificationService');
+        const response = await getMyNotifications(1, 10);
+        if (response.success) {
+          const count = response.data.filter(n => !n.isRead).length;
+          setUnreadCount(count);
+        }
+      } catch (err) {
+        console.error('Failed to fetch unread count', err);
+      }
+    };
+
+    if (getAuthToken()) {
+      fetchUnreadCount();
+      // Polling for new notifications every minute
+      const interval = setInterval(fetchUnreadCount, 60000);
+      return () => clearInterval(interval);
+    }
+  }, []);
 
   // Format location display text - only show if user has provided location
   const locationDisplayText = useMemo(() => {
@@ -339,6 +362,21 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
                 </div>
               )}
             </div>
+
+            {/* Right: Notification Icon */}
+            <button 
+              onClick={() => navigate('/notifications')}
+              className="mt-1 p-2 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md transition-all shadow-sm border border-white/30 relative"
+              aria-label="Notifications"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="text-neutral-900">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+              )}
+            </button>
           </div>
         </div>
       </div>

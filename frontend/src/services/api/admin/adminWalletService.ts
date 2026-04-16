@@ -19,8 +19,11 @@ export interface WalletTransaction {
   amount: number;
   description: string;
   status: string;
+  userName?: string;
+  userId?: string;
   createdAt: string;
   relatedOrder?: { orderNumber: string };
+  reference?: string;
 }
 
 export interface WithdrawalRequest {
@@ -83,7 +86,7 @@ export const getAdminEarnings = async (
  * Get Wallet Transactions (Platform Level)
  */
 export const getWalletTransactions = async (
-  params?: { page?: number; limit?: number; type?: string; status?: string; userType?: string }
+  params?: { page?: number; limit?: number; type?: string; status?: string; userType?: string; userId?: string }
 ): Promise<ApiResponse<WalletTransaction[]>> => {
   const response = await api.get<ApiResponse<WalletTransaction[]>>(
     "/admin/wallet/transactions",
@@ -126,6 +129,19 @@ export const getSellerTransactions = async (
   const response = await api.get<ApiResponse<any[]>>(
     `/admin/wallet/seller/${sellerId}`,
     { params }
+  );
+  return response.data;
+};
+
+/**
+ * Add Fund Transfer to Delivery Boy
+ */
+export const addDeliveryFundTransfer = async (
+  data: { deliveryBoyId: string; amount: number; type: 'Credit' | 'Debit'; description?: string }
+): Promise<ApiResponse<any>> => {
+  const response = await api.post<ApiResponse<any>>(
+    "/admin/wallet/delivery-fund-transfer",
+    data
   );
   return response.data;
 };

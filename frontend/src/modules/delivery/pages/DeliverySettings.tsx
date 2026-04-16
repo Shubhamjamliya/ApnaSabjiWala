@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import DeliveryHeader from '../components/DeliveryHeader';
 import DeliveryBottomNav from '../components/DeliveryBottomNav';
 import { updateSettings, getDeliveryProfile } from '../../../services/api/delivery/deliveryService';
+import { useToast } from '../../../context/ToastContext';
 
 export default function DeliverySettings() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -125,7 +127,9 @@ export default function DeliverySettings() {
             <h3 className="text-neutral-900 font-semibold">Other</h3>
           </div>
           <div className="divide-y divide-neutral-200">
-            <button className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 transition-colors">
+            <button 
+              onClick={() => showToast("Language options coming soon!", "info")}
+              className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 transition-colors">
               <div className="flex-1 text-left">
                 <p className="text-neutral-900 text-sm font-medium">Language</p>
                 <p className="text-neutral-500 text-xs mt-1">English</p>
@@ -141,7 +145,9 @@ export default function DeliverySettings() {
                 />
               </svg>
             </button>
-            <button className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 transition-colors">
+            <button 
+              onClick={() => navigate('/delivery/privacy-policy')}
+              className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 transition-colors">
               <div className="flex-1 text-left">
                 <p className="text-neutral-900 text-sm font-medium">Privacy Policy</p>
               </div>
@@ -156,7 +162,9 @@ export default function DeliverySettings() {
                 />
               </svg>
             </button>
-            <button className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 transition-colors">
+            <button 
+              onClick={() => navigate('/delivery/terms')}
+              className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 transition-colors">
               <div className="flex-1 text-left">
                 <p className="text-neutral-900 text-sm font-medium">Terms & Conditions</p>
               </div>

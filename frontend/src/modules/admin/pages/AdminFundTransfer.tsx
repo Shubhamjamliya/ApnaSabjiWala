@@ -1,20 +1,23 @@
-﻿import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getWalletTransactions, addDeliveryFundTransfer } from '../../../services/api/admin/adminWalletService';
+import { getDeliveryBoys } from '../../../services/api/admin/adminDeliveryService';
+import { useAuth } from '../../../context/AuthContext';
 
-interface FundTransfer {
-  id: number;
-  name: string;
-  mobile: string;
-  openingBalance: number;
-  closingBalance: number;
+interface Transaction {
+  _id: string;
+  userName: string;
+  userId: string;
   amount: number;
-  type: string;
-  message: string;
-  date: string;
+  type: 'Credit' | 'Debit';
+  description: string;
+  createdAt: string;
+  status: string;
 }
 
 export default function AdminFundTransfer() {
-  const [fromDate, setFromDate] = useState('12/09/2025');
-  const [toDate, setToDate] = useState('12/09/2025');
+  const { isAuthenticated, token } = useAuth();
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState('all');
   const [selectedMethod, setSelectedMethod] = useState('all');
   const [entriesPerPage, setEntriesPerPage] = useState(10);
@@ -22,9 +25,63 @@ export default function AdminFundTransfer() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [deliveryBoysList, setDeliveryBoysList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Modal states
+  const [showModal, setShowModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    deliveryBoyId: '',
+    amount: '',
+    type: 'Credit' as 'Credit' | 'Debit',
+    description: ''
+  });
 
-  // Mock data - empty for now as shown in image
-  const fundTransfers: FundTransfer[] = [];
+  // Fetch Delivery Boys for dropdown
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      getDeliveryBoys({ status: 'Active', limit: 100 }).then(res => {
+        if (res.success) setDeliveryBoysList(res.data);
+      });
+    }
+  }, [isAuthenticated, token]);
+
+  // Fetch Transactions
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
+
+    const fetchTransactions = async () => {
+      try {
+        setLoading(true);
+        const params: any = {
+          page: currentPage,
+          limit: entriesPerPage,
+          userType: 'DELIVERY_BOY',
+          search: searchTerm
+        };
+        
+        if (selectedMethod !== 'all') params.type = selectedMethod;
+        if (selectedDeliveryBoy !== 'all') params.userId = selectedDeliveryBoy;
+        
+        const res = await getWalletTransactions(params);
+        if (res.success) {
+          setTransactions(res.data as any);
+        } else {
+          setError('Failed to fetch transactions');
+        }
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Error fetching data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [isAuthenticated, token, currentPage, entriesPerPage, selectedDeliveryBoy, selectedMethod, searchTerm]);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -35,46 +92,72 @@ export default function AdminFundTransfer() {
     }
   };
 
-  const filteredTransfers = fundTransfers.filter(transfer =>
-    transfer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transfer.mobile.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transfer.id.toString().includes(searchTerm)
-  );
-
-  const totalPages = Math.ceil(filteredTransfers.length / entriesPerPage);
-  const startIndex = (currentPage - 1) * entriesPerPage;
-  const endIndex = startIndex + entriesPerPage;
-  const displayedTransfers = filteredTransfers.slice(startIndex, endIndex);
-
   const handleExport = () => {
-    alert('Export functionality will be implemented here');
+    const headers = ['ID', 'Name', 'Amount', 'Type', 'Description', 'Date'];
+    const csvContent = [
+      headers.join(','),
+      ...transactions.map(t => [
+        t._id.slice(-6),
+        `"${t.userName}"`,
+        t.amount,
+        t.type,
+        `"${t.description}"`,
+        new Date(t.createdAt).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `fund_transfers_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
   };
 
-  const handleClearDate = () => {
-    setFromDate('');
-    setToDate('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.deliveryBoyId || !formData.amount) {
+      alert('Please fill all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const res = await addDeliveryFundTransfer({
+        deliveryBoyId: formData.deliveryBoyId,
+        amount: Number(formData.amount),
+        type: formData.type,
+        description: formData.description
+      });
+
+      if (res.success) {
+        setShowModal(false);
+        setFormData({ deliveryBoyId: '', amount: '', type: 'Credit', description: '' });
+        // Refresh transactions
+        setCurrentPage(1);
+        // Refresh current page manually if needed, but the dependency array will handle it if we are on page 1
+        const params: any = { page: 1, limit: entriesPerPage, userType: 'DELIVERY_BOY' };
+        const updated = await getWalletTransactions(params);
+        if (updated.success) setTransactions(updated.data as any);
+        alert('Fund transfer successful');
+      } else {
+        alert(res.message || 'Transfer failed');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error submitting transfer');
+    } finally {
+      setSubmitting(false);
+    }
   };
-
-  const deliveryBoys = [
-    'All Delivery Boy',
-    'Delivery Boy 1',
-    'Delivery Boy 2',
-    'Delivery Boy 3',
-  ];
-
-  const methods = [
-    'All',
-    'Credit',
-    'Debit',
-    'Bank Transfer',
-  ];
 
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="bg-teal-600 px-4 sm:px-6 py-4 rounded-t-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-        <h1 className="text-white text-xl sm:text-2xl font-semibold">View Fund Transfer</h1>
-        <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors">
+        <h1 className="text-white text-xl sm:text-2xl font-semibold">View Delivery Boy Fund Transfer</h1>
+        <button 
+          onClick={() => setShowModal(true)}
+          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors"
+        >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -88,53 +171,7 @@ export default function AdminFundTransfer() {
         {/* Filters */}
         <div className="p-4 sm:p-6 border-b border-neutral-200">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-            {/* Left Side Filters */}
             <div className="flex flex-col sm:flex-row gap-3 flex-1 flex-wrap">
-              {/* From - To Date */}
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-neutral-700 whitespace-nowrap">From - To Date:</label>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                      <line x1="16" y1="2" x2="16" y2="6"></line>
-                      <line x1="8" y1="2" x2="8" y2="6"></line>
-                      <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    <input
-                      type="text"
-                      value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
-                      placeholder="MM/DD/YYYY"
-                      className="pl-10 pr-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 min-w-[140px]"
-                    />
-                  </div>
-                  <span className="text-neutral-500">-</span>
-                  <div className="relative">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                      <line x1="16" y1="2" x2="16" y2="6"></line>
-                      <line x1="8" y1="2" x2="8" y2="6"></line>
-                      <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    <input
-                      type="text"
-                      value={toDate}
-                      onChange={(e) => setToDate(e.target.value)}
-                      placeholder="MM/DD/YYYY"
-                      className="pl-10 pr-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 min-w-[140px]"
-                    />
-                  </div>
-                  <button
-                    onClick={handleClearDate}
-                    className="px-3 py-2 bg-neutral-700 hover:bg-neutral-800 text-white rounded text-sm transition-colors"
-                  >
-                    Clear
-                  </button>
-                </div>
-              </div>
-
-              {/* Filter by Delivery Boy */}
               <div className="flex items-center gap-2">
                 <label className="text-sm text-neutral-700 whitespace-nowrap">Filter by Delivery Boy:</label>
                 <select
@@ -143,57 +180,35 @@ export default function AdminFundTransfer() {
                     setSelectedDeliveryBoy(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="px-3 py-2 border border-neutral-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 min-w-[150px]"
+                  className="px-3 py-2 border border-neutral-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 min-w-[200px]"
                 >
-                  {deliveryBoys.map((boy) => (
-                    <option key={boy} value={boy === 'All Delivery Boy' ? 'all' : boy}>
-                      {boy}
+                  <option value="all">All Delivery Boys</option>
+                  {deliveryBoysList.map((boy) => (
+                    <option key={boy._id} value={boy._id}>
+                      {boy.name} ({boy.mobile})
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Filter by Method */}
               <div className="flex items-center gap-2">
-                <label className="text-sm text-neutral-700 whitespace-nowrap">Filter by Method:</label>
+                <label className="text-sm text-neutral-700 whitespace-nowrap">Type:</label>
                 <select
                   value={selectedMethod}
                   onChange={(e) => {
                     setSelectedMethod(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="px-3 py-2 border border-neutral-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 min-w-[100px]"
+                  className="px-3 py-2 border border-neutral-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
                 >
-                  {methods.map((method) => (
-                    <option key={method} value={method === 'All' ? 'all' : method}>
-                      {method}
-                    </option>
-                  ))}
+                  <option value="all">All</option>
+                  <option value="Credit">Credit</option>
+                  <option value="Debit">Debit</option>
                 </select>
               </div>
             </div>
 
-            {/* Right Side Controls */}
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-              {/* Per Page */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-neutral-700">Per Page:</span>
-                <select
-                  value={entriesPerPage}
-                  onChange={(e) => {
-                    setEntriesPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="px-2 py-1 border border-neutral-300 rounded text-sm bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-              </div>
-
-              {/* Export Button */}
               <button
                 onClick={handleExport}
                 className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors"
@@ -204,12 +219,8 @@ export default function AdminFundTransfer() {
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
                 Export
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
               </button>
 
-              {/* Search */}
               <div className="flex items-center gap-2">
                 <label className="text-sm text-neutral-700">Search:</label>
                 <input
@@ -219,8 +230,8 @@ export default function AdminFundTransfer() {
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  placeholder="Search:"
-                  className="px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 min-w-[150px]"
+                  placeholder="Search description..."
+                  className="px-3 py-2 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
             </div>
@@ -229,188 +240,152 @@ export default function AdminFundTransfer() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1200px]">
+          <table className="w-full">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                <th
-                  className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
-                  onClick={() => handleSort('id')}
-                >
-                  <div className="flex items-center gap-2">
-                    ID
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-neutral-400">
-                      <path d="M7 10L12 5L17 10M7 14L12 19L17 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </th>
-                <th
-                  className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
-                  onClick={() => handleSort('name')}
-                >
-                  <div className="flex items-center gap-2">
-                    Name
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-neutral-400">
-                      <path d="M7 10L12 5L17 10M7 14L12 19L17 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </th>
-                <th
-                  className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
-                  onClick={() => handleSort('mobile')}
-                >
-                  <div className="flex items-center gap-2">
-                    Mobile
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-neutral-400">
-                      <path d="M7 10L12 5L17 10M7 14L12 19L17 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </th>
-                <th
-                  className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
-                  onClick={() => handleSort('openingBalance')}
-                >
-                  <div className="flex items-center gap-2">
-                    Opening Balance (₹)
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-neutral-400">
-                      <path d="M7 10L12 5L17 10M7 14L12 19L17 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </th>
-                <th
-                  className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
-                  onClick={() => handleSort('closingBalance')}
-                >
-                  <div className="flex items-center gap-2">
-                    Closing Balance (₹)
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-neutral-400">
-                      <path d="M7 10L12 5L17 10M7 14L12 19L17 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </th>
-                <th
-                  className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
-                  onClick={() => handleSort('amount')}
-                >
-                  <div className="flex items-center gap-2">
-                    amount (₹)
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-neutral-400">
-                      <path d="M7 10L12 5L17 10M7 14L12 19L17 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </th>
-                <th
-                  className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
-                  onClick={() => handleSort('type')}
-                >
-                  <div className="flex items-center gap-2">
-                    Type
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-neutral-400">
-                      <path d="M7 10L12 5L17 10M7 14L12 19L17 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </th>
-                <th
-                  className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
-                  onClick={() => handleSort('message')}
-                >
-                  <div className="flex items-center gap-2">
-                    Message
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-neutral-400">
-                      <path d="M7 10L12 5L17 10M7 14L12 19L17 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </th>
-                <th
-                  className="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
-                  onClick={() => handleSort('date')}
-                >
-                  <div className="flex items-center gap-2">
-                    Date
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-neutral-400">
-                      <path d="M7 10L12 5L17 10M7 14L12 19L17 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase">ID</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase">Delivery Boy</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-neutral-700 uppercase">Date</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-neutral-200">
-              {displayedTransfers.length === 0 ? (
+              {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 sm:px-6 py-8 text-center text-sm text-neutral-500">
-                    No data available in table
+                  <td colSpan={6} className="px-6 py-10 text-center text-neutral-500">
+                    <div className="flex justify-center items-center gap-2">
+                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-teal-600"></div>
+                       Loading transfers...
+                    </div>
                   </td>
                 </tr>
+              ) : transactions.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-neutral-500">No transactions found</td>
+                </tr>
               ) : (
-                displayedTransfers.map((transfer) => (
-                  <tr key={transfer.id} className="hover:bg-neutral-50">
-                    <td className="px-4 sm:px-6 py-3 text-sm text-neutral-900">{transfer.id}</td>
-                    <td className="px-4 sm:px-6 py-3 text-sm text-neutral-900 font-medium">{transfer.name}</td>
-                    <td className="px-4 sm:px-6 py-3 text-sm text-neutral-600">{transfer.mobile}</td>
-                    <td className="px-4 sm:px-6 py-3 text-sm text-neutral-900">₹{transfer.openingBalance.toFixed(2)}</td>
-                    <td className="px-4 sm:px-6 py-3 text-sm text-neutral-900">₹{transfer.closingBalance.toFixed(2)}</td>
-                    <td className="px-4 sm:px-6 py-3 text-sm text-neutral-900 font-medium">₹{transfer.amount.toFixed(2)}</td>
-                    <td className="px-4 sm:px-6 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${transfer.type === 'Credit'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                        }`}>
-                        {transfer.type}
+                transactions.map((t) => (
+                  <tr key={t._id} className="hover:bg-neutral-50">
+                    <td className="px-6 py-4 text-sm text-neutral-500">#{t._id.slice(-6)}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-neutral-900">{t.userName}</td>
+                    <td className={`px-6 py-4 text-sm font-bold ${t.type === 'Credit' ? 'text-green-600' : 'text-red-600'}`}>
+                      {t.type === 'Credit' ? '+' : '-'} ₹{t.amount.toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs rounded-full ${t.type === 'Credit' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {t.type}
                       </span>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 text-sm text-neutral-600">{transfer.message}</td>
-                    <td className="px-4 sm:px-6 py-3 text-sm text-neutral-600">{transfer.date}</td>
+                    <td className="px-6 py-4 text-sm text-neutral-600">{t.description}</td>
+                    <td className="px-6 py-4 text-sm text-neutral-500">
+                      {new Date(t.createdAt).toLocaleString()}
+                    </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
+      </div>
 
-        {/* Pagination Footer */}
-        <div className="px-4 sm:px-6 py-3 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
-          <div className="text-xs sm:text-sm text-neutral-700">
-            Showing {startIndex + 1} to {Math.min(endIndex, filteredTransfers.length)} of {filteredTransfers.length} entries
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage === 1 || totalPages === 0}
-              className={`p-2 border border-neutral-300 rounded ${currentPage === 1 || totalPages === 0
-                ? 'text-neutral-400 cursor-not-allowed bg-neutral-50'
-                : 'text-neutral-700 hover:bg-neutral-50'
-                }`}
-              aria-label="Previous page"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className={`p-2 border border-neutral-300 rounded ${currentPage === totalPages || totalPages === 0
-                ? 'text-neutral-400 cursor-not-allowed bg-neutral-50'
-                : 'text-neutral-700 hover:bg-neutral-50'
-                }`}
-              aria-label="Next page"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+      {/* Add Fund Transfer Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+            <div className="bg-teal-600 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-white font-semibold flex items-center gap-2">
+                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                 </svg>
+                 Add Fund Transfer
+              </h2>
+              <button onClick={() => setShowModal(false)} className="text-teal-100 hover:text-white transition-colors">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Select Delivery Boy*</label>
+                <select
+                   required
+                   value={formData.deliveryBoyId}
+                   onChange={e => setFormData({...formData, deliveryBoyId: e.target.value})}
+                   className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                >
+                   <option value="">Select a delivery boy</option>
+                   {deliveryBoysList.map(boy => (
+                     <option key={boy._id} value={boy._id}>{boy.name} ({boy.mobile})</option>
+                   ))}
+                </select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Amount* (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={formData.amount}
+                    onChange={e => setFormData({...formData, amount: e.target.value})}
+                    placeholder="Enter amount"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Type*</label>
+                  <select
+                    value={formData.type}
+                    onChange={e => setFormData({...formData, type: e.target.value as 'Credit' | 'Debit'})}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  >
+                    <option value="Credit">Credit (+)</option>
+                    <option value="Debit">Debit (-)</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Description / Message</label>
+                <textarea
+                  value={formData.description}
+                  onChange={e => setFormData({...formData, description: e.target.value})}
+                  placeholder="e.g. Fuel allowance, Cash reconciliation"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 resize-none"
+                />
+              </div>
+              
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-700 rounded-md hover:bg-neutral-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Processing...
+                    </>
+                  ) : 'Confirm Transfer'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="text-center text-sm text-neutral-500 py-4">
-        Copyright Â© 2025. Developed By{' '}
-        <a href="#" className="text-teal-600 hover:text-teal-700">
-          Apna Sabji Wala - 10 Minute App
-        </a>
-      </div>
+      )}
     </div>
   );
 }
-
-

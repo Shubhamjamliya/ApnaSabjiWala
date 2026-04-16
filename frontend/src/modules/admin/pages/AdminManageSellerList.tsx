@@ -456,7 +456,7 @@ export default function AdminManageSellerList() {
                                     className="pl-14 pr-3 py-1.5 bg-neutral-100 border-none rounded text-sm focus:ring-1 focus:ring-teal-500 w-48"
                                     value={searchTerm}
                                     onChange={(e) => {
-                                        setSearchTerm(e.target.value);
+                                        setSearchTerm(e.target.value.replace(/\s/g, ""));
                                         setCurrentPage(1);
                                     }}
                                     placeholder=""

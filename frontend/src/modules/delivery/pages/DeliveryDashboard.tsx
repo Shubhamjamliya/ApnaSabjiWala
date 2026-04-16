@@ -511,19 +511,16 @@ export default function DeliveryDashboard() {
             accentColor="#ef4444"
             onClick={() => navigate("/delivery/orders/all")}
           />
-          <DashboardCard
-            icon={returnOrderIcon}
-            title="Today's Return Order"
-            value={stats?.returnOrders || 0}
-            accentColor="#f97316"
-            onClick={() => navigate("/delivery/orders/return")}
-          />
-          <DashboardCard
-            icon={returnItemIcon}
-            title="Total return item have"
-            value={stats?.returnItems || 0}
-            accentColor="#3b82f6"
-          />
+          <div className="col-span-2">
+            <DashboardCard
+              icon={returnOrderIcon}
+              title="Today's Return Order"
+              value={stats?.returnOrders || 0}
+              accentColor="#f97316"
+              onClick={() => navigate("/delivery/orders/return")}
+            />
+          </div>
+          {/* Removed: Total return item card */}
         </div>
 
         {/* Today's Earning & Total Earning Bar */}
@@ -537,63 +534,7 @@ export default function DeliveryDashboard() {
           accentColor="#16a34a"
         />
 
-        {/* Today's Pending Order Section */}
-        <div className="mt-6">
-          <h2 className="text-neutral-900 text-lg font-semibold mb-4">
-            Todays Pending Order
-          </h2>
-          {stats?.pendingOrdersList && stats.pendingOrdersList.length > 0 ? (
-            <div className="space-y-3">
-              {stats.pendingOrdersList.map((order: any) => (
-                <div
-                  key={order.id}
-                  className="bg-white rounded-xl p-4 shadow-sm border border-neutral-200 cursor-pointer"
-                  onClick={() => navigate(`/delivery/orders/${order.id}`)}>
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="text-neutral-900 font-semibold text-sm">
-                        {order.orderId}
-                      </p>
-                      {order.sellerNames && (
-                        <p className="text-teal-600 text-[10px] font-bold uppercase tracking-wider">
-                          Pickup: {order.sellerNames}
-                        </p>
-                      )}
-                      <p className="text-neutral-600 text-xs mt-1">
-                        {order.customerName}
-                      </p>
-                    </div>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        order.status === "Ready for pickup"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-blue-100 text-blue-700"
-                      }`}>
-                      {order.status}
-                    </span>
-                  </div>
-                  <p className="text-neutral-600 text-xs mb-2">
-                    {order.address}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-neutral-900 font-bold">
-                      ₹ {order.totalAmount}
-                    </p>
-                    {order.estimatedDeliveryTime && (
-                      <p className="text-neutral-500 text-xs">
-                        ETA: {order.estimatedDeliveryTime}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl p-8 min-h-[200px] flex items-center justify-center shadow-sm border border-neutral-200">
-              <p className="text-neutral-500 text-sm">No pending orders</p>
-            </div>
-          )}
-        </div>
+        {/* Removed: Today's Pending Order Section */}
       </div>
 
       {/* Bottom Navigation */}

@@ -237,25 +237,7 @@ const menuSections: MenuSection[] = [
           </svg>
         ),
       },
-      {
-        label: "Home Sections",
-        path: "/admin/home-section",
-        icon: (
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round">
-            <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"></path>
-            <path d="M9 22V12H15V22"></path>
-            <path d="M9 12H15"></path>
-          </svg>
-        ),
-      },
+
       /* {
         label: "Next Day Sections",
         path: "/admin/next-day-sections",
@@ -297,24 +279,7 @@ const menuSections: MenuSection[] = [
           </svg>
         ),
       },
-      {
-        label: "Coupon",
-        path: "/admin/coupon",
-        icon: (
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round">
-            <path d="M21 5H3C1.89543 5 1 5.89543 1 7V11C2.10457 11 3 11.8954 3 13C3 14.1046 2.10457 15 1 15V19C1 20.1046 1.89543 21 3 21H21C22.1046 21 23 20.1046 23 19V15C21.8954 15 21 14.1046 21 13C21 11.8954 21.8954 11 21 11V7C23 5.89543 22.1046 5 21 5Z"></path>
-            <line x1="10" y1="5" x2="10" y2="21"></line>
-          </svg>
-        ),
-      },
+
     ],
   },
   {
@@ -428,10 +393,8 @@ const menuSections: MenuSection[] = [
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round">
-                <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z"></path>
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                 <circle cx="12" cy="10" r="3"></circle>
-                <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"></path>
-                <circle cx="9" cy="7" r="4"></circle>
               </svg>
             ),
           },
@@ -477,9 +440,6 @@ const menuSections: MenuSection[] = [
                 <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
                 <circle cx="5.5" cy="18.5" r="2.5"></circle>
                 <circle cx="18.5" cy="18.5" r="2.5"></circle>
-                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"></path>
-                <path d="M14 2V8H20"></path>
-                <path d="M8 11H16M8 15H12"></path>
               </svg>
             ),
           },

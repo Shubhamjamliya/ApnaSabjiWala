@@ -476,7 +476,7 @@ export default function OrderDetail() {
   const [customTip, setCustomTip] = useState("");
   const previousOrderStatusRef = useRef<OrderStatus | string>(order?.status || "Received");
   const isTerminalStatus = (status?: string | null) =>
-    ["Delivered", "Cancelled", "Returned", "Rejected"].includes(String(status || ""));
+    ["Delivered", "Cancelled", "Cancelled by Seller", "Returned", "Rejected"].includes(String(status || ""));
 
   // Real-time delivery tracking via WebSocket
   const {
@@ -666,27 +666,6 @@ export default function OrderDetail() {
     }
   }, [orderStatus, routeInfo, eta]);
 
-  // Auto-redirect to home if seller cancels or rejects while user is on this page
-  useEffect(() => {
-    const previousStatus = previousOrderStatusRef.current;
-    const currentStatus = String(orderStatus || "");
-    const isCurrentTerminalStatus = currentStatus === "Cancelled" || currentStatus === "Rejected";
-    const wasPreviouslyTerminalStatus = previousStatus === "Cancelled" || previousStatus === "Rejected";
-
-    if (isCurrentTerminalStatus && !wasPreviouslyTerminalStatus) {
-      const cancellationReasonText = String(order?.cancellationReason || "").toLowerCase();
-      const cancelledBySeller =
-        currentStatus === "Cancelled" &&
-        (cancellationReasonText.includes("seller") || cancellationReasonText.includes("cancelled by seller"));
-
-      if (cancelledBySeller) {
-        alert("Order cancelled by seller");
-      }
-      navigate("/", { replace: true });
-    }
-
-    previousOrderStatusRef.current = currentStatus;
-  }, [orderStatus, navigate]);
 
   // Handler functions
   const handleRefresh = async () => {
@@ -878,6 +857,16 @@ export default function OrderDetail() {
     Cancelled: {
       title: "Order cancelled",
       subtitle: cancelledBySeller ? "Order cancelled by seller" : "This order has been cancelled",
+      color: "bg-red-600",
+    },
+    "Cancelled by Seller": {
+      title: "Cancelled by seller",
+      subtitle: "The store was unable to fulfill your order",
+      color: "bg-red-600",
+    },
+    Rejected: {
+      title: "Order rejected",
+      subtitle: "The store has rejected your order",
       color: "bg-red-600",
     },
     Returned: {

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DeliveryHeader from '../components/DeliveryHeader';
 import DeliveryBottomNav from '../components/DeliveryBottomNav';
 import { useDeliveryUser } from '../context/DeliveryUserContext';
-import { getDeliveryProfile, updateProfile } from '../../../services/api/delivery/deliveryService';
+import { getDeliveryProfile, updateProfile, getDashboardStats } from '../../../services/api/delivery/deliveryService';
 import { sendTestNotification } from '../../../services/pushNotificationService';
 import { useToast } from '../../../context/ToastContext';
 
@@ -37,7 +37,10 @@ export default function DeliveryProfile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const data = await getDeliveryProfile();
+        const [data, stats] = await Promise.all([
+          getDeliveryProfile(),
+          getDashboardStats()
+        ]);
         setProfileData({
           name: data.name,
           phone: data.mobile,
@@ -47,7 +50,7 @@ export default function DeliveryProfile() {
           vehicleNumber: data.vehicleNumber || '',
           vehicleType: data.vehicleType || 'Bike',
           joinDate: new Date(data.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-          totalDeliveries: data.totalDeliveredCount || 0, // Assuming backend sends this or we need to fetch dashboard stats
+          totalDeliveries: stats.totalDeliveredCount || 0,
           rating: 4.8, // Mock for now
           drivingLicense: data.drivingLicense || '',
           nationalIdentityCard: data.nationalIdentityCard || '',
@@ -74,17 +77,53 @@ export default function DeliveryProfile() {
   };
 
   const handleSave = async () => {
+    // Validation
+    const nameRegex = /^[a-zA-Z\s]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const vehicleRegex = /^[A-Z0-9\s-]+$/i;
+    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+    const accountRegex = /^\d{9,15}$/;
+
+    if (!nameRegex.test(profileData.name)) {
+      showToast("Name should only contain alphabets", "error");
+      return;
+    }
+    if (profileData.email && !emailRegex.test(profileData.email)) {
+      showToast("Please enter a valid email (ex: ags@gmail.com)", "error");
+      return;
+    }
+    if (!vehicleRegex.test(profileData.vehicleNumber)) {
+      showToast("Vehicle number should be in correct format", "error");
+      return;
+    }
+    if (profileData.accountName && !nameRegex.test(profileData.accountName)) {
+      showToast("Account holder name should only contain alphabets", "error");
+      return;
+    }
+    if (profileData.bankName && !nameRegex.test(profileData.bankName)) {
+      showToast("Bank name should only contain alphabets", "error");
+      return;
+    }
+    if (profileData.accountNumber && !accountRegex.test(profileData.accountNumber)) {
+      showToast("Account number should be 9-15 digits", "error");
+      return;
+    }
+    if (profileData.ifscCode && !ifscRegex.test(profileData.ifscCode)) {
+      showToast("IFSC code should be in format (ex: SBIN0001234)", "error");
+      return;
+    }
+
     try {
       await updateProfile({
         name: profileData.name,
         email: profileData.email,
         address: profileData.address,
-        vehicleNumber: profileData.vehicleNumber,
+        vehicleNumber: profileData.vehicleNumber.toUpperCase(),
         vehicleType: profileData.vehicleType,
         accountName: profileData.accountName,
         bankName: profileData.bankName,
         accountNumber: profileData.accountNumber,
-        ifscCode: profileData.ifscCode,
+        ifscCode: profileData.ifscCode.toUpperCase(),
       });
       setUserName(profileData.name);
       setIsEditing(false);
@@ -238,12 +277,12 @@ export default function DeliveryProfile() {
                 <select
                   value={profileData.vehicleType}
                   onChange={(e) => handleInputChange('vehicleType', e.target.value)}
-                  className="w-full text-neutral-900 text-sm px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full text-neutral-900 text-sm px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
                 >
-                  <option value="Bike">Bike</option>
-                  <option value="Scooter">Scooter</option>
-                  <option value="Car">Car</option>
-                  <option value="Cycle">Cycle</option>
+                  <option value="Bike" className="bg-white text-neutral-900">Bike</option>
+                  <option value="Scooter" className="bg-white text-neutral-900">Scooter</option>
+                  <option value="Car" className="bg-white text-neutral-900">Car</option>
+                  <option value="Cycle" className="bg-white text-neutral-900">Cycle</option>
                 </select>
               ) : (
                 <p className="text-neutral-900 text-sm">{profileData.vehicleType}</p>

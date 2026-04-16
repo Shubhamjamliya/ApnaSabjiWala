@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   createTax,
   getTaxes,
@@ -253,7 +253,7 @@ export default function AdminTaxes() {
                   <input
                     type="text"
                     value={taxTitle}
-                    onChange={(e) => setTaxTitle(e.target.value)}
+                    onChange={(e) => setTaxTitle(e.target.value.replace(/\s/g, ""))}
                     placeholder="Enter Tax Title"
                     className="w-full px-3 py-2 border border-neutral-300 rounded focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
                   />

@@ -94,6 +94,12 @@ const SellerAccountSettings = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
+        
+        // Alphabet validation for Seller Name and City
+        if ((name === 'sellerName' || name === 'city') && value !== '') {
+            if (!/^[a-zA-Z\s]+$/.test(value)) return;
+        }
+
         setSellerData(prev => ({
             ...prev,
             [name]: value
@@ -387,22 +393,8 @@ const SellerAccountSettings = () => {
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                     <InputGroup label="Full Name" name="sellerName" value={sellerData.sellerName} onChange={handleInputChange} disabled={!isEditing} autoComplete="name" />
-                                                    <InputGroup label="Email Address" name="email" value={sellerData.email} onChange={handleInputChange} disabled={!isEditing} type="email" autoComplete="email" />
+                                                    <InputGroup label="Email Address" name="email" value={sellerData.email} onChange={handleInputChange} disabled={!isEditing} type="email" autoComplete="email" pattern="^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$" title="ex - ags@gmail.com" />
                                                     <InputGroup label="Mobile Number" name="mobile" value={sellerData.mobile} onChange={handleInputChange} disabled={!isEditing} type="tel" autoComplete="tel" />
-
-                                                    <div className="space-y-1.5">
-                                                        <label className="text-sm font-semibold text-gray-700 ml-1">Password</label>
-                                                        <div className="relative">
-                                                            <input
-                                                                type="password"
-                                                                autoComplete="new-password"
-                                                                placeholder="••••••••"
-                                                                disabled={!isEditing}
-                                                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none disabled:bg-gray-50/50 disabled:text-gray-500 transition-all placeholder:text-gray-300"
-                                                            />
-                                                        </div>
-                                                        {isEditing && <p className="text-xs text-gray-400 ml-1">Leave blank to keep current password</p>}
-                                                    </div>
                                                 </div>
 
                                                 <div className="mt-6 pt-6 border-t border-gray-100">
@@ -529,7 +521,7 @@ const SellerAccountSettings = () => {
                                                                         }}
                                                                     />
                                                                     <p className="mt-1 text-xs text-neutral-500 text-center">
-                                                                        Selected Coordinates: {parseFloat(sellerData.latitude).toFixed(4) || 'Not selected'}, {parseFloat(sellerData.longitude).toFixed(4) || 'Not selected'}
+                                                                        Selected Area: {sellerData.searchLocation || 'Not selected'}
                                                                     </p>
                                                                 </div>
                                                             </>
@@ -692,7 +684,7 @@ const SellerAccountSettings = () => {
     );
 };
 
-const InputGroup = ({ label, name, value, onChange, disabled, type = "text", placeholder = "", autoComplete }: any) => (
+const InputGroup = ({ label, name, value, onChange, disabled, type = "text", placeholder = "", autoComplete, pattern, title }: any) => (
     <div className="space-y-2">
         <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider ml-1">{label}</label>
         <div className="relative group">
@@ -704,6 +696,8 @@ const InputGroup = ({ label, name, value, onChange, disabled, type = "text", pla
                 disabled={disabled}
                 placeholder={placeholder}
                 autoComplete={autoComplete}
+                pattern={pattern}
+                title={title}
                 className={`w-full px-4 py-3 rounded-xl border transition-all outline-none text-sm ${
                     disabled 
                         ? 'bg-neutral-50/50 text-neutral-400 border-neutral-100 italic' 

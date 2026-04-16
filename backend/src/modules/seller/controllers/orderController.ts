@@ -243,13 +243,16 @@ export const updateOrderStatus = asyncHandler(
     const { status } = req.body;
 
     // Validate allowed status updates for seller
-    const allowedStatuses = ['Accepted', 'On the way', 'Delivered', 'Cancelled', 'Rejected'];
+    const allowedStatuses = ['Accepted', 'On the way', 'Delivered', 'Cancelled', 'Rejected', 'Cancelled by Seller'];
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
         message: `Invalid status. Seller can only update to: ${allowedStatuses.join(', ')}`,
       });
     }
+
+    // Map 'Rejected' to 'Cancelled by Seller' for user panel clarity
+    const finalStatus = status === 'Rejected' ? 'Cancelled by Seller' : status;
 
     // Find the order first by either _id or orderNumber
     let orderQuery;
@@ -287,7 +290,7 @@ export const updateOrderStatus = asyncHandler(
     }
 
     const previousStatus = order.status;
-    order.status = status;
+    order.status = finalStatus;
     await order.save();
 
     // Trigger delivery notification if seller accepts the order
@@ -352,7 +355,7 @@ export const updateOrderStatus = asyncHandler(
         order.orderNumber,
         order._id.toString(),
         order.customer.toString(),
-        status,
+        finalStatus,
         order.total
       );
     } catch (pushErr) {

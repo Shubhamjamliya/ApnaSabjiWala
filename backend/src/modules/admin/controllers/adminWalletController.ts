@@ -18,7 +18,7 @@ export const getFinancialDashboard = asyncHandler(async (_req: Request, res: Res
     // Excluding Cancelled/Rejected/Returned for net GMV? User didn't specify, but usually GMV excludes cancelled.
     // User said "add 100rs... to total plateform earning" for a new order. So implies all new orders count.
     const totalGMVResult = await mongoose.model('Order').aggregate([
-        { $match: { status: { $ne: 'Cancelled' }, paymentStatus: 'Paid' } },
+        { $match: { status: { $nin: ["Cancelled", "Cancelled by Seller", "Rejected", "Returned"] } } },
         { $group: { _id: null, total: { $sum: '$total' } } }
     ]);
     const totalGMV = totalGMVResult.length > 0 ? totalGMVResult[0].total : 0;
@@ -42,7 +42,7 @@ export const getFinancialDashboard = asyncHandler(async (_req: Request, res: Res
 
     // C. Order Fees (Platform Fee + Shipping Charge)
     const orderFeesResult = await mongoose.model('Order').aggregate([
-        { $match: { status: { $ne: 'Cancelled' }, paymentStatus: 'Paid' } },
+        { $match: { status: { $nin: ["Cancelled", "Cancelled by Seller", "Rejected", "Returned"] } } },
         { $group: { _id: null, total: { $sum: { $add: ['$platformFee', '$shipping'] } } } }
     ]);
     const orderFees = orderFeesResult.length > 0 ? orderFeesResult[0].total : 0;
@@ -152,16 +152,38 @@ export const getAdminEarnings = asyncHandler(async (req: Request, res: Response)
  * Get All Wallet Transactions (Sellers & Delivery Boys)
  */
 export const getWalletTransactions = asyncHandler(async (req: Request, res: Response) => {
-    const { page = 1, limit = 20, type, userType, search: _search } = req.query;
+    const { page = 1, limit = 20, type, userType, userId, search, startDate, endDate } = req.query;
 
-    const query: any = {};
+    const query: any = { status: { $ne: 'Failed' } };
     if (type) query.type = type;
     if (userType) query.userType = userType;
+    if (userId && mongoose.Types.ObjectId.isValid(userId as string)) {
+        query.userId = userId;
+    }
+
+    // Date range filter
+    if (startDate || endDate) {
+        query.createdAt = {};
+        if (startDate) {
+            query.createdAt.$gte = new Date(startDate as string);
+        }
+        if (endDate) {
+            const end = new Date(endDate as string);
+            end.setHours(23, 59, 59, 999);
+            query.createdAt.$lte = end;
+        }
+    }
+
+    // Search filter
+    if (search) {
+        query.description = { $regex: search, $options: 'i' };
+    }
 
     // Search handling not fully implemented for cross-collection ref
 
     const skip = (Number(page) - 1) * Number(limit);
 
+    console.log("Wallet transactions query:", query);
     const transactions = await WalletTransaction.find(query)
         .populate({
             path: 'userId', // This will populate based on refPath 'userType'
@@ -173,6 +195,7 @@ export const getWalletTransactions = asyncHandler(async (req: Request, res: Resp
         .limit(Number(limit));
 
     const total = await WalletTransaction.countDocuments(query);
+    console.log(`Found ${transactions.length} transactions out of ${total} total.`);
 
     // Format transactions to ensure user name is accessible
     const formattedTransactions = transactions.map((t: any) => {
@@ -249,3 +272,156 @@ export const processWithdrawalWrapper = asyncHandler(async (req: Request, res: R
         });
     }
 });
+
+/**
+ * Add Fund Transfer to Seller
+ */
+export const addSellerFundTransfer = asyncHandler(async (req: Request, res: Response) => {
+    const { sellerId, amount, type, description } = req.body;
+
+    if (!sellerId || !amount || !type) {
+        return res.status(400).json({
+            success: false,
+            message: 'Seller ID, amount and transfer type are required'
+        });
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const seller = await mongoose.model('Seller').findById(sellerId).session(session);
+        if (!seller) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({
+                success: false,
+                message: 'Seller not found'
+            });
+        }
+
+        // 1. Update Seller Balance Logic
+        if (type === 'Credit') {
+            seller.balance += Number(amount);
+        } else if (type === 'Debit') {
+            // Check if sufficient balance
+            if (seller.balance < amount) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(400).json({
+                    success: false,
+                    message: 'Insufficient seller balance for debit'
+                });
+            }
+            seller.balance -= Number(amount);
+        }
+
+        // 2. Create Wallet Transaction
+        const transaction = await WalletTransaction.create([{
+            userId: sellerId,
+            userType: 'SELLER',
+            amount: Number(amount),
+            type: type, // 'Credit' or 'Debit'
+            description: description || `Admin Manual Transfer`,
+            status: 'Completed',
+            reference: `MANUAL-${Date.now()}`
+        }], { session });
+
+        await seller.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(201).json({
+            success: true,
+            message: 'Fund transfer successful',
+            data: transaction[0]
+        });
+    } catch (error: any) {
+        await session.abortTransaction();
+        session.endSession();
+        console.error('Error in fund transfer:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error processing fund transfer',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * Add Fund Transfer to Delivery Boy
+ */
+export const addDeliveryFundTransfer = asyncHandler(async (req: Request, res: Response) => {
+    const { deliveryBoyId, amount, type, description } = req.body;
+
+    if (!deliveryBoyId || !amount || !type) {
+        return res.status(400).json({
+            success: false,
+            message: 'Delivery boy ID, amount and transfer type are required'
+        });
+    }
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const deliveryBoy = await mongoose.model('Delivery').findById(deliveryBoyId).session(session);
+        if (!deliveryBoy) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({
+                success: false,
+                message: 'Delivery boy not found'
+            });
+        }
+
+        // 1. Update Delivery Boy Balance Logic
+        if (type === 'Credit') {
+            deliveryBoy.balance += Number(amount);
+        } else if (type === 'Debit') {
+            // Check if sufficient balance
+            if (deliveryBoy.balance < amount) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(400).json({
+                    success: false,
+                    message: 'Insufficient delivery boy balance for debit'
+                });
+            }
+            deliveryBoy.balance -= Number(amount);
+        }
+
+        // 2. Create Wallet Transaction
+        const transaction = await WalletTransaction.create([{
+            userId: deliveryBoyId,
+            userType: 'DELIVERY_BOY',
+            amount: Number(amount),
+            type: type, // 'Credit' or 'Debit'
+            description: description || `Admin Manual Transfer`,
+            status: 'Completed',
+            reference: `MANUAL-DB-${Date.now()}`
+        }], { session });
+
+        await deliveryBoy.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(201).json({
+            success: true,
+            message: 'Fund transfer successful',
+            data: transaction[0]
+        });
+    } catch (error: any) {
+        await session.abortTransaction();
+        session.endSession();
+        console.error('Error in fund transfer:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error processing fund transfer',
+            error: error.message
+        });
+    }
+});
+

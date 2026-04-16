@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getUsers, updateUserStatus, type User as UserType } from '../../../services/api/admin/adminMiscService';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -50,8 +50,8 @@ export default function AdminUsers() {
                     params.status = statusFilter;
                 }
 
-                if (searchTerm) {
-                    params.search = searchTerm;
+                if (searchTerm.trim()) {
+                    params.search = searchTerm.trim();
                 }
 
                 // Add sorting parameters

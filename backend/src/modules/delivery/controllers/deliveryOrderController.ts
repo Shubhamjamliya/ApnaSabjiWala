@@ -75,7 +75,9 @@ export const getAllOrdersHistory = asyncHandler(async (req: Request, res: Respon
         sellerNames: [...new Set(order.items.map((item: any) => item.seller?.storeName || "Unknown Seller"))].join(", "),
         paymentMethod: order.paymentMethod,
         createdAt: order.createdAt,
-        estimatedDeliveryTime: order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'
+        estimatedDeliveryTime: order.status === 'Delivered' && order.deliveredAt 
+            ? new Date(order.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+            : (order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A')
     }));
 
     res.status(200).json({
@@ -129,7 +131,9 @@ export const getTodayOrders = asyncHandler(async (req: Request, res: Response) =
         items: mapOrderItems(order.items), // Real items
         sellerNames: [...new Set(order.items.map((item: any) => item.seller?.storeName || "Unknown Seller"))].join(", "),
         totalAmount: order.total,
-        estimatedDeliveryTime: order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A',
+        estimatedDeliveryTime: order.status === 'Delivered' && order.deliveredAt 
+            ? new Date(order.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+            : (order.estimatedDeliveryDate ? new Date(order.estimatedDeliveryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'),
         paymentMethod: order.paymentMethod,
         createdAt: order.createdAt,
         distance: null

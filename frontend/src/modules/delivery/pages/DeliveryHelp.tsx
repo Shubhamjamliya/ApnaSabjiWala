@@ -34,6 +34,18 @@ export default function DeliveryHelp() {
     fetchHelp();
   }, []);
 
+  const handleContactAction = (option: any) => {
+    if (option.icon === 'phone') {
+      window.location.href = `tel:${option.value}`;
+    } else if (option.icon === 'email') {
+      window.location.href = `mailto:${option.value}`;
+    } else if (option.icon === 'chat') {
+      // Assuming it's a WhatsApp link or similar
+      const cleanNumber = option.value.replace(/\D/g, '');
+      window.open(`https://wa.me/${cleanNumber}`, '_blank');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-100 flex items-center justify-center pb-20">
@@ -45,7 +57,6 @@ export default function DeliveryHelp() {
 
   return (
     <div className="min-h-screen bg-neutral-100 pb-20">
-      <DeliveryHeader />
       <div className="px-4 py-4">
         <div className="flex items-center mb-4">
           <button
@@ -72,13 +83,17 @@ export default function DeliveryHelp() {
           </div>
           <div className="divide-y divide-neutral-200">
             {contacts.map((option, index) => (
-              <div key={index} className="p-4 flex items-center justify-between">
+              <button
+                key={index}
+                onClick={() => handleContactAction(option)}
+                className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 transition-colors text-left"
+              >
                 <div>
                   <p className="text-neutral-900 text-sm font-medium mb-1">{option.label}</p>
                   <p className="text-neutral-500 text-xs">{option.value}</p>
                 </div>
                 <div className="text-2xl">{getIcon(option.icon)}</div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -99,7 +114,9 @@ export default function DeliveryHelp() {
         </div>
 
         {/* Support Button */}
-        <button className="w-full mt-4 bg-orange-500 text-white rounded-xl py-3 font-semibold hover:bg-orange-600 transition-colors shadow-md active:scale-[0.98]">
+        <button 
+          onClick={() => handleContactAction(contacts.find(c => c.icon === 'phone') || contacts[0])}
+          className="w-full mt-4 bg-orange-500 text-white rounded-xl py-3 font-semibold hover:bg-orange-600 transition-colors shadow-md active:scale-[0.98]">
           Contact Support
         </button>
       </div>

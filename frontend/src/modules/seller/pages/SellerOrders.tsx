@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getOrders, Order, GetOrdersParams } from '../../../services/api/orderService';
 
@@ -87,12 +87,18 @@ export default function SellerOrders() {
     const csvContent = [
       headers.join(','),
       ...orders.map(order =>
-        [order.orderId, order.deliveryDate, order.orderDate, order.status, order.amount].join(',')
+        [
+            `"${order.orderId || ''}"`,
+            `"${order.deliveryDate || ''}"`,
+            `"${order.orderDate || ''}"`,
+            `"${order.status || ''}"`,
+            order.amount || 0
+        ].join(',')
       )
     ].join('\n');
 
-    // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Create blob and download with BOM for Excel compatibility
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);

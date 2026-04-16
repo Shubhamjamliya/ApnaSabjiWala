@@ -80,7 +80,7 @@ export default function SellerWallet() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
       </div>
     );
   }
@@ -98,13 +98,13 @@ export default function SellerWallet() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="m-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg"
+        className="m-4 bg-gradient-to-r from-teal-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg"
       >
         <p className="text-sm opacity-90 mb-1">Wallet Balance</p>
         <h1 className="text-4xl font-bold mb-4">₹{balance.toFixed(2)}</h1>
         <button
           onClick={() => setShowWithdrawModal(true)}
-          className="bg-white text-blue-600 px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-50 transition-all shadow-md"
+          className="bg-white text-teal-600 px-6 py-2.5 rounded-lg font-semibold hover:bg-teal-50 transition-all shadow-md"
         >
           Request Withdrawal
         </button>
@@ -117,7 +117,7 @@ export default function SellerWallet() {
           <button
             onClick={() => setActiveTab('transactions')}
             className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === 'transactions'
-              ? 'text-blue-600 border-b-2 border-blue-600'
+              ? 'text-teal-600 border-b-2 border-teal-600'
               : 'text-gray-600'
               }`}
           >
@@ -126,7 +126,7 @@ export default function SellerWallet() {
           <button
             onClick={() => setActiveTab('withdrawals')}
             className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === 'withdrawals'
-              ? 'text-blue-600 border-b-2 border-blue-600'
+              ? 'text-teal-600 border-b-2 border-teal-600'
               : 'text-gray-600'
               }`}
           >
@@ -135,7 +135,7 @@ export default function SellerWallet() {
           <button
             onClick={() => setActiveTab('commissions')}
             className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === 'commissions'
-              ? 'text-blue-600 border-b-2 border-blue-600'
+              ? 'text-teal-600 border-b-2 border-teal-600'
               : 'text-gray-600'
               }`}
           >
@@ -322,7 +322,7 @@ export default function SellerWallet() {
                 </button>
                 <button
                   onClick={handleWithdrawRequest}
-                  className="flex-1 bg-blue-600 text-white rounded-lg py-2.5 font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+                  className="flex-1 bg-teal-600 text-white rounded-lg py-2.5 font-semibold hover:bg-teal-700 transition disabled:opacity-50"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Request'}

@@ -1,9 +1,10 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
-  getSellerTransactions,
+  getWalletTransactions,
   type SellerTransaction,
 } from "../../../services/api/admin/adminWalletService";
 import { getAllSellers as getSellers } from "../../../services/api/sellerService";
+import api from "../../../services/api/config";
 import { useAuth } from "../../../context/AuthContext";
 
 interface Transaction {
@@ -43,6 +44,15 @@ export default function AdminSellerTransaction() {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState(1);
+  
+  // Fund Transfer Modal State
+  const [isAddFundModalOpen, setIsAddFundModalOpen] = useState(false);
+  const [transferType, setTransferType] = useState<"Credit" | "Debit">("Credit");
+  const [transferAmount, setTransferAmount] = useState("");
+  const [transferSellerId, setTransferSellerId] = useState("");
+  const [transferRemark, setTransferRemark] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch sellers on component mount
   useEffect(() => {
@@ -84,78 +94,48 @@ export default function AdminSellerTransaction() {
         setLoading(true);
         setError(null);
 
-        if (selectedSeller === "all") {
-          // Fetch transactions for all sellers
-          const allTransactions: Transaction[] = [];
-
-          // For now, we'll fetch from the first few sellers
-          // In a real implementation, you might want a separate endpoint for all transactions
-          const sellersToFetch = sellers.slice(0, 10); // Limit to first 10 sellers
-
-          for (const seller of sellersToFetch) {
-            try {
-              const response = await getSellerTransactions(seller._id, {
-                page: 1,
-                limit: 50,
-              });
-
-              if (response.success && response.data) {
-                const sellerTransactions: Transaction[] = response.data.map(
-                  (tx: SellerTransaction) => ({
-                    id: tx.id,
-                    sellerName: seller.sellerName,
-                    sellerId: seller._id,
-                    amount: tx.amount,
-                    flag: tx.transactionType,
-                    date: tx.date,
-                    type: tx.type,
-                    status: tx.status,
-                    remark: tx.description,
-                  })
-                );
-                allTransactions.push(...sellerTransactions);
-              }
-            } catch (err) {
-              console.error(
-                `Error fetching transactions for seller ${seller._id}:`,
-                err
-              );
-            }
-          }
-
-          // Sort by date (newest first)
-          allTransactions.sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-          );
-          setTransactions(allTransactions);
-        } else {
-          // Fetch transactions for specific seller
-          const response = await getSellerTransactions(selectedSeller, {
-            page: currentPage,
-            limit: entriesPerPage,
-          });
-
-          if (response.success && response.data) {
-            const seller = sellers.find((s) => s._id === selectedSeller);
-            const sellerTransactions: Transaction[] = response.data.map(
-              (tx: SellerTransaction) => ({
-                id: tx.id,
-                sellerName: seller?.sellerName || "Unknown Seller",
-                sellerId: selectedSeller,
-                amount: tx.amount,
-                flag: tx.transactionType,
-                date: tx.date,
-                type: tx.type,
-                status: tx.status,
-                remark: tx.description,
-              })
-            );
-            setTransactions(sellerTransactions);
-          } else {
-            setTransactions([]);
-          }
+        const params: any = {
+          page: currentPage,
+          limit: entriesPerPage,
+          userType: "SELLER"
+        };
+        
+        if (selectedSeller !== "all") {
+          params.userId = selectedSeller;
         }
-      } catch (err) {
+        
+        if (selectedMethod !== "all") {
+          params.type = selectedMethod;
+        }
+
+        if (fromDate) {
+          params.startDate = fromDate;
+        }
+
+        if (toDate) {
+          params.endDate = toDate;
+        }
+        
+        console.log("Fetching transactions with params:", params);
+        const response = await getWalletTransactions(params);
+        
+        if (response.success && response.data) {
+          const formattedTx = response.data.map((tx: any) => ({
+            id: tx._id,
+            sellerName: tx.userName || "Unknown",
+            sellerId: tx.userId,
+            amount: tx.amount,
+            flag: tx.type.toLowerCase(),
+            date: tx.createdAt,
+            type: tx.type,
+            status: tx.status,
+            remark: tx.description,
+            orderId: tx.relatedOrder?.orderNumber
+          }));
+          setTransactions(formattedTx);
+          setTotalPages(response.pagination?.pages || 1);
+        }
+      } catch (err: any) {
         console.error("Error fetching transactions:", err);
         setError("Failed to load transactions. Please try again.");
         setTransactions([]);
@@ -164,11 +144,14 @@ export default function AdminSellerTransaction() {
       }
     };
 
-    if (selectedSeller !== "all" || sellers.length > 0) {
+    if (isAuthenticated && token && (selectedSeller !== "all" || sellers.length > 0)) {
       fetchTransactions();
     }
   }, [
     selectedSeller,
+    selectedMethod,
+    fromDate,
+    toDate,
     currentPage,
     entriesPerPage,
     isAuthenticated,
@@ -233,7 +216,6 @@ export default function AdminSellerTransaction() {
     });
   }
 
-  const totalPages = Math.ceil(filteredTransactions.length / entriesPerPage);
   const startIndex = (currentPage - 1) * entriesPerPage;
   const endIndex = startIndex + entriesPerPage;
   const displayedTransactions = filteredTransactions.slice(
@@ -242,7 +224,69 @@ export default function AdminSellerTransaction() {
   );
 
   const handleExport = () => {
-    alert("Export functionality will be implemented here");
+    if (transactions.length === 0) {
+      alert("No data available to export");
+      return;
+    }
+
+    const headers = ["ID", "Seller Name", "Amount", "Type", "Status", "Date", "Remark"];
+    const csvData = transactions.map(tx => [
+      tx.id.slice(-6),
+      tx.sellerName,
+      tx.amount,
+      tx.type,
+      tx.status,
+      new Date(tx.date).toLocaleDateString(),
+      tx.remark || ""
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map(row => row.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `seller_transactions_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleCreateFundTransfer = async () => {
+    if (!transferSellerId || !transferAmount || !transferRemark) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await api.post("/admin/wallet/fund-transfer", {
+        sellerId: transferSellerId,
+        amount: Number(transferAmount),
+        type: transferType,
+        description: transferRemark
+      });
+
+      if (response.data && response.data.success) {
+        alert("Fund transfer successful");
+        setIsAddFundModalOpen(false);
+        setTransferAmount("");
+        setTransferRemark("");
+        // Reload transactions
+        setSelectedSeller(selectedSeller); 
+      } else {
+        alert(response.data?.message || "Failed to transfer funds");
+      }
+    } catch (err: any) {
+      console.error("Error transferring funds:", err);
+      alert(err.response?.data?.message || "Failed to transfer funds");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClearDate = () => {
@@ -257,9 +301,11 @@ export default function AdminSellerTransaction() {
       {/* Header */}
       <div className="bg-teal-600 px-4 sm:px-6 py-4 rounded-t-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
         <h1 className="text-white text-xl sm:text-2xl font-semibold">
-          View Seller List
+          Seller Transactions
         </h1>
-        <button className="bg-white text-teal-600 border-2 border-teal-600 hover:bg-teal-50 px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors">
+        <button 
+          onClick={() => setIsAddFundModalOpen(true)}
+          className="bg-white text-teal-600 border-2 border-teal-600 hover:bg-teal-50 px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors">
           <svg
             width="16"
             height="16"
@@ -830,6 +876,106 @@ export default function AdminSellerTransaction() {
           Apna Sabji Wala - 10 Minute App
         </a>
       </div>
+
+      {/* Add Fund Transfer Modal */}
+      {isAddFundModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 opacity-100">
+            <div className="bg-teal-600 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-white font-semibold text-lg">Add Fund Transfer</h2>
+              <button 
+                onClick={() => setIsAddFundModalOpen(false)}
+                className="text-white/80 hover:text-white transition-colors"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Select Seller</label>
+                <select 
+                  className="w-full border border-neutral-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none"
+                  value={transferSellerId}
+                  onChange={(e) => setTransferSellerId(e.target.value)}
+                >
+                  <option value="">Select a seller</option>
+                  {sellers.map(seller => (
+                    <option key={seller._id} value={seller._id}>{seller.storeName || seller.sellerName}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Type</label>
+                  <div className="flex bg-neutral-100 p-1 rounded-lg">
+                    <button 
+                      className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all ${transferType === "Credit" ? "bg-white text-teal-600 shadow-sm" : "text-neutral-500 hover:text-neutral-700"}`}
+                      onClick={() => setTransferType("Credit")}
+                    >
+                      Credit
+                    </button>
+                    <button 
+                      className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all ${transferType === "Debit" ? "bg-white text-rose-600 shadow-sm" : "text-neutral-500 hover:text-neutral-700"}`}
+                      onClick={() => setTransferType("Debit")}
+                    >
+                      Debit
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Amount</label>
+                  <input 
+                    type="number" 
+                    className="w-full border border-neutral-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none"
+                    placeholder="0.00"
+                    value={transferAmount}
+                    onChange={(e) => setTransferAmount(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Remark/Description</label>
+                <textarea 
+                  className="w-full border border-neutral-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 outline-none h-24 resize-none"
+                  placeholder="Enter reason for transfer..."
+                  value={transferRemark}
+                  onChange={(e) => setTransferRemark(e.target.value)}
+                />
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button 
+                  onClick={() => setIsAddFundModalOpen(false)}
+                  className="flex-1 px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg font-medium hover:bg-neutral-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleCreateFundTransfer}
+                  disabled={isSubmitting}
+                  className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </>
+                  ) : "Transfer Funds"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -38,14 +38,42 @@ export const getAllCustomers = asyncHandler(
       Customer.find(query)
         .sort(sort)
         .skip(skip)
-        .limit(parseInt(limit as string)),
+        .limit(parseInt(limit as string))
+        .lean(),
       Customer.countDocuments(query),
     ]);
+
+    // Dynamically calculate total orders and total spent for each customer
+    const customersWithStats = await Promise.all(
+      customers.map(async (customer: any) => {
+        const stats = await Order.aggregate([
+          { 
+            $match: { 
+              customer: customer._id,
+              status: { $nin: ["Cancelled", "Cancelled by Seller", "Rejected", "Returned"] }
+            } 
+          },
+          {
+            $group: {
+              _id: null,
+              totalOrders: { $sum: 1 },
+              totalSpent: { $sum: "$total" },
+            },
+          },
+        ]);
+
+        return {
+          ...customer,
+          totalOrders: stats[0]?.totalOrders || 0,
+          totalSpent: stats[0]?.totalSpent || 0,
+        };
+      })
+    );
 
     return res.status(200).json({
       success: true,
       message: "Customers fetched successfully",
-      data: customers,
+      data: customersWithStats,
       pagination: {
         page: parseInt(page as string),
         limit: parseInt(limit as string),

@@ -665,6 +665,7 @@ export default function AdminPromoStrip() {
                     <input
                       type="date"
                       value={startDate}
+                      min={new Date().toISOString().split("T")[0]}
                       onChange={(e) => setStartDate(e.target.value)}
                       className="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg font-semibold text-sm"
                       required
@@ -675,6 +676,7 @@ export default function AdminPromoStrip() {
                     <input
                       type="date"
                       value={endDate}
+                      min={startDate || new Date().toISOString().split("T")[0]}
                       onChange={(e) => setEndDate(e.target.value)}
                       className="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg font-semibold text-sm"
                       required

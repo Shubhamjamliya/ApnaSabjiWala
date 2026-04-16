@@ -1,4 +1,5 @@
-﻿import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { getAllSellers, Seller as SellerType } from "../../../services/api/sellerService";
 import { Link } from "react-router-dom";
 import {
   getAllOrders,
@@ -20,8 +21,10 @@ type SortDirection = "asc" | "desc";
 export default function AdminAllOrders() {
   const { isAuthenticated, token } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [dateRange, setDateRange] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [seller, setSeller] = useState("All Sellers");
+  const [sellers, setSellers] = useState<SellerType[]>([]);
   const [status, setStatus] = useState("All Status");
   const [entriesPerPage, setEntriesPerPage] = useState("10");
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,7 +34,20 @@ export default function AdminAllOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch orders on component mount
+  // Fetch sellers on mount
+  useEffect(() => {
+    const fetchSellers = async () => {
+      try {
+        const res = await getAllSellers({ status: "Approved" });
+        if (res.success) setSellers(res.data);
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    fetchSellers();
+  }, []);
+
+  // Fetch orders on component mount and when filters change
   useEffect(() => {
     if (!isAuthenticated || !token) {
       setLoading(false);
@@ -52,25 +68,21 @@ export default function AdminAllOrders() {
           params.status = status;
         }
 
-        if (searchQuery) {
-          params.search = searchQuery;
+        if (seller && seller !== "All Sellers") {
+          params.seller = seller;
         }
 
-        // Parse date range if provided
-        if (dateRange && dateRange.includes(" - ")) {
-          const [dateFrom, dateTo] = dateRange.split(" - ").map((d) => {
-            // Convert MM/DD/YYYY to YYYY-MM-DD
-            const parts = d.trim().split("/");
-            if (parts.length === 3) {
-              return `${parts[2]}-${parts[0].padStart(
-                2,
-                "0"
-              )}-${parts[1].padStart(2, "0")}`;
-            }
-            return d.trim();
-          });
+        if (searchQuery.trim()) {
+          params.search = searchQuery.trim();
+        }
+
+        if (dateFrom) {
           params.dateFrom = dateFrom;
-          params.dateTo = dateTo;
+        }
+
+        if (dateTo) {
+          // Include full selected day in filter
+          params.dateTo = `${dateTo}T23:59:59.999`;
         }
 
         const response = await getAllOrders(params);
@@ -96,11 +108,14 @@ export default function AdminAllOrders() {
     entriesPerPage,
     status,
     searchQuery,
-    dateRange,
+    dateFrom,
+    dateTo,
+    seller,
   ]);
 
   const handleClearDate = () => {
-    setDateRange("");
+    setDateFrom("");
+    setDateTo("");
     setCurrentPage(1);
   };
 
@@ -118,7 +133,6 @@ export default function AdminAllOrders() {
       "O. Id",
       "Customer Details",
       "Address",
-      "D. Date",
       "O. Date",
       "Status",
       "Delivery Boy Assign Status",
@@ -131,7 +145,6 @@ export default function AdminAllOrders() {
           order.orderNumber || "",
           order.customerName || "",
           order.deliveryAddress?.address || "",
-          order.estimatedDeliveryDate || "",
           order.orderDate || "",
           order.status || "",
           order.deliveryBoyStatus || "Not Assigned",
@@ -176,10 +189,7 @@ export default function AdminAllOrders() {
             aValue = a.deliveryAddress?.address || "";
             bValue = b.deliveryAddress?.address || "";
             break;
-          case "deliveryDate":
-            aValue = a.estimatedDeliveryDate || "";
-            bValue = b.estimatedDeliveryDate || "";
-            break;
+
           case "orderDate":
             aValue = a.orderDate || "";
             bValue = b.orderDate || "";
@@ -320,16 +330,28 @@ export default function AdminAllOrders() {
                     />
                   </svg>
                   <input
-                    type="text"
-                    value={dateRange}
+                    type="date"
+                    value={dateFrom}
                     onChange={(e) => {
-                      setDateRange(e.target.value);
+                      setDateFrom(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="flex-1 sm:w-48 text-xs sm:text-sm text-neutral-600 bg-transparent focus:outline-none placeholder:text-neutral-400"
-                    placeholder="MM/DD/YYYY - MM/DD/YYYY"
+                    className="flex-1 sm:w-40 text-xs sm:text-sm text-neutral-600 bg-transparent focus:outline-none"
+                    aria-label="From order date"
                   />
-                  {dateRange && (
+                  <span className="text-neutral-400 text-xs sm:text-sm">to</span>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    min={dateFrom || undefined}
+                    onChange={(e) => {
+                      setDateTo(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="flex-1 sm:w-40 text-xs sm:text-sm text-neutral-600 bg-transparent focus:outline-none"
+                    aria-label="To order date"
+                  />
+                  {(dateFrom || dateTo) && (
                     <button
                       onClick={handleClearDate}
                       className="ml-2 px-2 py-1 text-xs font-medium text-neutral-700 bg-neutral-200 hover:bg-neutral-300 rounded transition-colors flex-shrink-0">
@@ -351,10 +373,12 @@ export default function AdminAllOrders() {
                     setCurrentPage(1);
                   }}
                   className="w-full sm:w-auto px-3 py-2 border border-neutral-300 rounded text-xs sm:text-sm text-neutral-900 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500">
-                  <option>All Sellers</option>
-                  <option>Seller 1</option>
-                  <option>Seller 2</option>
-                  <option>Seller 3</option>
+                  <option value="All Sellers">All Sellers</option>
+                  {sellers.map((s) => (
+                    <option key={s._id} value={s._id}>
+                      {s.sellerName} {s.storeName ? `(${s.storeName})` : ""}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -448,7 +472,7 @@ export default function AdminAllOrders() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => {
-                    setSearchQuery(e.target.value);
+                    setSearchQuery(e.target.value.trim());
                     setCurrentPage(1);
                   }}
                   className="flex-1 w-full sm:w-auto px-3 py-2 border border-neutral-300 rounded text-xs sm:text-sm text-neutral-900 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
@@ -535,39 +559,6 @@ export default function AdminAllOrders() {
                     <div className="flex items-center gap-1">
                       Address
                       {sortField === "address" && (
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg">
-                          {sortDirection === "asc" ? (
-                            <path
-                              d="M7 14L12 9L17 14"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          ) : (
-                            <path
-                              d="M17 10L12 15L7 10"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          )}
-                        </svg>
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    onClick={() => handleSort("deliveryDate")}
-                    className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100">
-                    <div className="flex items-center gap-1">
-                      D. Date
-                      {sortField === "deliveryDate" && (
                         <svg
                           width="12"
                           height="12"
@@ -772,13 +763,7 @@ export default function AdminAllOrders() {
                       <td className="px-4 sm:px-6 py-3 text-sm text-neutral-600">
                         {order.deliveryAddress?.address || "-"}
                       </td>
-                      <td className="px-4 sm:px-6 py-3 text-sm text-neutral-600">
-                        {order.estimatedDeliveryDate
-                          ? new Date(
-                            order.estimatedDeliveryDate
-                          ).toLocaleDateString()
-                          : "-"}
-                      </td>
+
                       <td className="px-4 sm:px-6 py-3 text-sm text-neutral-600">
                         {order.orderDate
                           ? new Date(order.orderDate).toLocaleDateString()

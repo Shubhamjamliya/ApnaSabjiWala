@@ -358,7 +358,7 @@ export default function DeliveryWallet() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl p-6 max-w-md w-full">
+            className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4">Request Withdrawal</h2>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">

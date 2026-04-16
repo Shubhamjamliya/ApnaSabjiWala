@@ -11,6 +11,10 @@ const getStatusColor = (status: string) => {
       return 'bg-yellow-100 text-yellow-700';
     case 'Received':
       return 'bg-neutral-100 text-neutral-700';
+    case 'Cancelled':
+    case 'Cancelled by Seller':
+    case 'Rejected':
+      return 'bg-red-100 text-red-700';
     default:
       return 'bg-neutral-100 text-neutral-700';
   }

@@ -60,9 +60,6 @@ export default function DeliveryPendingOrders() {
 
   return (
     <div className="min-h-screen bg-neutral-100 pb-20">
-      {/* Header */}
-      <DeliveryHeader />
-
       <div className="px-4 py-4">
         <div className="flex items-center mb-4">
           <button
@@ -115,9 +112,9 @@ export default function DeliveryPendingOrders() {
                     </p>
                     <p className="text-neutral-900 font-bold">₹ {order.totalAmount}</p>
                   </div>
-                  {order.estimatedDeliveryTime && (
+                  {order.estimatedDeliveryTime && order.estimatedDeliveryTime !== 'N/A' && (
                     <p className="text-neutral-500 text-xs">
-                      ETA: {order.estimatedDeliveryTime} {order.distance && `• ${order.distance}`}
+                      <span className="font-semibold text-neutral-600">ETA:</span> {order.estimatedDeliveryTime} {order.distance && `• ${order.distance}`}
                     </p>
                   )}
                   <p className="text-neutral-400 text-xs mt-2">

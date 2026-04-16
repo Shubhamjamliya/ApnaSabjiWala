@@ -39,6 +39,7 @@ const Category = lazy(() => import("./modules/user/Category"));
 const Invoice = lazy(() => import("./modules/user/Invoice"));
 const Login = lazy(() => import("./modules/user/Login"));
 const TomorrowVegBooking = lazy(() => import("./modules/user/TomorrowVegBooking"));
+const Notifications = lazy(() => import("./modules/user/Notifications"));
 
 const AboutUs = lazy(() => import("./modules/user/AboutUs"));
 const FAQ = lazy(() => import("./modules/user/FAQ"));
@@ -73,6 +74,7 @@ const DeliveryAbout = lazy(() => import("./modules/delivery/pages/DeliveryAbout"
 const DeliverySellersInRange = lazy(() => import("./modules/delivery/pages/DeliverySellersInRange"));
 const DeliveryLogin = lazy(() => import("./modules/delivery/pages/DeliveryLogin"));
 const DeliverySignUp = lazy(() => import("./modules/delivery/pages/DeliverySignUp"));
+const DeliveryPolicy = lazy(() => import("./modules/delivery/pages/DeliveryPolicy"));
 
 // Lazy load seller routes
 const SellerLayout = lazy(() => import("./modules/seller/components/SellerLayout"));
@@ -266,6 +268,8 @@ function App() {
                                       <Route path="settings" element={<DeliverySettings />} />
                                       <Route path="help" element={<DeliveryHelp />} />
                                       <Route path="about" element={<DeliveryAbout />} />
+                                      <Route path="privacy-policy" element={<DeliveryPolicy />} />
+                                      <Route path="terms" element={<DeliveryPolicy />} />
                                       <Route path="sellers-in-range" element={<DeliverySellersInRange />} />
                                     </Routes>
                                   </DeliveryLayout>
@@ -348,7 +352,7 @@ function App() {
                                         <Route path="customer-app-policy" element={<AdminCustomerAppPolicy />} />
                                         <Route path="delivery-app-policy" element={<AdminDeliveryAppPolicy />} />
                                         <Route path="users" element={<AdminUsers />} />
-                                        <Route path="home-section" element={<AdminHomeSection readOnly={true} />} />
+                                        <Route path="home-section" element={<AdminHomeSection />} />
                                         <Route path="bestseller-cards" element={<AdminBestsellerCards />} />
                                         <Route path="promo-strip" element={<AdminPromoStrip />} />
                                         <Route path="lowest-prices" element={<AdminLowestPrices />} />
@@ -413,6 +417,7 @@ function App() {
                                     <Route path="/store/toy" element={<ToyStore />} />
                                     <Route path="/store/hobby" element={<HobbyStore />} />
                                     <Route path="/tomorrow-veg-booking" element={<TomorrowVegBooking />} />
+                                    <Route path="/notifications" element={<Notifications />} />
                                     <Route path="/rewards" element={<UserRewards />} />
                                   </Routes>
                                 </Suspense>

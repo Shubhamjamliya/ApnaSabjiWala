@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     getDeliveryBoys,
     updateDeliveryBoyStatus,
@@ -39,7 +39,7 @@ export default function AdminManageDeliveryBoy() {
                 const params: any = {
                     page: currentPage,
                     limit: rowsPerPage,
-                    search: searchTerm || undefined,
+                    search: searchTerm.trim() || undefined,
                     sortBy: sortColumn || undefined,
                     sortOrder: sortDirection,
                 };
@@ -186,15 +186,13 @@ export default function AdminManageDeliveryBoy() {
     };
 
     const handleExport = () => {
-        const headers = ['Id', 'Name', 'Mobile', 'Address', 'City', 'Commission', 'Balance', 'Cash Collected', 'Status', 'Available'];
+        const headers = ['Id', 'Name', 'Mobile', 'Commission', 'Balance', 'Cash Collected', 'Status', 'Available'];
         const csvContent = [
             headers.join(','),
             ...deliveryBoys.map(deliveryBoy => [
                 deliveryBoy._id.slice(-6),
                 `"${deliveryBoy.name}"`,
                 deliveryBoy.mobile,
-                `"${deliveryBoy.address}"`,
-                `"${deliveryBoy.city}"`,
                 deliveryBoy.commissionType === 'Percentage'
                     ? `"Commission ${deliveryBoy.commission}%"`
                     : 'Fixed',
@@ -312,7 +310,7 @@ export default function AdminManageDeliveryBoy() {
                                         setSearchTerm(e.target.value);
                                         setCurrentPage(1);
                                     }}
-                                    placeholder="Search by name, mobile, address..."
+                                    placeholder="Search by name, mobile..."
                                 />
                             </div>
                         </div>
@@ -379,17 +377,6 @@ export default function AdminManageDeliveryBoy() {
                                         </div>
                                     </th>
                                     <th className="p-4">
-                                        Address
-                                    </th>
-                                    <th
-                                        className="p-4 cursor-pointer hover:bg-neutral-100 transition-colors"
-                                        onClick={() => handleSort('city')}
-                                    >
-                                        <div className="flex items-center">
-                                            City <SortIcon column="city" />
-                                        </div>
-                                    </th>
-                                    <th className="p-4">
                                         Commission
                                     </th>
                                     <th
@@ -431,7 +418,7 @@ export default function AdminManageDeliveryBoy() {
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={12} className="p-8 text-center">
+                                        <td colSpan={10} className="p-8 text-center">
                                             <div className="flex items-center justify-center">
                                                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-teal-600 mr-2"></div>
                                                 Loading delivery boys...
@@ -440,13 +427,13 @@ export default function AdminManageDeliveryBoy() {
                                     </tr>
                                 ) : error ? (
                                     <tr>
-                                        <td colSpan={12} className="p-8 text-center text-red-600">
+                                        <td colSpan={10} className="p-8 text-center text-red-600">
                                             {error}
                                         </td>
                                     </tr>
                                 ) : displayedDeliveryBoys.length === 0 ? (
                                     <tr>
-                                        <td colSpan={12} className="p-8 text-center text-neutral-400">
+                                        <td colSpan={10} className="p-8 text-center text-neutral-400">
                                             No delivery boys found.
                                         </td>
                                     </tr>
@@ -456,8 +443,6 @@ export default function AdminManageDeliveryBoy() {
                                             <td className="p-4 align-middle">{deliveryBoy._id.slice(-6)}</td>
                                             <td className="p-4 align-middle">{deliveryBoy.name}</td>
                                             <td className="p-4 align-middle">{deliveryBoy.mobile}</td>
-                                            <td className="p-4 align-middle">{deliveryBoy.address}</td>
-                                            <td className="p-4 align-middle">{deliveryBoy.city}</td>
                                             <td className="p-4 align-middle">
                                                 {deliveryBoy.commissionType === 'Percentage' ? (
                                                     <div className="text-xs">

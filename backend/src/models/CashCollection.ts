@@ -21,7 +21,7 @@ const cashCollectionSchema = new Schema<ICashCollection>(
         order: {
             type: Schema.Types.ObjectId,
             ref: "Order",
-            required: [true, "Order is required"],
+            required: false,
         },
         amount: {
             type: Number,

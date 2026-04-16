@@ -95,9 +95,7 @@ export default function DeliveryOrderDetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [sellerLocations, setSellerLocations] = useState<any[]>([]);
-    const [showOtpInput, setShowOtpInput] = useState(false);
     const [otpValue, setOtpValue] = useState('');
-    const [otpSending, setOtpSending] = useState(false);
     const [otpVerifying, setOtpVerifying] = useState(false);
     const otpInputRef = useRef<HTMLInputElement | null>(null);
     const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -158,31 +156,13 @@ export default function DeliveryOrderDetail() {
     }, []);
 
 
-    const handleSendOtp = async () => {
-        if (!id) return;
-        if (!SHOW_DEV_MODE && !getOtpEnabled) {
-            alert('You must be near the customer to request OTP.');
-            return;
-        }
-        try {
-            setOtpSending(true);
-            await sendDeliveryOtp(id);
-            setShowOtpInput(true);
-            alert('OTP sent to customer successfully');
-        } catch (err: any) {
-            alert(err.message || 'Failed to send OTP');
-        } finally {
-            setOtpSending(false);
-        }
-    };
-
     useEffect(() => {
-        if (showOtpInput) {
+        if (order?.status === 'Out for Delivery') {
             window.setTimeout(() => {
                 otpInputRef.current?.focus();
-            }, 0);
+            }, 500);
         }
-    }, [showOtpInput]);
+    }, [order?.status]);
 
     const handleVerifyOtp = async () => {
         if (!id || !otpValue) {
@@ -194,7 +174,6 @@ export default function DeliveryOrderDetail() {
             const result = await verifyDeliveryOtp(id, otpValue);
             alert(result.message || 'OTP verified successfully. Order marked as delivered.');
             await fetchOrder(); // Refresh order data
-            setShowOtpInput(false);
             setOtpValue('');
         } catch (err: any) {
             alert(err.message || 'Failed to verify OTP');
@@ -928,65 +907,33 @@ export default function DeliveryOrderDetail() {
                             type="text"
                             value={otpValue}
                             onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                            onClick={() => {
-                                if (showOtpInput) otpInputRef.current?.focus();
-                            }}
                             placeholder="Enter 4-digit OTP"
-                            disabled={!showOtpInput || otpSending || otpVerifying}
+                            disabled={otpVerifying || (!SHOW_DEV_MODE && !getOtpEnabled)}
                             inputMode="numeric"
                             autoComplete="one-time-code"
                             aria-label="Enter customer delivery OTP"
-                            className={`w-full px-4 py-3 border rounded-xl text-lg font-semibold text-center mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 ${showOtpInput ? 'border-neutral-300 bg-white' : 'border-neutral-200 bg-neutral-100 text-neutral-400'
+                            className={`w-full px-4 py-3 border rounded-xl text-lg font-semibold text-center mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 ${(SHOW_DEV_MODE || getOtpEnabled) ? 'border-neutral-300 bg-white' : 'border-neutral-200 bg-neutral-100 text-neutral-400'
                                 }`}
                             maxLength={4}
                         />
 
                         <div className="flex gap-3">
-                            {!showOtpInput ? (
-                                <button
-                                    onClick={handleSendOtp}
-                                    disabled={otpSending || (!SHOW_DEV_MODE && !getOtpEnabled)}
-                                    className={`flex-1 py-3 rounded-xl font-semibold transition-all ${!otpSending
-                                            ? (!SHOW_DEV_MODE && !getOtpEnabled)
-                                                ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
-                                                : 'bg-green-600 text-white hover:bg-green-700 active:scale-[0.98]'
-                                            : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
-                                        }`}
-                                >
-                                    {otpSending
-                                        ? 'Sending...'
-                                        : SHOW_DEV_MODE
-                                            ? 'Get OTP (Dev Mode: Range Free)'
-                                            : 'Get OTP'}
-                                </button>
-                            ) : (
-                                <>
-                                    <button
-                                        onClick={() => {
-                                            setShowOtpInput(false);
-                                            setOtpValue('');
-                                        }}
-                                        className="flex-1 py-3 rounded-xl bg-neutral-200 text-neutral-700 font-semibold hover:bg-neutral-300 transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleVerifyOtp}
-                                        className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
-                                        disabled={otpVerifying || otpValue.length !== 4}
-                                    >
-                                        {otpVerifying ? 'Verifying...' : 'Verify OTP'}
-                                    </button>
-                                </>
-                            )}
+                            <button
+                                onClick={handleVerifyOtp}
+                                className={`flex-1 py-3 rounded-xl font-semibold transition-all ${!otpVerifying && otpValue.length === 4 && (SHOW_DEV_MODE || getOtpEnabled)
+                                        ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]'
+                                        : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                                    }`}
+                                disabled={otpVerifying || otpValue.length !== 4 || (!SHOW_DEV_MODE && !getOtpEnabled)}
+                            >
+                                {otpVerifying ? 'Verifying...' : 'Verify OTP'}
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Floating Glassmorphic Action Button Dock - Order Taken button or status update */}
-            {/* Hide this button when order is "Out for Delivery" because OTP section is shown instead */}
-            {nextStatus && order.status !== 'Picked up' && order.status !== 'Out for Delivery' && !showOtpInput && (
+            {nextStatus && order.status !== 'Picked up' && order.status !== 'Out for Delivery' && (
                 <div className="fixed bottom-24 left-6 right-6 z-30">
                     <button
                         onClick={() => handleStatusChange(nextStatus)}
