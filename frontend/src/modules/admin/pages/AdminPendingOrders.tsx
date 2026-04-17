@@ -554,26 +554,142 @@ export default function AdminPendingOrders() {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                             />
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    O. Id
+                          )}
+                        </svg>
+                      )}
+                    </div>
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    Customer
+                  <th
+                    onClick={() => handleSort("orderDate")}
+                    className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100">
+                    <div className="flex items-center gap-1">
+                      O. Date
+                      {sortField === "orderDate" && (
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg">
+                          {sortDirection === "asc" ? (
+                            <path
+                              d="M7 14L12 9L17 14"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          ) : (
+                            <path
+                              d="M17 10L12 15L7 10"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          )}
+                        </svg>
+                      )}
+                    </div>
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    Address
+                  <th
+                    onClick={() => handleSort("status")}
+                    className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100">
+                    <div className="flex items-center gap-1">
+                      Status
+                      {sortField === "status" && (
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg">
+                          {sortDirection === "asc" ? (
+                            <path
+                              d="M7 14L12 9L17 14"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          ) : (
+                            <path
+                              d="M17 10L12 15L7 10"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          )}
+                        </svg>
+                      )}
+                    </div>
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    O. Date
+                  <th
+                    onClick={() => handleSort("deliveryBoyStatus")}
+                    className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100">
+                    <div className="flex items-center gap-1">
+                      Delivery Boy Status
+                      {sortField === "deliveryBoyStatus" && (
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg">
+                          {sortDirection === "asc" ? (
+                            <path
+                              d="M7 14L12 9L17 14"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          ) : (
+                            <path
+                              d="M17 10L12 15L7 10"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          )}
+                        </svg>
+                      )}
+                    </div>
                   </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    Delivery Boy Status
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    Amount
+                  <th
+                    onClick={() => handleSort("amount")}
+                    className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100">
+                    <div className="flex items-center gap-1">
+                      Amount
+                      {sortField === "amount" && (
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg">
+                          {sortDirection === "asc" ? (
+                            <path
+                              d="M7 14L12 9L17 14"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          ) : (
+                            <path
+                              d="M17 10L12 15L7 10"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          )}
+                        </svg>
+                      )}
+                    </div>
                   </th>
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                     Action

@@ -8,13 +8,14 @@ export default function DeliveryBottomNav() {
   const [hasUnread, setHasUnread] = useState(false);
 
   useEffect(() => {
-    if (!window.visualViewport) return;
+    const visualViewport = window.visualViewport;
+    if (!visualViewport) return;
 
     const handleResize = () => {
       // If viewport height is significantly less than window height, keyboard is likely open
       if (
-        window.visualViewport &&
-        window.visualViewport.height < window.innerHeight * 0.75
+        visualViewport &&
+        visualViewport.height < window.innerHeight * 0.75
       ) {
         setIsVisible(false);
       } else {
@@ -22,9 +23,9 @@ export default function DeliveryBottomNav() {
       }
     };
 
-    window.visualViewport.addEventListener("resize", handleResize);
+    visualViewport.addEventListener("resize", handleResize);
     return () =>
-      window.visualViewport.removeEventListener("resize", handleResize);
+      visualViewport.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {

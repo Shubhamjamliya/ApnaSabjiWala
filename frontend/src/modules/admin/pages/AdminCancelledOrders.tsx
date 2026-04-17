@@ -487,7 +487,7 @@ export default function AdminCancelledOrders() {
                         </svg>
                       )}
                     </div>
-                  </th>h>
+                  </th>
                   <th
                     onClick={() => handleSort('orderDate')}
                     className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100"
