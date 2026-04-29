@@ -352,13 +352,18 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
               {/* Location with dropdown indicator - only show if location is provided */}
               {locationDisplayText && (
                 <div 
-                  className="text-neutral-700 text-[10px] md:text-xs flex items-center gap-0.5 leading-tight cursor-pointer hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-1 group cursor-pointer"
                   onClick={() => setIsLocationModalOpen(true)}
                 >
-                  <span className="line-clamp-1" title={locationDisplayText}>{locationDisplayText}</span>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <div className="text-neutral-700 text-[10px] md:text-xs flex items-center gap-0.5 leading-tight hover:opacity-80 transition-opacity">
+                    <span className="line-clamp-1" title={locationDisplayText}>{locationDisplayText}</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+                      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <button className="text-[#2563eb] font-bold text-[9px] md:text-[10px] uppercase tracking-wider hover:underline ml-1">
+                    Change
+                  </button>
                 </div>
               )}
             </div>

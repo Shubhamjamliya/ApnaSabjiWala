@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 interface DeliveryPartner {
     name?: string
     phone?: string
+    mobile?: string
     profileImage?: string
     vehicleNumber?: string
 }
@@ -91,6 +92,11 @@ export default function DeliveryPartnerCard({
                                 🏍️ {partner.vehicleNumber}
                             </p>
                         )}
+                        {(partner?.phone || partner?.mobile) && (
+                            <p className="text-sm text-gray-600 font-medium flex items-center gap-1 mt-0.5">
+                                📞 {partner.phone || partner.mobile}
+                            </p>
+                        )}
                         {isTracking && (
                             <div className="flex items-center gap-1 mt-1">
                                 <motion.div
@@ -106,7 +112,7 @@ export default function DeliveryPartnerCard({
                     </div>
 
                     {/* Call Button */}
-                    {partner?.phone && onCall && (
+                    {(partner?.phone || partner?.mobile) && onCall && (
                         <motion.button
                             className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center hover:bg-green-200"
                             whileHover={{ scale: 1.05 }}

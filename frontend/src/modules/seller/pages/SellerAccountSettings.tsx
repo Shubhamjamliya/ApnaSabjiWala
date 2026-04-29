@@ -171,10 +171,14 @@ const SellerAccountSettings = () => {
                     serviceRadiusKm: (data.serviceRadiusKm || 10).toString(),
                 });
                 if (updateUser) {
+                    const location = data.location || {};
                     updateUser({
                         ...user,
                         ...data,
-                        id: data._id || user?.id
+                        id: data._id || user?.id,
+                        name: data.sellerName || user?.name,
+                        address: location.address || data.address || user?.address,
+                        city: location.city || data.city || user?.city,
                     });
                 }
                 setError('');

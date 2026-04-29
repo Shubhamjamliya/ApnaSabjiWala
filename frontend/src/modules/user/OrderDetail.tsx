@@ -1045,21 +1045,37 @@ export default function OrderDetail() {
       )}
 
       {/* Delivery Partner Card */}
-      {(order?.deliveryPartner || order?.deliveryOtp) && (
+      {(order?.deliveryPartner || order?.deliveryBoy || order?.deliveryBoyName || order?.deliveryOtp) && (
         <DeliveryPartnerCard
           partner={{
-            name: order?.deliveryPartner?.name || "Delivery Partner",
-            phone: order?.deliveryPartner?.phone,
-            profileImage: order?.deliveryPartner?.profileImage,
-            vehicleNumber: order?.deliveryPartner?.vehicleNumber,
+            name: order?.deliveryPartner?.name || order?.deliveryBoy?.name || order?.deliveryBoyName || "Delivery Partner",
+            phone: order?.deliveryPartner?.phone || order?.deliveryPartner?.mobile || order?.deliveryPartner?.phoneNumber || order?.deliveryPartner?.mobileNumber ||
+                   order?.deliveryPartner?.mobile_no || order?.deliveryPartner?.phone_no || order?.deliveryPartner?.contact_no ||
+                   order?.deliveryBoy?.phone || order?.deliveryBoy?.mobile || order?.deliveryBoy?.phoneNumber || order?.deliveryBoy?.mobileNumber ||
+                   order?.deliveryBoy?.mobile_no || order?.deliveryBoy?.phone_no || order?.deliveryBoy?.contact_no ||
+                   order?.deliveryBoyPhone || order?.deliveryPartnerPhone || 
+                   order?.deliveryPartner?.user?.phone || order?.deliveryBoy?.user?.phone ||
+                   order?.deliveryPartner?.user?.mobile || order?.deliveryBoy?.user?.mobile ||
+                   order?.deliveryPartner?.user?.phoneNumber || order?.deliveryBoy?.user?.phoneNumber ||
+                   order?.deliveryPartner?.user?.mobile_no || order?.deliveryBoy?.user?.mobile_no,
+            profileImage: order?.deliveryPartner?.profileImage || order?.deliveryBoy?.profileImage || order?.deliveryBoyProfileImage,
+            vehicleNumber: order?.deliveryPartner?.vehicleNumber || order?.deliveryBoy?.vehicleNumber || order?.deliveryBoyVehicleNumber || order?.deliveryPartnerVehicleNumber || order?.deliveryBoy?.vehicleNo || order?.deliveryPartner?.vehicleNo || order?.deliveryBoy?.vehicleNumberPlate || order?.deliveryPartner?.vehicleNumberPlate,
           }}
           eta={routeInfo ? Math.ceil(routeInfo.durationValue / 60) : eta}
           distance={routeInfo ? routeInfo.distanceValue : distance}
           isTracking={isConnected && !!deliveryLocation}
           deliveryOtp={order?.deliveryOtp}
           onCall={() => {
-            const phone = order?.deliveryPartner?.phone || "1234567890";
-            window.location.href = `tel:${phone}`;
+            const phone = order?.deliveryPartner?.phone || order?.deliveryPartner?.mobile || order?.deliveryPartner?.phoneNumber || order?.deliveryPartner?.mobileNumber ||
+                          order?.deliveryPartner?.mobile_no || order?.deliveryPartner?.phone_no || order?.deliveryPartner?.contact_no ||
+                          order?.deliveryBoy?.phone || order?.deliveryBoy?.mobile || order?.deliveryBoy?.phoneNumber || order?.deliveryBoy?.mobileNumber ||
+                          order?.deliveryBoy?.mobile_no || order?.deliveryBoy?.phone_no || order?.deliveryBoy?.contact_no ||
+                          order?.deliveryBoyPhone || order?.deliveryPartnerPhone || 
+                          order?.deliveryPartner?.user?.phone || order?.deliveryBoy?.user?.phone ||
+                          order?.deliveryPartner?.user?.mobile || order?.deliveryBoy?.user?.mobile ||
+                          order?.deliveryPartner?.user?.phoneNumber || order?.deliveryBoy?.user?.phoneNumber ||
+                          order?.deliveryPartner?.user?.mobile_no || order?.deliveryBoy?.user?.mobile_no;
+            if (phone) window.location.href = `tel:${phone}`;
           }}
         />
       )}

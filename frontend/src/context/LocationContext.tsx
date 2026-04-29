@@ -73,51 +73,55 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const abortControllerRef = useRef<AbortController | null>(null);
   const isRequestingRef = useRef(false);
 
-  // Initialize location state and check session permission
+  // Initialize location state and check persistence
   useEffect(() => {
-    const checkInitialPermission = async () => {
-      console.log('[LocationContext] Checking initial permission status...');
+    const checkInitialPersistence = async () => {
+      console.log('[LocationContext] Checking initial persistence status...');
 
       try {
-        // 1. Check sessionStorage for session-level permission
-        const sessionGranted = sessionStorage.getItem(SESSION_PERMISSION_KEY);
-
-        if (sessionGranted === 'true') {
-          console.log('[LocationContext] Permission already granted in this session.');
-
-          // 2. Check for cached location in localStorage
-          const cachedLocation = localStorage.getItem(LOCATION_STORAGE_KEY);
-          if (cachedLocation) {
-            try {
-              const parsedLocation = JSON.parse(cachedLocation);
-              console.log('[LocationContext] Using cached location from this session:', parsedLocation.address);
-              setLocation(parsedLocation);
-              setIsLocationEnabled(true);
-              setLocationPermissionStatus('session_granted');
-            } catch (e) {
-              console.error('[LocationContext] Failed to parse cached location:', e);
-            }
-          } else {
-            // Permission granted but no location? Prompt to refresh it
-            console.log('[LocationContext] Session permission exists but no cached location.');
+        // 1. Check for cached location in localStorage (Primary persistence)
+        const cachedLocation = localStorage.getItem(LOCATION_STORAGE_KEY);
+        
+        if (cachedLocation) {
+          try {
+            const parsedLocation = JSON.parse(cachedLocation);
+            console.log('[LocationContext] Restoring persisted location:', parsedLocation.address);
+            setLocation(parsedLocation);
+            setIsLocationEnabled(true);
+            
+            // If we have a location, we can consider the permission status as 'session_granted' 
+            // for the current session to avoid unnecessary prompts
             setLocationPermissionStatus('session_granted');
+            
+            // Sync with sessionStorage for consistency with other parts of the app
+            sessionStorage.setItem(SESSION_PERMISSION_KEY, 'true');
+            return;
+          } catch (e) {
+            console.error('[LocationContext] Failed to parse cached location:', e);
+            localStorage.removeItem(LOCATION_STORAGE_KEY);
           }
+        }
+
+        // 2. Fallback to session check if no localStorage data
+        const sessionGranted = sessionStorage.getItem(SESSION_PERMISSION_KEY);
+        if (sessionGranted === 'true') {
+          console.log('[LocationContext] Permission granted in this session, but no location data found.');
+          setLocationPermissionStatus('session_granted');
         } else {
-          console.log('[LocationContext] No session-level permission found. User will be prompted.');
+          console.log('[LocationContext] No persisted location found. User will be prompted.');
           setLocation(null);
           setIsLocationEnabled(false);
           setLocationPermissionStatus('prompt');
         }
       } catch (error) {
-        console.error('[LocationContext] Error checking session storage:', error);
-        // Fallback to prompt if storage is unavailable
+        console.error('[LocationContext] Error checking persistence:', error);
         setLocationPermissionStatus('prompt');
       } finally {
         setIsLocationLoading(false);
       }
     };
 
-    checkInitialPermission();
+    checkInitialPersistence();
   }, []);
 
   // Request user's current location - OPTIMIZED for speed and accuracy
@@ -235,7 +239,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
 
               setLocation(newLocation);
               setLocationError(null); // Clear error on successful geocoding
-              localStorage.setItem('userLocation', JSON.stringify(newLocation));
+              localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(newLocation));
 
               // Save to backend in background (non-blocking, don't wait - only for customers)
 
@@ -262,7 +266,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
                 };
                 setLocation(fallbackLocation);
                 setLocationError(null); // Clear error since we have valid coordinates
-                localStorage.setItem('userLocation', JSON.stringify(fallbackLocation));
+                localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(fallbackLocation));
 
                 // Try to save to backend anyway
                 if (isAuthenticated && user && user.userType === 'Customer') {

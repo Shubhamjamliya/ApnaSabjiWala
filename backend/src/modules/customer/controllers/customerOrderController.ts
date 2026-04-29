@@ -593,7 +593,7 @@ export const getOrderById = async (req: Request, res: Response) => {
                     { path: 'seller', select: 'storeName location phone fssaiLicNo' }
                 ]
             })
-            .populate('deliveryBoy', 'name phone profileImage vehicleNumber');
+            .populate('deliveryBoy', 'name mobile profileImage vehicleNumber');
 
         if (!order) {
             return res.status(404).json({
