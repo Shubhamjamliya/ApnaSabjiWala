@@ -252,6 +252,22 @@ export const updateOrderStatus = asyncHandler(async (req: Request, res: Response
         return res.status(403).json({ success: false, message: "This order is not assigned to you" });
     }
 
+    // CHECK FOR 5 ORDERS LIMIT
+    // If delivery boy is accepting a new order, check if they already have 5 active orders
+    if (status === 'Accepted' && order.status !== 'Accepted') {
+        const activeOrdersCount = await Order.countDocuments({
+            deliveryBoy: deliveryId,
+            status: { $in: ["Accepted", "Ready for pickup", "Picked Up", "Out for Delivery", "In Transit", "Processed", "Shipped"] }
+        });
+
+        if (activeOrdersCount >= 5) {
+            return res.status(400).json({
+                success: false,
+                message: "Maximum limit reached! You cannot accept more than 5 active orders. Please deliver your existing orders first."
+            });
+        }
+    }
+
     // Save previous status before updating
     const previousStatus = order.status;
 
@@ -284,6 +300,16 @@ export const updateOrderStatus = asyncHandler(async (req: Request, res: Response
     }
 
     await order.save();
+
+    // Update DeliveryAssignment if it exists
+    try {
+        await DeliveryAssignment.findOneAndUpdate(
+            { order: id, deliveryBoy: deliveryId },
+            { status: status as any }
+        );
+    } catch (err) {
+        console.error("Failed to update DeliveryAssignment status:", err);
+    }
 
     // Emit socket events for status changes
     const io = (req.app as any).get("io");
@@ -322,6 +348,61 @@ export const updateOrderStatus = asyncHandler(async (req: Request, res: Response
         success: true,
         message: `Order status updated to ${status}`,
         data: order
+    });
+});
+
+/**
+ * Reject Order
+ * Allows delivery boy to reject an assigned order
+ */
+export const rejectOrder = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const deliveryId = req.user?.userId;
+
+    const order = await Order.findById(id);
+    if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    if (order.deliveryBoy?.toString() != deliveryId) {
+        return res.status(403).json({ success: false, message: "This order is not assigned to you" });
+    }
+
+    // Only allow rejection if it's not yet accepted
+    if (!["Received", "Pending"].includes(order.status)) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "Cannot reject an order that has already been accepted or picked up." 
+        });
+    }
+
+    // Clear delivery assignment on order
+    order.deliveryBoy = undefined;
+    order.deliveryBoyStatus = undefined;
+    order.assignedAt = undefined;
+    
+    await order.save();
+    
+    // Update DeliveryAssignment
+    await DeliveryAssignment.findOneAndUpdate(
+        { order: id, deliveryBoy: deliveryId },
+        { status: 'Cancelled' }
+    );
+
+    // Notify admin/others via socket if needed
+    const io = (req.app as any).get("io");
+    if (io) {
+        io.emit('order-assignment-rejected', {
+            orderId: id,
+            orderNumber: order.orderNumber,
+            deliveryBoyId: deliveryId,
+            message: `Order ${order.orderNumber} was rejected by delivery partner.`
+        });
+    }
+
+    return res.status(200).json({
+        success: true,
+        message: "Order rejected successfully. It is now available for other delivery partners."
     });
 });
 

@@ -664,6 +664,27 @@ export default function GoogleMapsTracking({
 
             <div className={`absolute ${isFullScreen ? 'right-6 top-6' : 'right-3 top-3'} flex flex-col gap-2 z-10`}>
                 <button
+                    onClick={() => {
+                        const origin = animatedDeliveryLocation || allSellers[0] || { lat: 0, lng: 0 };
+                        const destination = normalizedCustomer;
+                        if (!destination) return;
+                        
+                        const waypoints = allSellers
+                            .filter(s => (s.lat !== origin.lat || s.lng !== origin.lng) && (s.lat !== destination.lat || s.lng !== destination.lng))
+                            .map(s => `${s.lat},${s.lng}`)
+                            .join('|');
+                            
+                        const url = `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}${waypoints ? `&waypoints=${waypoints}` : ''}&travelmode=driving`;
+                        window.open(url, '_blank');
+                    }}
+                    className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                    title="Open in Google Maps"
+                >
+                    <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z" fill="#4285F4"/>
+                    </svg>
+                </button>
+                <button
                     onClick={toggleFullScreen}
                     className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
                     title={isFullScreen ? "Exit Full Screen" : "Full Screen"}

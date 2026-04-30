@@ -136,7 +136,7 @@ export default function DeliverySignUp() {
       {
         enableHighAccuracy: true,
         timeout: 20000,
-        maximumAge: 0
+        maximumAge: 10000
       }
     );
   };

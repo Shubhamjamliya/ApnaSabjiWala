@@ -278,6 +278,16 @@ export const assignDeliveryBoy = asyncHandler(
       .populate("deliveryBoy", "name mobile email")
       .populate("items");
 
+    // Notify delivery boy via socket
+    const io: SocketIOServer = req.app.get("io");
+    if (io) {
+      io.to(`delivery-${deliveryBoyId}`).emit("order-assigned", {
+        orderId: order._id,
+        orderNumber: order.orderNumber,
+        message: `New order #${order.orderNumber} assigned to you!`,
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: "Delivery boy assigned successfully",

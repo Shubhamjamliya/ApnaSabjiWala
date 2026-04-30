@@ -1,5 +1,9 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { updateStatus, getDeliveryProfile, updateGeneralLocation, getSellersInRadius } from '../../../services/api/delivery/deliveryService';
+import { getSocketBaseURL } from '../../../services/api/config';
+import { io, Socket } from 'socket.io-client';
+import NewOrderAlert from '../components/NewOrderAlert';
+import { useAuth } from '../../../context/AuthContext';
 
 interface SellerInRange {
   _id: string;
@@ -18,22 +22,29 @@ interface DeliveryStatusContextType {
   sellersInRange: SellerInRange[];
   locationError: string | null;
   isLoadingSellers: boolean;
+  newOrder: any | null;
+  setNewOrder: (order: any | null) => void;
 }
 
 const DeliveryStatusContext = createContext<DeliveryStatusContextType | undefined>(undefined);
 
 export function DeliveryStatusProvider({ children }: { children: ReactNode }) {
+  const { user, token, isAuthenticated } = useAuth();
   const [isOnline, setIsOnlineLocal] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [sellersInRangeCount, setSellersInRangeCount] = useState(0);
   const [sellersInRange, setSellersInRange] = useState<SellerInRange[]>([]);
   const [isLoadingSellers, setIsLoadingSellers] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [newOrder, setNewOrder] = useState<any | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const lastUpdateTimeRef = useRef<number>(0);
+  const socketRef = useRef<Socket | null>(null);
 
   // Fetch initial status
   useEffect(() => {
+    if (!isAuthenticated) return;
+    
     const fetchStatus = async () => {
       try {
         const profile = await getDeliveryProfile();
@@ -43,18 +54,75 @@ export function DeliveryStatusProvider({ children }: { children: ReactNode }) {
       }
     };
     fetchStatus();
-  }, []);
+  }, [isAuthenticated]);
+
+  // Socket Initialization - Reactive to Auth
+  useEffect(() => {
+    if (!isAuthenticated || !token || !user?.id) {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      return;
+    }
+
+    // Cleanup existing socket if any
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
+
+    const socketUrl = getSocketBaseURL();
+    console.log('🔌 Initializing Global Delivery Socket:', socketUrl);
+    
+    const socket = io(socketUrl, {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 10
+    });
+
+    socket.on('connect', () => {
+      console.log('✅ Global Delivery Socket Connected for User:', user.id);
+      // Join delivery boy's personal room using the correct backend event
+      socket.emit('join-delivery-notifications', user.id);
+    });
+
+    socket.on('order-assigned', (data: any) => {
+      console.log('🔔 Global Order Assignment Received:', data);
+      setNewOrder(data);
+      
+      // Play notification sound
+      try {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'); 
+        audio.play().catch(e => console.log('Audio play blocked or failed:', e));
+      } catch (e) {
+        console.error('Failed to setup notification sound:', e);
+      }
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('❌ Socket Connection Error:', err.message);
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      console.log('🔌 Cleaning up Global Delivery Socket');
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [isAuthenticated, token, user?.id]);
 
   // Location Tracking Logic
   useEffect(() => {
-    if (isOnline) {
+    if (isOnline && isAuthenticated) {
       startTracking();
     } else {
       stopTracking();
     }
 
     return () => stopTracking();
-  }, [isOnline]);
+  }, [isOnline, isAuthenticated]);
 
   const startTracking = () => {
     if (!navigator.geolocation) {
@@ -151,9 +219,12 @@ export function DeliveryStatusProvider({ children }: { children: ReactNode }) {
       sellersInRangeCount,
       sellersInRange,
       locationError,
-      isLoadingSellers
+      isLoadingSellers,
+      newOrder,
+      setNewOrder
     }}>
       {children}
+      <NewOrderAlert order={newOrder} onClose={() => setNewOrder(null)} />
     </DeliveryStatusContext.Provider>
   );
 }

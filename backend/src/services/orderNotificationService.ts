@@ -302,36 +302,44 @@ export async function notifyDeliveryBoysOfNewOrder(
             return;
         }
 
-        // --- FILTER BUSY DELIVERY BOYS ---
-        // Check if any of these delivery boys already have an active order
-        // Active = deliveryBoyStatus is Assigned, Picked Up, or In Transit
-        const busyOrders = await Order.find({
-            deliveryBoy: { $in: nearbyDeliveryBoyIds },
-            deliveryBoyStatus: { $in: ['Assigned', 'Picked Up', 'In Transit'] },
-            // Double check status to be sure we don't count completed/cancelled ones just in case statuses are out of sync
-            status: { $nin: ['Delivered', 'Cancelled', 'Rejected', 'Returned'] }
-        }).select('_id deliveryBoy status orderNumber');
+        // --- FILTER BUSY DELIVERY BOYS (UP TO 5 CONCURRENT ORDERS) ---
+        // Get counts of active orders for all nearby delivery boys
+        const activeOrdersCounts = await Order.aggregate([
+            {
+                $match: {
+                    deliveryBoy: { $in: nearbyDeliveryBoyIds },
+                    deliveryBoyStatus: { $in: ['Assigned', 'Picked Up', 'In Transit'] },
+                    status: { $nin: ['Delivered', 'Cancelled', 'Rejected', 'Returned'] }
+                }
+            },
+            {
+                $group: {
+                    _id: '$deliveryBoy',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
 
-        const busyIdsSet = new Set(busyOrders.map(o => o.deliveryBoy?.toString()));
+        const busyIdsSet = new Set(
+            activeOrdersCounts
+                .filter(item => item.count >= 5)
+                .map(item => item._id.toString())
+        );
 
         if (busyIdsSet.size > 0) {
-            console.log(`🚫 Busy Check: Found ${busyIdsSet.size} busy delivery boys among nearby list:`, Array.from(busyIdsSet));
-            console.log('📝 Active Orders pinning them as busy:');
-            busyOrders.forEach(bo => {
-                console.log(`   - Partner ${bo.deliveryBoy} is on ${bo.orderNumber} (Status: ${bo.status})`);
-            });
-
+            console.log(`🚫 Busy Check: Found ${busyIdsSet.size} delivery boys with max orders (5+) among nearby list:`, Array.from(busyIdsSet));
+            
             const originalCount = nearbyDeliveryBoyIds.length;
             nearbyDeliveryBoyIds = nearbyDeliveryBoyIds.filter(id => !busyIdsSet.has(id.toString()));
 
             console.log(`ℹ️ Filtered nearby list: ${originalCount} -> ${nearbyDeliveryBoyIds.length} available partners.`);
 
             if (nearbyDeliveryBoyIds.length === 0) {
-                console.log('⚠️ All nearby delivery boys are currently busy with other orders.');
+                console.log('⚠️ All nearby delivery boys have reached their maximum order limit (5).');
                 return;
             }
         } else {
-            console.log('✅ Busy Check: All nearby delivery boys are free.');
+            console.log('✅ Busy Check: All nearby delivery boys are within their order limit.');
         }
         // ---------------------------------
 

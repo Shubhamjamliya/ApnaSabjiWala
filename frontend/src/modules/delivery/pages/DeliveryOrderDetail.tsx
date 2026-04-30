@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getOrderDetails, updateOrderStatus, getSellerLocationsForOrder, sendDeliveryOtp, verifyDeliveryOtp, updateDeliveryLocation, checkSellerProximity, confirmSellerPickup, checkCustomerProximity } from '../../../services/api/delivery/deliveryService';
+import { getOrderDetails, updateOrderStatus, getSellerLocationsForOrder, sendDeliveryOtp, verifyDeliveryOtp, updateDeliveryLocation, checkSellerProximity, confirmSellerPickup, checkCustomerProximity, rejectOrder } from '../../../services/api/delivery/deliveryService';
 import deliveryIcon from '@assets/deliveryboy/deliveryIcon.png';
 import GoogleMapsTracking from '../../../components/GoogleMapsTracking';
 import { SHOW_DEV_MODE } from '@/config/appMode';
@@ -86,7 +86,7 @@ const Icons = {
     )
 };
 
-type DeliveryOrderStatus = 'Pending' | 'Accepted' | 'Processed' | 'Ready for pickup' | 'Picked up' | 'Out for Delivery' | 'Delivered' | 'Cancelled' | 'Returned';
+type DeliveryOrderStatus = 'Received' | 'Pending' | 'Accepted' | 'Processed' | 'Ready for pickup' | 'Picked up' | 'Out for Delivery' | 'Delivered' | 'Cancelled' | 'Returned';
 
 export default function DeliveryOrderDetail() {
     const { id } = useParams();
@@ -277,55 +277,61 @@ export default function DeliveryOrderDetail() {
     const locationPermissionDeniedRef = useRef<boolean>(false);
 
     // Get delivery boy's current location
-    useEffect(() => {
-        const getCurrentLocation = () => {
-            if (!navigator.geolocation) {
-                console.warn('Geolocation is not supported by this browser');
-                return;
-            }
+    const getCurrentLocation = useCallback(() => {
+        if (!navigator.geolocation) {
+            console.warn('Geolocation is not supported by this browser');
+            return;
+        }
 
-            if (locationPermissionDeniedRef.current) {
-                // Don't retry if permission was denied
-                return;
-            }
+        if (locationPermissionDeniedRef.current) {
+            // Don't retry if permission was denied, unless explicitly requested by user
+            return;
+        }
 
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    setDeliveryBoyLocation({
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                    });
-                    locationPermissionDeniedRef.current = false; // Reset on success
-                    setLocationError(null);
-                },
-                (error: GeolocationPositionError) => {
-                    // Handle different error types
-                    switch (error.code) {
-                        case error.PERMISSION_DENIED:
-                            locationPermissionDeniedRef.current = true;
-                            setLocationError('Location permission denied. Please enable location access in your browser settings to track delivery.');
-                            console.warn('Location permission denied. Please enable location access in your browser settings.');
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            setLocationError('Location information unavailable. Please check your device settings.');
-                            console.warn('Location information unavailable. Please check your device settings.');
-                            break;
-                        case error.TIMEOUT:
-                            setLocationError('Location request timed out. Please try again.');
-                            console.warn('Location request timed out. Please try again.');
-                            break;
-                        default:
-                            setLocationError(`Error getting location: ${error.message}`);
-                            console.warn('Error getting location:', error.message);
-                            break;
-                    }
-                },
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-            );
-        };
-
-        getCurrentLocation();
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setDeliveryBoyLocation({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                });
+                locationPermissionDeniedRef.current = false; // Reset on success
+                setLocationError(null);
+            },
+            (error: GeolocationPositionError) => {
+                // Handle different error types
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        locationPermissionDeniedRef.current = true;
+                        setLocationError('Location permission denied. Please enable location access in your browser settings to track delivery.');
+                        console.warn('Location permission denied. Please enable location access in your browser settings.');
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        setLocationError('Location information unavailable. Please check your device settings.');
+                        console.warn('Location information unavailable. Please check your device settings.');
+                        break;
+                    case error.TIMEOUT:
+                        setLocationError('Location request timed out. Please try again.');
+                        console.warn('Location request timed out. Please try again.');
+                        break;
+                    default:
+                        setLocationError(`Error getting location: ${error.message}`);
+                        console.warn('Error getting location:', error.message);
+                        break;
+                }
+            },
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 }
+        );
     }, []);
+
+    const handleRetryLocation = () => {
+        setLocationError(null);
+        locationPermissionDeniedRef.current = false;
+        getCurrentLocation();
+    };
+
+    useEffect(() => {
+        getCurrentLocation();
+    }, [getCurrentLocation]);
 
 
 
@@ -457,11 +463,16 @@ export default function DeliveryOrderDetail() {
                         if (error.code === error.PERMISSION_DENIED) {
                             if (!locationPermissionDeniedRef.current) {
                                 locationPermissionDeniedRef.current = true;
+                                setLocationError('Location permission denied. Please enable location access.');
                                 console.warn('Location permission denied.');
                             }
+                        } else if (error.code === error.TIMEOUT) {
+                            // Don't necessarily show error UI for every background timeout
+                            // but maybe log it
+                            console.warn('Background location request timed out.');
                         }
                     },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
                 );
             };
 
@@ -508,7 +519,7 @@ export default function DeliveryOrderDetail() {
         );
     }
 
-    const statusFlow: DeliveryOrderStatus[] = ['Pending', 'Accepted', 'Processed', 'Ready for pickup', 'Picked up', 'Out for Delivery', 'Delivered'];
+    const statusFlow: DeliveryOrderStatus[] = ['Received', 'Pending', 'Accepted', 'Processed', 'Ready for pickup', 'Picked up', 'Out for Delivery', 'Delivered'];
 
     let currentStatusIndex = statusFlow.indexOf(order.status as DeliveryOrderStatus);
     // Handle cases where status might not be in the flow (e.g. Cancelled)
@@ -531,6 +542,21 @@ export default function DeliveryOrderDetail() {
             }
         } catch (err: any) {
             alert(err.message || "Failed to update status");
+            setLoading(false);
+        }
+    };
+
+    const handleRejectOrder = async () => {
+        if (!id) return;
+        if (!window.confirm("Are you sure you want to reject this order assignment?")) return;
+        
+        try {
+            setLoading(true);
+            await rejectOrder(id);
+            alert("Order assignment rejected.");
+            navigate('/delivery/orders/pending');
+        } catch (err: any) {
+            alert(err.message || "Failed to reject order");
             setLoading(false);
         }
     };
@@ -594,11 +620,17 @@ export default function DeliveryOrderDetail() {
 
             {/* Location Error Warning */}
             {locationError && (
-                <div className="mx-4 mt-4 bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3">
+                <div className="mx-4 mt-4 bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3 shadow-sm">
                     <Icons.AlertTriangle size={20} className="text-red-500 shrink-0 mt-0.5" />
-                    <div>
+                    <div className="flex-1">
                         <p className="text-sm font-medium text-red-800">Location Access Required</p>
                         <p className="text-xs text-red-600 mt-0.5">{locationError}</p>
+                        <button
+                            onClick={handleRetryLocation}
+                            className="mt-3 px-3 py-1.5 bg-white border border-red-200 text-red-700 text-xs font-semibold rounded-lg hover:bg-red-50 transition-colors shadow-sm"
+                        >
+                            Try Again
+                        </button>
                     </div>
                 </div>
             )}
@@ -934,14 +966,23 @@ export default function DeliveryOrderDetail() {
             )}
 
             {nextStatus && order.status !== 'Picked up' && order.status !== 'Out for Delivery' && (
-                <div className="fixed bottom-24 left-6 right-6 z-30">
+                <div className="fixed bottom-24 left-6 right-6 z-30 flex flex-col gap-3">
+                    {['Received', 'Pending'].includes(order.status) && (
+                         <button
+                            onClick={handleRejectOrder}
+                            className="w-full py-4 rounded-2xl bg-white border-2 border-red-500 text-red-600 font-bold text-lg shadow-lg transition-transform active:scale-[0.98]"
+                            disabled={loading}
+                        >
+                            {loading ? 'Processing...' : 'Reject Order'}
+                        </button>
+                    )}
                     <button
                         onClick={() => handleStatusChange(nextStatus)}
                         className="w-full py-4 rounded-2xl bg-black/75 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] text-white font-bold text-lg transition-transform active:scale-[0.98] flex items-center justify-center gap-3 overflow-hidden group"
                         disabled={loading}
                     >
                         <span className="relative z-10">
-                            {loading ? 'Updating...' : nextStatus === 'Picked up' ? 'Order Taken' : `Mark as ${nextStatus}`}
+                            {loading ? 'Updating...' : nextStatus === 'Accepted' ? 'Accept Order' : nextStatus === 'Picked up' ? 'Order Taken' : `Mark as ${nextStatus}`}
                         </span>
                         {!loading && <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center relative z-10 group-hover:bg-white/30 transition-colors">
                             <Icons.ChevronLeft className="rotate-180" size={18} />
