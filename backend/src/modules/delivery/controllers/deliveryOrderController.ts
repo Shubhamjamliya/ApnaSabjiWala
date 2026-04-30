@@ -3,6 +3,7 @@ import { asyncHandler } from "../../../utils/asyncHandler";
 import Order from "../../../models/Order";
 import { notifySellersOfOrderUpdate } from "../../../services/sellerNotificationService";
 import Delivery from "../../../models/Delivery";
+import DeliveryAssignment from "../../../models/DeliveryAssignment";
 import OrderItem from "../../../models/OrderItem";
 import Seller from "../../../models/Seller";
 import { generateDeliveryOtp, verifyDeliveryOtp } from "../../../services/deliveryOtpService";
