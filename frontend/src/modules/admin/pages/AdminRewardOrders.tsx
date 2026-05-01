@@ -77,12 +77,14 @@ export default function AdminRewardOrders() {
                         <select
                           value={order.status}
                           onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                          className={`rounded border-gray-300 text-sm focus:ring-teal-500 focus:border-teal-500 ${order.status === 'Pending' ? 'text-yellow-700 bg-yellow-50' :
-                            order.status === 'Fulfilled' ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'
+                          className={`rounded-full px-3 py-1 text-xs font-bold focus:ring-teal-500 focus:border-teal-500 outline-none border transition-colors ${order.status === 'Pending' ? 'text-yellow-700 bg-yellow-50 border-yellow-200' :
+                            order.status === 'Approved' ? 'text-blue-700 bg-blue-50 border-blue-200' :
+                              order.status === 'Delivered' ? 'text-green-700 bg-green-50 border-green-200' : 'text-red-700 bg-red-50 border-red-200'
                             }`}
                         >
                           <option value="Pending">Pending</option>
-                          <option value="Fulfilled">Fulfilled</option>
+                          <option value="Approved">Approved</option>
+                          <option value="Delivered">Delivered</option>
                           <option value="Cancelled">Cancelled</option>
                         </select>
                       </td>

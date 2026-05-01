@@ -6,6 +6,10 @@ import {
   deleteRewardItem,
   getRewardOrders,
   updateRewardOrderStatus,
+  addRewardRule,
+  getRewardRules,
+  updateRewardRule,
+  deleteRewardRule,
 } from "../modules/admin/controllers/adminRewardController";
 
 const router = Router();
@@ -17,5 +21,10 @@ router.delete("/items/:id", deleteRewardItem);
 
 router.get("/orders", getRewardOrders);
 router.put("/orders/:id/status", updateRewardOrderStatus);
+
+router.post("/rules", addRewardRule);
+router.get("/rules", getRewardRules);
+router.put("/rules/:id", updateRewardRule);
+router.delete("/rules/:id", deleteRewardRule);
 
 export default router;

@@ -3,6 +3,7 @@ import { asyncHandler } from "../../../utils/asyncHandler";
 import RewardItem from "../../../models/RewardItem";
 import RewardOrder from "../../../models/RewardOrder";
 import Customer from "../../../models/Customer";
+import CoinTransaction from "../../../models/CoinTransaction";
 
 /**
  * Get available reward items and user's coin balance
@@ -87,6 +88,15 @@ export const redeemReward = asyncHandler(async (req: Request, res: Response) => 
     status: 'Pending',
   });
 
+  // Create CoinTransaction
+  await CoinTransaction.create({
+    customer: customerId,
+    type: 'Redeemed',
+    amount: rewardItem.coinsRequired,
+    description: `Redeemed ${rewardItem.name}`,
+    rewardOrderId: rewardOrder._id,
+  });
+
   return res.status(200).json({
     success: true,
     message: "Reward redeemed successfully!",
@@ -111,5 +121,21 @@ export const getMyRedemptions = asyncHandler(async (req: Request, res: Response)
     success: true,
     message: "Redemptions fetched successfully",
     data: redemptions,
+  });
+});
+
+/**
+ * Get user's coin history
+ */
+export const getCoinHistory = asyncHandler(async (req: Request, res: Response) => {
+  const customerId = req.user?.userId;
+
+  const history = await CoinTransaction.find({ customer: customerId })
+    .sort({ createdAt: -1 });
+
+  return res.status(200).json({
+    success: true,
+    message: "Coin history fetched successfully",
+    data: history,
   });
 });

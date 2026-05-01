@@ -2,6 +2,9 @@ import Order from "../models/Order";
 import { IOrderItem } from "../models/OrderItem";
 import Inventory from "../models/Inventory";
 import { clearOrderCache } from "../socket/socketService";
+import RewardRule from "../models/RewardRule";
+import Customer from "../models/Customer";
+import CoinTransaction from "../models/CoinTransaction";
 
 /**
  * Process order status transition
@@ -39,6 +42,8 @@ export const processOrderStatusTransition = async (
     case "Delivered":
       // Create commissions for sellers
       await createCommissions(order.items as any[]);
+      // Award reward coins to customer
+      await awardRewardCoins(order);
       break;
   }
 
@@ -174,4 +179,37 @@ export const calculateOrderTotals = async (
     discount,
     total,
   };
+};
+
+/**
+ * Calculate and award reward coins to customer based on order amount
+ */
+const awardRewardCoins = async (order: any) => {
+  if (!order.customer) return;
+
+  const totalAmount = order.total;
+  
+  // Find matching reward rule
+  const rule = await RewardRule.findOne({
+    minAmount: { $lte: totalAmount },
+    maxAmount: { $gte: totalAmount },
+    isActive: true
+  });
+
+  if (rule && rule.coins > 0) {
+    const customer = await Customer.findById(order.customer);
+    if (customer) {
+      customer.rewardCoins = (customer.rewardCoins || 0) + rule.coins;
+      await customer.save();
+
+      // Create CoinTransaction
+      await CoinTransaction.create({
+        customer: customer._id,
+        type: 'Earned',
+        amount: rule.coins,
+        description: `Earned from order #${order.orderNumber}`,
+        orderId: order._id
+      });
+    }
+  }
 };

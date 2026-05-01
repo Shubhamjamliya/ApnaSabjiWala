@@ -4,7 +4,7 @@ export interface IRewardOrder extends Document {
   customer: mongoose.Types.ObjectId;
   rewardItem: mongoose.Types.ObjectId;
   coinsSpent: number;
-  status: 'Pending' | 'Fulfilled' | 'Cancelled';
+  status: 'Pending' | 'Approved' | 'Delivered' | 'Cancelled';
   orderDate: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -28,7 +28,7 @@ const RewardOrderSchema = new Schema<IRewardOrder>(
     },
     status: {
       type: String,
-      enum: ['Pending', 'Fulfilled', 'Cancelled'],
+      enum: ['Pending', 'Approved', 'Delivered', 'Cancelled'],
       default: 'Pending',
     },
     orderDate: {

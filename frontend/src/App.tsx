@@ -149,6 +149,7 @@ const AdminWallet = lazy(() => import("./modules/admin/pages/AdminWallet"));
 const AdminBillingSettings = lazy(() => import("./modules/admin/pages/AdminBillingSettings"));
 
 const AdminRewards = lazy(() => import("./modules/admin/pages/AdminRewards"));
+const AdminRewardRules = lazy(() => import("./modules/admin/pages/AdminRewardRules"));
 const AdminRewardOrders = lazy(() => import("./modules/admin/pages/AdminRewardOrders"));
 const UserRewards = lazy(() => import("./modules/user/Rewards"));
 
@@ -372,6 +373,7 @@ function App() {
                                         <Route path="wallet" element={<AdminWallet />} />
                                         <Route path="billing-settings" element={<AdminBillingSettings />} />
                                         <Route path="rewards" element={<AdminRewards />} />
+                                        <Route path="reward-rules" element={<AdminRewardRules />} />
                                         <Route path="reward-orders" element={<AdminRewardOrders />} />
                                       </Routes>
                                     </Suspense>

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import RewardItem from "../../../models/RewardItem";
 import RewardOrder from "../../../models/RewardOrder";
+import RewardRule from "../../../models/RewardRule";
 
 /**
  * Add a new reward item
@@ -105,7 +106,7 @@ export const updateRewardOrderStatus = asyncHandler(async (req: Request, res: Re
   const { id } = req.params;
   const { status } = req.body;
 
-  const validStatuses = ['Pending', 'Fulfilled', 'Cancelled'];
+  const validStatuses = ['Pending', 'Approved', 'Delivered', 'Cancelled'];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({
       success: false,
@@ -128,5 +129,118 @@ export const updateRewardOrderStatus = asyncHandler(async (req: Request, res: Re
     success: true,
     message: `Reward order marked as ${status}`,
     data: order,
+  });
+});
+
+/**
+ * Add a new reward rule
+ */
+export const addRewardRule = asyncHandler(async (req: Request, res: Response) => {
+  const { minAmount, maxAmount, coins, isActive } = req.body;
+
+  // Check for overlapping ranges
+  const overlappingRule = await RewardRule.findOne({
+    $or: [
+      { minAmount: { $lte: minAmount }, maxAmount: { $gte: minAmount } },
+      { minAmount: { $lte: maxAmount }, maxAmount: { $gte: maxAmount } },
+      { minAmount: { $gte: minAmount }, maxAmount: { $lte: maxAmount } }
+    ]
+  });
+
+  if (overlappingRule) {
+    return res.status(400).json({
+      success: false,
+      message: "This range overlaps with an existing rule",
+    });
+  }
+
+  const rewardRule = await RewardRule.create({
+    minAmount,
+    maxAmount,
+    coins,
+    isActive,
+  });
+
+  return res.status(201).json({
+    success: true,
+    message: "Reward rule added successfully",
+    data: rewardRule,
+  });
+});
+
+/**
+ * Get all reward rules
+ */
+export const getRewardRules = asyncHandler(async (_req: Request, res: Response) => {
+  const rules = await RewardRule.find().sort({ minAmount: 1 });
+
+  return res.status(200).json({
+    success: true,
+    message: "Reward rules fetched successfully",
+    data: rules,
+  });
+});
+
+/**
+ * Update a reward rule
+ */
+export const updateRewardRule = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { minAmount, maxAmount, coins, isActive } = req.body;
+
+  // Check for overlapping ranges excluding current rule
+  const overlappingRule = await RewardRule.findOne({
+    _id: { $ne: id },
+    $or: [
+      { minAmount: { $lte: minAmount }, maxAmount: { $gte: minAmount } },
+      { minAmount: { $lte: maxAmount }, maxAmount: { $gte: maxAmount } },
+      { minAmount: { $gte: minAmount }, maxAmount: { $lte: maxAmount } }
+    ]
+  });
+
+  if (overlappingRule) {
+    return res.status(400).json({
+      success: false,
+      message: "This range overlaps with an existing rule",
+    });
+  }
+
+  const rule = await RewardRule.findByIdAndUpdate(id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!rule) {
+    return res.status(404).json({
+      success: false,
+      message: "Reward rule not found",
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "Reward rule updated successfully",
+    data: rule,
+  });
+});
+
+/**
+ * Delete a reward rule
+ */
+export const deleteRewardRule = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const rule = await RewardRule.findByIdAndDelete(id);
+
+  if (!rule) {
+    return res.status(404).json({
+      success: false,
+      message: "Reward rule not found",
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "Reward rule deleted successfully",
   });
 });

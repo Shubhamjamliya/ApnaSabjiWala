@@ -10,8 +10,10 @@ export default function Rewards() {
   const [coins, setCoins] = useState(0);
   const [items, setItems] = useState<any[]>([]);
   const [redemptions, setRedemptions] = useState<any[]>([]);
+  const [coinHistory, setCoinHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("rewards"); // 'rewards' or 'history'
+  const [showAffordableOnly, setShowAffordableOnly] = useState(false);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -27,9 +29,10 @@ export default function Rewards() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [rewardsRes, historyRes] = await Promise.all([
+      const [rewardsRes, historyRes, coinHistoryRes] = await Promise.all([
         api.get("/customer/rewards"),
-        api.get("/customer/rewards/redemptions")
+        api.get("/customer/rewards/redemptions"),
+        api.get("/customer/rewards/history")
       ]);
 
       if (rewardsRes.data.success) {
@@ -39,6 +42,10 @@ export default function Rewards() {
 
       if (historyRes.data.success) {
         setRedemptions(historyRes.data.data);
+      }
+
+      if (coinHistoryRes.data.success) {
+        setCoinHistory(coinHistoryRes.data.data);
       }
     } catch (error: any) {
       showToast(error.response?.data?.message || "Failed to load rewards", "error");
@@ -99,13 +106,34 @@ export default function Rewards() {
           onClick={() => setActiveTab("history")}
           className={`pb-2 px-4 font-semibold text-lg transition-colors ${activeTab === 'history' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-800'}`}
         >
-          History
+          Redemption History
+        </button>
+        <button
+          onClick={() => setActiveTab("coins")}
+          className={`pb-2 px-4 font-semibold text-lg transition-colors ${activeTab === 'coins' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-800'}`}
+        >
+          Coin History
         </button>
       </div>
 
       {activeTab === "rewards" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {items.map((item) => (
+        <>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-800">Available Products</h2>
+            <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200">
+              <span className="text-xs font-semibold text-gray-600">Show only affordable</span>
+              <button 
+                onClick={() => setShowAffordableOnly(!showAffordableOnly)}
+                className={`w-10 h-5 rounded-full transition-colors relative ${showAffordableOnly ? 'bg-teal-600' : 'bg-gray-300'}`}
+              >
+                <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${showAffordableOnly ? 'left-6' : 'left-1'}`} />
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {items
+              .filter(item => !showAffordableOnly || coins >= item.coinsRequired)
+              .map((item) => (
             <div key={item._id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100 overflow-hidden flex flex-col">
               <div className="h-48 w-full bg-gray-50 relative p-4 flex items-center justify-center">
                 {item.imageUrl ? (
@@ -144,7 +172,8 @@ export default function Rewards() {
             </div>
           )}
         </div>
-      )}
+      </>
+    )}
 
       {activeTab === "history" && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -168,7 +197,8 @@ export default function Rewards() {
                     </div>
                   </div>
                   <div className={`px-4 py-2 rounded-full text-sm font-bold capitalize w-full sm:w-auto text-center ${order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                    order.status === 'Fulfilled' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    order.status === 'Approved' ? 'bg-blue-100 text-blue-700' :
+                      order.status === 'Delivered' || order.status === 'Fulfilled' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }`}>
                     {order.status}
                   </div>
@@ -180,6 +210,39 @@ export default function Rewards() {
               <span className="text-4xl mb-4 block">🛒</span>
               <h3 className="text-xl font-bold text-gray-700 mb-1">No History Yet</h3>
               <p className="text-gray-500">You haven't redeemed any rewards yet.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "coins" && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          {coinHistory.length > 0 ? (
+            <div className="divide-y divide-gray-100">
+              {coinHistory.map((transaction) => (
+                <div key={transaction._id} className="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${transaction.type === 'Earned' ? 'bg-green-100' : 'bg-red-100'
+                      }`}>
+                      {transaction.type === 'Earned' ? '💰' : '🎁'}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900">{transaction.description}</h4>
+                      <p className="text-sm text-gray-500">{new Date(transaction.createdAt).toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className={`text-lg font-black ${transaction.type === 'Earned' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                    {transaction.type === 'Earned' ? '+' : '-'} {transaction.amount} 🪙
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-16 text-center">
+              <span className="text-4xl mb-4 block">💰</span>
+              <h3 className="text-xl font-bold text-gray-700 mb-1">No Coin History</h3>
+              <p className="text-gray-500">Earn coins by completing orders!</p>
             </div>
           )}
         </div>
