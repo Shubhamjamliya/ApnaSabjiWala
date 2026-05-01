@@ -186,7 +186,7 @@ export const getRewardRules = asyncHandler(async (_req: Request, res: Response) 
  */
 export const updateRewardRule = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { minAmount, maxAmount, coins, isActive } = req.body;
+  const { minAmount, maxAmount } = req.body;
 
   // Check for overlapping ranges excluding current rule
   const overlappingRule = await RewardRule.findOne({
