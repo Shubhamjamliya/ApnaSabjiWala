@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { sendOTP, verifyOTP } from '../../services/api/auth/customerAuthService';
 import { useAuth } from '../../context/AuthContext';
 import OTPInput from '../../components/OTPInput';
@@ -236,6 +236,13 @@ export default function Login() {
         <p className="text-[9px] sm:text-[10px] text-neutral-500 text-center max-w-sm leading-tight px-4 relative z-10 pb-1">
           Access your saved addresses from Apna Sabji Wala automatically!
         </p>
+
+        {/* Legal Links */}
+        <div className="flex justify-center gap-4 mt-2 mb-2 text-[10px] text-neutral-500 relative z-10">
+          <Link to="/customer/policy" className="hover:text-neutral-800 underline">Privacy Policy</Link>
+          <Link to="/customer/terms" className="hover:text-neutral-800 underline">Terms & Conditions</Link>
+          <Link to="/customer/support" className="hover:text-neutral-800 underline">Support</Link>
+        </div>
       </div>
     </div>
   );

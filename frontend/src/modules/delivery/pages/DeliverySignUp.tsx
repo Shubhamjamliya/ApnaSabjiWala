@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   register,
   sendOTP,
@@ -748,9 +748,16 @@ export default function DeliverySignUp() {
       </div>
 
       {/* Footer Text */}
-      <p className="mt-6 text-xs text-neutral-500 text-center max-w-md">
+      <p className="mt-6 text-xs text-neutral-500 text-center max-w-md mb-2">
         By continuing, you agree to Apna Sabji Wala's Terms of Service and Privacy Policy
       </p>
+
+      {/* Legal Links */}
+      <div className="flex justify-center gap-4 text-xs text-neutral-500 relative z-10">
+        <Link to="/delivery/policy" className="hover:text-neutral-800 underline">Privacy Policy</Link>
+        <Link to="/delivery/terms" className="hover:text-neutral-800 underline">Terms & Conditions</Link>
+        <Link to="/delivery/support" className="hover:text-neutral-800 underline">Support</Link>
+      </div>
     </div>
   );
 }

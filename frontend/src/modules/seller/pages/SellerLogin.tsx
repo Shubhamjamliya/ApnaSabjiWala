@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { sendOTP, verifyOTP } from '../../../services/api/auth/sellerAuthService';
 import OTPInput from '../../../components/OTPInput';
 import { useAuth } from '../../../context/AuthContext';
@@ -256,6 +256,13 @@ export default function SellerLogin() {
                 Sign Up
               </button>
             </p>
+          </div>
+
+          {/* Legal Links */}
+          <div className="flex justify-center gap-4 mt-2 text-xs text-neutral-500">
+            <Link to="/seller/policy" className="hover:text-neutral-800 underline">Privacy Policy</Link>
+            <Link to="/seller/terms" className="hover:text-neutral-800 underline">Terms & Conditions</Link>
+            <Link to="/seller/support" className="hover:text-neutral-800 underline">Support</Link>
           </div>
         </div>
       </div>

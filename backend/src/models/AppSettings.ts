@@ -69,13 +69,26 @@ export interface IAppSettings extends Document {
   gstEnabled: boolean;
   gstRate?: number;
 
-  // Policies
-  privacyPolicy?: string;
-  termsOfService?: string;
-  returnPolicy?: string;
-  refundPolicy?: string;
-  customerAppPolicy?: string;
-  deliveryAppPolicy?: string;
+  // App Policies
+  appPolicies?: {
+    customer?: string;
+    seller?: string;
+    delivery?: string;
+  };
+
+  // App Terms
+  appTerms?: {
+    customer?: string;
+    seller?: string;
+    delivery?: string;
+  };
+
+  // App Support
+  appSupport?: {
+    customer?: string;
+    seller?: string;
+    delivery?: string;
+  };
 
   // FAQ
   faq?: Array<{
@@ -291,30 +304,25 @@ const AppSettingsSchema = new Schema<IAppSettings>(
       max: [100, "GST rate cannot exceed 100%"],
     },
 
-    // Policies
-    privacyPolicy: {
-      type: String,
-      trim: true,
+    // App Policies
+    appPolicies: {
+      customer: { type: String, trim: true },
+      seller: { type: String, trim: true },
+      delivery: { type: String, trim: true }
     },
-    termsOfService: {
-      type: String,
-      trim: true,
+
+    // App Terms
+    appTerms: {
+      customer: { type: String, trim: true },
+      seller: { type: String, trim: true },
+      delivery: { type: String, trim: true }
     },
-    returnPolicy: {
-      type: String,
-      trim: true,
-    },
-    refundPolicy: {
-      type: String,
-      trim: true,
-    },
-    customerAppPolicy: {
-      type: String,
-      trim: true,
-    },
-    deliveryAppPolicy: {
-      type: String,
-      trim: true,
+
+    // App Support
+    appSupport: {
+      customer: { type: String, trim: true },
+      seller: { type: String, trim: true },
+      delivery: { type: String, trim: true }
     },
 
     // FAQ

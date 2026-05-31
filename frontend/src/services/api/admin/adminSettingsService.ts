@@ -86,12 +86,21 @@ export interface AppSettings {
   };
   gstEnabled: boolean;
   gstRate?: number;
-  privacyPolicy?: string;
-  termsOfService?: string;
-  returnPolicy?: string;
-  refundPolicy?: string;
-  customerAppPolicy?: string;
-  deliveryAppPolicy?: string;
+  appPolicies?: {
+    customer?: string;
+    seller?: string;
+    delivery?: string;
+  };
+  appTerms?: {
+    customer?: string;
+    seller?: string;
+    delivery?: string;
+  };
+  appSupport?: {
+    customer?: string;
+    seller?: string;
+    delivery?: string;
+  };
   faq?: Array<{
     question: string;
     answer: string;

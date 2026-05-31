@@ -13,6 +13,7 @@ import IconLoader from "./components/loaders/IconLoader";
 import ContentLoader from "./components/loaders/ContentLoader";
 import RouteLoaderTrigger from "./components/loaders/RouteLoaderTrigger";
 import AppLayout from "./components/AppLayout";
+import LegalViewer from "./components/LegalViewer";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import LoadingSpinner from "./components/LoadingSpinner";
@@ -136,8 +137,9 @@ const AdminShippedOrders = lazy(() => import("./modules/admin/pages/AdminShipped
 const AdminOutForDeliveryOrders = lazy(() => import("./modules/admin/pages/AdminOutForDeliveryOrders"));
 const AdminDeliveredOrders = lazy(() => import("./modules/admin/pages/AdminDeliveredOrders"));
 const AdminCancelledOrders = lazy(() => import("./modules/admin/pages/AdminCancelledOrders"));
-const AdminCustomerAppPolicy = lazy(() => import("./modules/admin/pages/AdminCustomerAppPolicy"));
-const AdminDeliveryAppPolicy = lazy(() => import("./modules/admin/pages/AdminDeliveryAppPolicy"));
+const AdminPolicy = lazy(() => import("./modules/admin/pages/AdminPolicy"));
+const AdminTerms = lazy(() => import("./modules/admin/pages/AdminTerms"));
+const AdminSupport = lazy(() => import("./modules/admin/pages/AdminSupport"));
 const AdminOrders = lazy(() => import("./modules/admin/pages/AdminOrders"));
 const AdminOrderDetail = lazy(() => import("./modules/admin/pages/AdminOrderDetail"));
 const AdminManageCustomer = lazy(() => import("./modules/admin/pages/AdminManageCustomer"));
@@ -247,6 +249,19 @@ function App() {
                             }
                           />
 
+                          {/* Legal Public Routes */}
+                          <Route path="/customer/policy" element={<LegalViewer appType="customer" docType="policy" />} />
+                          <Route path="/customer/terms" element={<LegalViewer appType="customer" docType="terms" />} />
+                          <Route path="/customer/support" element={<LegalViewer appType="customer" docType="support" />} />
+
+                          <Route path="/seller/policy" element={<LegalViewer appType="seller" docType="policy" />} />
+                          <Route path="/seller/terms" element={<LegalViewer appType="seller" docType="terms" />} />
+                          <Route path="/seller/support" element={<LegalViewer appType="seller" docType="support" />} />
+
+                          <Route path="/delivery/policy" element={<LegalViewer appType="delivery" docType="policy" />} />
+                          <Route path="/delivery/terms" element={<LegalViewer appType="delivery" docType="terms" />} />
+                          <Route path="/delivery/support" element={<LegalViewer appType="delivery" docType="support" />} />
+
                           {/* Delivery App Routes */}
                           <Route
                             path="/delivery/*"
@@ -350,8 +365,9 @@ function App() {
                                         <Route path="payment-list" element={<AdminPaymentList />} />
                                         <Route path="sms-gateway" element={<AdminSmsGateway />} />
                                         <Route path="system-user" element={<AdminSystemUser />} />
-                                        <Route path="customer-app-policy" element={<AdminCustomerAppPolicy />} />
-                                        <Route path="delivery-app-policy" element={<AdminDeliveryAppPolicy />} />
+                                        <Route path="policy" element={<AdminPolicy />} />
+                                        <Route path="terms" element={<AdminTerms />} />
+                                        <Route path="support" element={<AdminSupport />} />
                                         <Route path="users" element={<AdminUsers />} />
                                         <Route path="home-section" element={<AdminHomeSection />} />
                                         <Route path="bestseller-cards" element={<AdminBestsellerCards />} />

@@ -68,7 +68,10 @@ router.get("/app-settings", async (req, res) => {
     res.json({
       success: true,
       data: {
-        modules: settings.modules
+        modules: settings.modules,
+        appPolicies: settings.appPolicies,
+        appTerms: settings.appTerms,
+        appSupport: settings.appSupport
       }
     });
   } catch (error) {
