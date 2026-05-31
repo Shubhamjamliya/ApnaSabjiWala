@@ -62,7 +62,7 @@ router.get("/health", (_req, res) => {
 import AppSettings from "../models/AppSettings";
 
 // Public App Settings
-router.get("/app-settings", async (req, res) => {
+router.get("/app-settings", async (_req, res) => {
   try {
     const settings = await AppSettings.getSettings();
     res.json({
