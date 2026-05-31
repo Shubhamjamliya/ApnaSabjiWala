@@ -594,6 +594,25 @@ export default function DeliveryOrderDetail() {
     const showSellerLocations = sellerLocations.length > 0 && order.status !== 'Picked up' && order.status !== 'Out for Delivery' && order.status !== 'Delivered';
     const showCustomerLocation = order.status === 'Picked up' || order.status === 'Out for Delivery';
 
+    const handleOpenGoogleMaps = () => {
+        const origin = deliveryBoyLocation || (sellerLocations.length > 0 ? { lat: Number(sellerLocations[0].latitude), lng: Number(sellerLocations[0].longitude) } : null) || { lat: 0, lng: 0 };
+        const destination = hasValidCustomerLocation ? { lat: customerLat, lng: customerLng } : null;
+        if (!destination || !destination.lat) {
+            alert("Customer location is not available");
+            return;
+        }
+
+        const allSellersLocations = sellerLocations.map(s => ({ lat: Number(s.latitude), lng: Number(s.longitude) }));
+
+        const waypoints = allSellersLocations
+            .filter(s => (s.lat !== origin.lat || s.lng !== origin.lng) && (s.lat !== destination.lat || s.lng !== destination.lng))
+            .map(s => `${s.lat},${s.lng}`)
+            .join('|');
+
+        const url = `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}${waypoints ? `&waypoints=${waypoints}` : ''}&travelmode=driving`;
+        window.open(url, '_blank');
+    };
+
     return (
         <div className="min-h-screen bg-neutral-50 pb-32 relative">
 
@@ -690,10 +709,19 @@ export default function DeliveryOrderDetail() {
             {showSellerLocations && sellerLocations.length > 0 && (
                 <div className="p-4">
                     <div className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-100">
-                        <h3 className="font-semibold text-neutral-900 mb-4 flex items-center gap-2">
-                            <Icons.Store size={18} className="text-neutral-500" />
-                            Seller Pickup Locations
-                        </h3>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-semibold text-neutral-900 flex items-center gap-2">
+                                <Icons.Store size={18} className="text-neutral-500" />
+                                Seller Pickup Locations
+                            </h3>
+                            <button
+                                onClick={handleOpenGoogleMaps}
+                                className="flex items-center gap-1.5 bg-[#1a1a1a] text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-black transition-colors"
+                            >
+                                <Icons.Navigation size={14} className="fill-current" />
+                                Map
+                            </button>
+                        </div>
                         <div className="space-y-3">
                             {sellerLocations.map((seller: any, idx: number) => {
                                 const isPickedUp = order?.sellerPickups?.some(
