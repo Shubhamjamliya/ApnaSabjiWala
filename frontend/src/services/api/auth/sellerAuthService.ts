@@ -112,4 +112,12 @@ export const toggleShopStatus = async (): Promise<any> => {
   return response.data;
 };
 
+/**
+ * Delete seller account
+ */
+export const deleteAccount = async (): Promise<{ success: boolean; message: string }> => {
+  const response = await api.delete<{ success: boolean; message: string }>('/auth/seller/profile');
+  return response.data;
+};
+
 

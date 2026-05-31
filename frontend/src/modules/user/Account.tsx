@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getProfile, CustomerProfile } from '../../services/api/customerService';
+import { getProfile, CustomerProfile, deleteAccount } from '../../services/api/customerService';
 import { sendTestNotification } from '../../services/pushNotificationService';
 import { useToast } from '../../context/ToastContext';
 
@@ -15,6 +15,8 @@ export default function Account() {
   const [gstNumber, setGstNumber] = useState('');
   const { showToast } = useToast();
   const [testNotifLoading, setTestNotifLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -59,6 +61,25 @@ export default function Account() {
   const handleGstSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setShowGstModal(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      setDeleteLoading(true);
+      const response = await deleteAccount();
+      if (response.success) {
+        showToast(response.message, 'success');
+        authLogout();
+        navigate('/login');
+      } else {
+        showToast(response.message, 'error');
+      }
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to delete account', 'error');
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   const handleTestNotification = async () => {
@@ -254,6 +275,14 @@ export default function Account() {
             </div>
             <span className="text-neutral-400">›</span>
           </button>
+          
+          <button onClick={() => setShowDeleteConfirm(true)} className="w-full flex items-center justify-between px-3 py-3 hover:bg-neutral-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-red-600"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              <span className="text-[13px] font-medium text-red-600">Delete Account</span>
+            </div>
+            <span className="text-neutral-400">›</span>
+          </button>
         </div>
       </div>
 
@@ -274,6 +303,33 @@ export default function Account() {
                   <button type="submit" disabled={!gstNumber.trim()} className="w-full rounded-xl bg-teal-600 text-white font-bold py-4 hover:bg-teal-700 disabled:opacity-50 transition-colors shadow-lg shadow-teal-500/20 uppercase tracking-wider text-sm">Save Details</button>
                 </form>
                 <p className="mt-6 text-[11px] text-neutral-400">By continuing, you agree to our <span className="underline">Terms & Conditions</span></p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteConfirm && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => !deleteLoading && setShowDeleteConfirm(false)} />
+          <div className="fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-500 ease-out">
+            <div className="bg-white rounded-t-[32px] shadow-2xl max-w-lg mx-auto p-6 pt-10 relative">
+              <button disabled={deleteLoading} onClick={() => setShowDeleteConfirm(false)} className="absolute -top-12 right-4 w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center text-white"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
+              <div className="text-center">
+                <div className="mx-auto mb-6 w-20 h-20 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" className="text-red-500"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </div>
+                <h3 className="text-xl font-bold text-neutral-900 mb-2">Delete Account?</h3>
+                <p className="text-[13px] text-neutral-500 mb-8 px-4">Are you sure you want to delete your account? This action cannot be undone.</p>
+                <div className="space-y-3">
+                  <button onClick={handleDeleteAccount} disabled={deleteLoading} className="w-full rounded-xl bg-red-600 text-white font-bold py-4 hover:bg-red-700 disabled:opacity-50 transition-colors shadow-lg shadow-red-500/20 text-sm">
+                    {deleteLoading ? 'Deleting...' : 'Yes, Delete My Account'}
+                  </button>
+                  <button onClick={() => setShowDeleteConfirm(false)} disabled={deleteLoading} className="w-full rounded-xl bg-neutral-100 text-neutral-900 font-bold py-4 hover:bg-neutral-200 disabled:opacity-50 transition-colors text-sm">
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -418,3 +418,28 @@ export const toggleShopStatus = asyncHandler(
     });
   },
 );
+
+/**
+ * Delete seller profile (Soft delete)
+ */
+export const deleteProfile = asyncHandler(async (req: Request, res: Response) => {
+  const sellerId = (req as any).user.userId;
+
+  const seller = await Seller.findById(sellerId);
+
+  if (!seller) {
+    return res.status(404).json({
+      success: false,
+      message: "Seller not found",
+    });
+  }
+
+  // Soft delete by updating status
+  seller.status = 'Deleted';
+  await seller.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Account deleted successfully",
+  });
+});

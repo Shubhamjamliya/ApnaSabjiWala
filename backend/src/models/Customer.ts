@@ -6,7 +6,7 @@ export interface ICustomer extends Document {
   phone: string;
   dateOfBirth?: Date;
   registrationDate: Date;
-  status: 'Active' | 'Inactive';
+  status: 'Active' | 'Inactive' | 'Deleted';
   refCode: string;
   deliveryOtp: string; // Permanent 4-digit OTP for delivery verification
   totalOrders: number;
@@ -91,7 +91,7 @@ const CustomerSchema = new Schema<ICustomer>(
     },
     status: {
       type: String,
-      enum: ['Active', 'Inactive'],
+      enum: ['Active', 'Inactive', 'Deleted'],
       default: 'Active',
     },
     refCode: {

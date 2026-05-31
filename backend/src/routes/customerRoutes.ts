@@ -10,6 +10,9 @@ router.get("/profile", authenticate, customerController.getProfile);
 // Update customer profile (protected route)
 router.put("/profile", authenticate, customerController.updateProfile);
 
+// Delete customer account (protected route)
+router.delete("/profile", authenticate, customerController.deleteProfile);
+
 // Update customer location (protected route)
 router.post("/location", authenticate, customerController.updateLocation);
 

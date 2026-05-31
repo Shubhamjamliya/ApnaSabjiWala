@@ -284,6 +284,15 @@ export const updateProfile = async (data: any) => {
   }
 };
 
+export const deleteAccount = async () => {
+  try {
+    const response = await api.delete(`${BASE_URL}/profile`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
 export const updateStatus = async (isOnline: boolean) => {
   try {
     const response = await api.put(`${BASE_URL}/status`, { isOnline });

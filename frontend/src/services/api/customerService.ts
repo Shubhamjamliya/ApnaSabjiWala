@@ -47,4 +47,10 @@ export const updateProfile = async (data: UpdateProfileData): Promise<UpdateProf
   const response = await api.put<UpdateProfileResponse>('/customer/profile', data);
   return response.data;
 };
-
+/**
+ * Delete customer account
+ */
+export const deleteAccount = async (): Promise<{ success: boolean; message: string }> => {
+  const response = await api.delete<{ success: boolean; message: string }>('/customer/profile');
+  return response.data;
+};

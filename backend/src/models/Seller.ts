@@ -62,7 +62,7 @@ export interface ISeller extends Document {
   commissionRate?: number; // Individual commission rate (overrides global setting)
 
   // Status
-  status: 'Approved' | 'Pending' | 'Rejected';
+  status: 'Approved' | 'Pending' | 'Rejected' | 'Deleted';
   balance: number;
   categories: string[];
   logo?: string;
@@ -253,7 +253,7 @@ const SellerSchema = new Schema<ISeller>(
     // Status
     status: {
       type: String,
-      enum: ['Approved', 'Pending', 'Rejected'],
+      enum: ['Approved', 'Pending', 'Rejected', 'Deleted'],
       default: 'Pending',
     },
     balance: {

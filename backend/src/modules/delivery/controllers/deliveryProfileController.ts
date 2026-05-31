@@ -139,3 +139,28 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
         data: delivery.settings
     });
 });
+
+/**
+ * Delete Delivery Profile (Soft delete)
+ */
+export const deleteProfile = asyncHandler(async (req: Request, res: Response) => {
+    const deliveryId = req.user?.userId;
+
+    const delivery = await Delivery.findById(deliveryId);
+
+    if (!delivery) {
+        return res.status(404).json({
+            success: false,
+            message: "Delivery partner not found"
+        });
+    }
+
+    // Soft delete by updating status
+    delivery.status = 'Deleted';
+    await delivery.save();
+
+    return res.status(200).json({
+        success: true,
+        message: "Account deleted successfully"
+    });
+});

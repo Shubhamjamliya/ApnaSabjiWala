@@ -201,3 +201,35 @@ export const getLocation = asyncHandler(async (req: Request, res: Response) => {
     data: customer.location,
   });
 });
+
+/**
+ * Delete customer profile (Soft delete)
+ */
+export const deleteProfile = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+
+  if (!userId || (req as any).user?.userType !== "Customer") {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized or not a customer",
+    });
+  }
+
+  const customer = await Customer.findById(userId);
+
+  if (!customer) {
+    return res.status(404).json({
+      success: false,
+      message: "Customer not found",
+    });
+  }
+
+  // Soft delete by updating status
+  customer.status = 'Deleted';
+  await customer.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Account deleted successfully",
+  });
+});
