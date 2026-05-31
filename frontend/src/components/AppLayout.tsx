@@ -21,6 +21,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { isLocationEnabled, isLocationLoading, location: userLocation, isLocationModalOpen, setIsLocationModalOpen } = useLocationContext();
   const [showLocationRequest, setShowLocationRequest] = useState(false);
   const { currentTheme } = useThemeContext();
+  const [isLocationPopupEnabled, setIsLocationPopupEnabled] = useState(true);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -35,6 +36,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
     // This ensures location is mandatory for everyone visiting the platform
     return true;
   };
+
+  // Fetch app settings to check if location popup is enabled
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${API_URL}/api/v1/app-settings`);
+        const result = await response.json();
+        if (result.success && result.data?.modules) {
+          setIsLocationPopupEnabled(result.data.modules.locationPopup !== false);
+        }
+      } catch (err) {
+        console.error('Failed to fetch app settings for location popup', err);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   // ALWAYS show location request modal on app load if location is not enabled
   // This ensures modal appears on every app open, regardless of browser permission state
@@ -52,12 +70,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
     // If location is NOT enabled and route requires location, ALWAYS show modal
     // This will trigger on every app open until user explicitly confirms location
-    if (!isLocationEnabled && requiresLocation()) {
+    if (!isLocationEnabled && requiresLocation() && isLocationPopupEnabled) {
       setShowLocationRequest(true);
     } else {
       setShowLocationRequest(false);
     }
-  }, [isLocationLoading, isLocationEnabled, location.pathname]);
+  }, [isLocationLoading, isLocationEnabled, location.pathname, isLocationPopupEnabled]);
 
   // Update search query when URL params change
   useEffect(() => {

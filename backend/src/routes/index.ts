@@ -59,6 +59,23 @@ router.get("/health", (_req, res) => {
   });
 });
 
+import AppSettings from "../models/AppSettings";
+
+// Public App Settings
+router.get("/app-settings", async (req, res) => {
+  try {
+    const settings = await AppSettings.getSettings();
+    res.json({
+      success: true,
+      data: {
+        modules: settings.modules
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching app settings" });
+  }
+});
+
 // Authentication routes
 router.use("/auth/admin", adminAuthRoutes);
 router.use("/auth/seller", sellerAuthRoutes);

@@ -14,6 +14,9 @@ export default function AdminBillingSettings() {
     const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState<number>(0);
     const [deliveryCharges, setDeliveryCharges] = useState<number>(0);
 
+    // Module Config
+    const [locationPopup, setLocationPopup] = useState(true);
+
     // Distance Based Config
     const [isDistanceBased, setIsDistanceBased] = useState(false);
     const [baseCharge, setBaseCharge] = useState<number>(0);
@@ -38,6 +41,10 @@ export default function AdminBillingSettings() {
                 setPlatformFee(data.platformFee || 0);
                 setFreeDeliveryThreshold(data.freeDeliveryThreshold || 0);
                 setDeliveryCharges(data.deliveryCharges || 0);
+                
+                if (data.modules) {
+                    setLocationPopup(data.modules.locationPopup !== false);
+                }
 
                 if (data.deliveryConfig) {
                     setIsDistanceBased(data.deliveryConfig.isDistanceBased || false);
@@ -74,6 +81,9 @@ export default function AdminBillingSettings() {
                     kmRate,
                     deliveryBoyKmRate,
                     googleMapsKey
+                },
+                modules: {
+                    locationPopup
                 }
             };
 
@@ -167,6 +177,32 @@ export default function AdminBillingSettings() {
                             </div>
                             <p className="mt-1 text-xs text-gray-500">Orders above this amount will have free delivery.</p>
                         </div>
+                    </div>
+                </div>
+
+                {/* Module Settings Section */}
+                <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Module Settings</h2>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                                User App Location Pop-up
+                            </label>
+                            <p className="mt-1 text-xs text-gray-500">Enable or disable the location request pop-up when users open the app.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setLocationPopup(!locationPopup)}
+                            className={`${locationPopup ? 'bg-green-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2`}
+                            role="switch"
+                            aria-checked={locationPopup}
+                        >
+                            <span className="sr-only">Toggle location popup</span>
+                            <span
+                                aria-hidden="true"
+                                className={`${locationPopup ? 'translate-x-5' : 'translate-x-0'} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                            />
+                        </button>
                     </div>
                 </div>
 

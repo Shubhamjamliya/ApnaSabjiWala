@@ -104,6 +104,9 @@ export interface AppSettings {
     wallet: boolean;
     coupons: boolean;
   };
+  modules?: {
+    locationPopup: boolean;
+  };
   maintenanceMode: boolean;
   maintenanceMessage?: string;
   updatedBy?: string;

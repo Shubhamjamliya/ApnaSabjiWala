@@ -105,6 +105,11 @@ export interface IAppSettings extends Document {
     coupons: boolean;
   };
 
+  // Modules
+  modules: {
+    locationPopup: boolean;
+  };
+
   // Maintenance Mode
   maintenanceMode: boolean;
   maintenanceMessage?: string;
@@ -354,26 +359,16 @@ const AppSettingsSchema = new Schema<IAppSettings>(
 
     // Feature Flags
     features: {
-      sellerRegistration: {
-        type: Boolean,
-        default: true,
-      },
-      productApproval: {
-        type: Boolean,
-        default: true,
-      },
-      orderTracking: {
-        type: Boolean,
-        default: true,
-      },
-      wallet: {
-        type: Boolean,
-        default: true,
-      },
-      coupons: {
-        type: Boolean,
-        default: true,
-      },
+      sellerRegistration: { type: Boolean, default: true },
+      productApproval: { type: Boolean, default: true },
+      orderTracking: { type: Boolean, default: true },
+      wallet: { type: Boolean, default: true },
+      coupons: { type: Boolean, default: true },
+    },
+
+    // Modules
+    modules: {
+      locationPopup: { type: Boolean, default: true },
     },
 
     // Maintenance Mode
