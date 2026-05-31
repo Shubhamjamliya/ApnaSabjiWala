@@ -5,14 +5,18 @@ export interface HomeContentResponse {
   success: boolean;
   data: {
     bestsellers: any[];
+    allProducts?: any[];
     lowestPrices?: any[];
     categories: any[];
+    subcategories?: any[];
+    homeSections?: any[];
     shops: any[];
     promoBanners: any[];
     trending: any[];
     cookingIdeas: any[];
     promoCards?: any[];
     promoStrip?: any; // PromoStrip data from backend
+    bestsellerCards?: any[];
   };
 }
 

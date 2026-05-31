@@ -331,6 +331,22 @@ export const getHomeContent = async (req: Request, res: Response) => {
       variations: p.variations
     }));
 
+    // -> All Products (in range)
+    const allProductsQuery = await Product.find(baseProductQuery)
+      .limit(60) // Limit to 60 to keep response size reasonable
+      .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category variations")
+      .lean();
+
+    const formattedAllProducts = allProductsQuery.map((p: any) => ({
+      ...p,
+      id: p._id.toString(),
+      name: p.productName,
+      imageUrl: p.mainImage,
+      mrp: p.compareAtPrice || p.price,
+      categoryId: p.category?.toString(),
+      variations: p.variations
+    }));
+
     // -> Lowest Prices Ever (Manual admin selection filtered by header)
     const lpQuery: any = { isActive: true };
 
@@ -705,6 +721,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
         subcategories: subcategories, // Subcategory tiles for the tab
         homeSections: dynamicSections.filter(s => s.data.length > 0), // Products grouped by sections
         bestsellers: formattedBestsellers,
+        allProducts: formattedAllProducts,
         lowestPrices: formattedLowestPrices,
         shops: formattedShops,
         trending: formattedTrending,

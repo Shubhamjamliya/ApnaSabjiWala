@@ -85,7 +85,9 @@ export default function Home() {
         if (response.success && response.data) {
           setHomeData(response.data);
 
-          if (response.data.bestsellers) {
+          if (response.data.allProducts) {
+            setProducts(response.data.allProducts);
+          } else if (response.data.bestsellers) {
             setProducts(response.data.bestsellers);
           }
         } else {
@@ -384,6 +386,31 @@ export default function Home() {
                         showHeartIcon={true}
                       />
                     </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* All Products Section */}
+        {filteredProducts && filteredProducts.length > 0 && (
+          <div className="mt-6 mb-6 md:mt-8 md:mb-8">
+            <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
+              All
+            </h2>
+            <div className="px-4 md:px-6 lg:px-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                {filteredProducts
+                  .map((product: any) => (
+                    <ProductCard
+                      key={product.id || product._id}
+                      product={product}
+                      categoryStyle={true}
+                      showBadge={true}
+                      showHeartIcon={true}
+                      showPackBadge={false}
+                      showStockInfo={false}
+                    />
                   ))}
               </div>
             </div>
