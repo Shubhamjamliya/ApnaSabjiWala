@@ -117,6 +117,36 @@ router.post('/verify', authenticate, requireUserType('Customer'), async (req: Re
             return res.status(400).json(result);
         }
 
+        // Send notifications to sellers now that the order is confirmed
+        try {
+            const io = req.app.get("io");
+            if (io) {
+                const OrderItem = (await import('../models/OrderItem')).default;
+                const { notifySellersOfOrderUpdate } = await import('../services/sellerNotificationService');
+                
+                const updatedOrder = order || await (await import("../models/NextDayOrder")).default.findById(orderId).lean();
+                
+                if (updatedOrder) {
+                    const orderItems = await OrderItem.find({ order: updatedOrder._id });
+                    const orderWithItems = { ...updatedOrder.toObject ? updatedOrder.toObject() : updatedOrder, items: orderItems };
+                    
+                    await notifySellersOfOrderUpdate(io, orderWithItems, 'NEW_ORDER');
+
+                    try {
+                        const { sendNewOrderNotification } = await import('../services/notificationService');
+                        const sellerIdsInOrder = [...new Set(orderItems.map((i: any) => i.seller?.toString()).filter((id: any) => id))];
+                        for (const sellerId of sellerIdsInOrder) {
+                            await sendNewOrderNotification(sellerId as string, String(updatedOrder._id), (updatedOrder as any).orderNumber, updatedOrder.total);
+                        }
+                    } catch (pushErr) {
+                        console.error("Error sending push notifications to sellers after payment:", pushErr);
+                    }
+                }
+            }
+        } catch (notificationError) {
+            console.error("Error notifying sellers after payment:", notificationError);
+        }
+
         return res.status(200).json(result);
     } catch (error: any) {
         console.error('Error verifying payment:', error);

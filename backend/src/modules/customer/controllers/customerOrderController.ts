@@ -139,7 +139,7 @@ export const createOrder = async (req: Request, res: Response) => {
             },
             paymentMethod: paymentMethod || 'COD',
             paymentStatus: 'Pending',
-            status: 'Received',
+            status: paymentMethod === 'Online' ? 'Pending' : 'Received',
             subtotal: 0,
             tax: 0,
             shipping: fees?.deliveryFee || 0,
@@ -446,22 +446,25 @@ export const createOrder = async (req: Request, res: Response) => {
                 const savedOrderResult = await Order.findById(newOrder._id).lean();
                 if (savedOrderResult && !Array.isArray(savedOrderResult)) {
                     const savedOrder = savedOrderResult;
-                    // Fetch full order items to get seller IDs
-                    const orderItems = await OrderItem.find({ order: savedOrder._id });
-                    const orderWithItems = { ...savedOrder, items: orderItems };
                     
-                    // Socket Notifications
-                    await notifySellersOfOrderUpdate(io, orderWithItems, 'NEW_ORDER');
+                    if (savedOrder.status !== 'Pending') {
+                        // Fetch full order items to get seller IDs
+                        const orderItems = await OrderItem.find({ order: savedOrder._id });
+                        const orderWithItems = { ...savedOrder, items: orderItems };
+                        
+                        // Socket Notifications
+                        await notifySellersOfOrderUpdate(io, orderWithItems, 'NEW_ORDER');
 
-                    // Push Notifications to Sellers
-                    try {
-                        const { sendNewOrderNotification } = await import('../../../services/notificationService');
-                        const sellerIdsInOrder = [...new Set(orderItems.map((i: any) => i.seller?.toString()).filter((id: any) => id))];
-                        for (const sellerId of sellerIdsInOrder) {
-                            await sendNewOrderNotification(sellerId as string, String(savedOrder._id), savedOrder.orderNumber, savedOrder.total);
+                        // Push Notifications to Sellers
+                        try {
+                            const { sendNewOrderNotification } = await import('../../../services/notificationService');
+                            const sellerIdsInOrder = [...new Set(orderItems.map((i: any) => i.seller?.toString()).filter((id: any) => id))];
+                            for (const sellerId of sellerIdsInOrder) {
+                                await sendNewOrderNotification(sellerId as string, String(savedOrder._id), savedOrder.orderNumber, savedOrder.total);
+                            }
+                        } catch (pushErr) {
+                            console.error("Error sending push notifications to sellers:", pushErr);
                         }
-                    } catch (pushErr) {
-                        console.error("Error sending push notifications to sellers:", pushErr);
                     }
                 }
             }

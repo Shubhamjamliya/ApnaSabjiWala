@@ -1314,21 +1314,21 @@ export default function Checkout() {
           </button>
 
           <button
-            disabled
-            className="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-neutral-100 bg-neutral-50 cursor-not-allowed opacity-70 relative overflow-hidden"
+            onClick={() => setPaymentMethod('Online')}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${paymentMethod === 'Online'
+              ? 'border-green-600 bg-green-50'
+              : 'border-neutral-200 bg-white hover:border-neutral-300'
+              }`}
           >
-            <div className="absolute top-0 right-0 bg-orange-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg">
-              Coming Soon
-            </div>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center mb-2 bg-neutral-200 text-neutral-400">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${paymentMethod === 'Online' ? 'bg-green-600 text-white' : 'bg-neutral-100 text-neutral-500'}`}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                 <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
                 <line x1="12" y1="22.08" x2="12" y2="12" />
               </svg>
             </div>
-            <span className="text-xs font-bold text-neutral-400">Online Payment</span>
-            <span className="text-[10px] text-neutral-400 mt-0.5">PhonePe, Card, UPI</span>
+            <span className={`text-xs font-bold ${paymentMethod === 'Online' ? 'text-green-700' : 'text-neutral-700'}`}>Online Payment</span>
+            <span className="text-[10px] text-neutral-500 mt-0.5">Pay securely online</span>
           </button>
         </div>
       </div>

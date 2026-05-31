@@ -8,6 +8,9 @@ import GoogleMapsTracking from "../../components/GoogleMapsTracking";
 import { useDeliveryTracking } from "../../hooks/useDeliveryTracking";
 import DeliveryPartnerCard from "../../components/DeliveryPartnerCard";
 import { cancelOrder, updateOrderNotes, getSellerLocationsForOrder, refreshDeliveryOtp } from "../../services/api/customerOrderService";
+import RazorpayCheckout from "../../components/RazorpayCheckout";
+import { useAuth } from "../../context/AuthContext";
+
 
 // Icon Components
 const ArrowLeftIcon = ({ className }: { className?: string }) => (
@@ -440,6 +443,7 @@ const SectionItem = ({
 );
 
 export default function OrderDetail() {
+  const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -460,6 +464,7 @@ export default function OrderDetail() {
     distanceValue: number;
   } | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showRazorpayCheckout, setShowRazorpayCheckout] = useState(false);
 
   // Modal states
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -1083,25 +1088,30 @@ export default function OrderDetail() {
       {/* Scrollable Content */}
       <div className="px-4 py-4 space-y-4 pb-24">
         {/* Payment Pending */}
-        <motion.div
-          className="bg-white rounded-xl p-4 shadow-sm"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-gray-900">
-                Payment of ₹{order.totalAmount?.toFixed(0) || "0"} pending
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Pay now, or pay to the delivery partner using Cash/UPI
-              </p>
+        {order?.paymentMethod === 'COD' && order?.paymentStatus === 'Pending' && !['Delivered', 'Cancelled', 'Returned', 'Rejected'].includes(order?.status) && (
+          <motion.div
+            className="bg-white rounded-xl p-4 shadow-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-gray-900">
+                  Payment of ₹{order.totalAmount?.toFixed(0) || "0"} pending
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Pay now, or pay to the delivery partner using Cash/UPI
+                </p>
+              </div>
+              <Button 
+                onClick={() => setShowRazorpayCheckout(true)}
+                className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6"
+              >
+                Pay now <ChevronRightIcon className="w-4 h-4 ml-1" />
+              </Button>
             </div>
-            <Button className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-6">
-              Pay now <ChevronRightIcon className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
 
         {/* Promo Carousel */}
         <PromoCarousel />
