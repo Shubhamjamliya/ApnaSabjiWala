@@ -29,10 +29,10 @@ export const isOriginAllowed = (origin: string | undefined): boolean => {
       .map((url) => url.trim().replace(/\/$/, '')) // Remove trailing slashes
       .filter((url) => url.length > 0);
 
-    // Default production origins (explicitly include www.apnasabjiwala.com)
+    // Default production origins (explicitly include www.barodamart.com)
     const defaultOrigins = [
-      'https://www.apnasabjiwala.com',
-      'https://apnasabjiwala.com',
+      'https://www.barodamart.com',
+      'https://barodamart.com',
     ];
 
     // Combine and remove duplicates

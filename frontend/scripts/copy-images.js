@@ -198,13 +198,13 @@ function copyShopByStoreImages() {
   });
 }
 
-// Copy Apna Sabji Wala logo
-function copyApnaSabjiWalaLogo() {
-  const apnasabjiwalaPath = path.join(assetsDir, 'apnasabjiwala.png');
-  if (fs.existsSync(apnasabjiwalaPath)) {
-    const destPath = path.join(publicAssetsDir, 'apnasabjiwala.png');
-    fs.copyFileSync(apnasabjiwalaPath, destPath);
-    console.log('Copied Apna Sabji Wala logo: apnasabjiwala.png');
+// Copy BarodaMart logo
+function copyBarodaMartLogo() {
+  const barodamartPath = path.join(assetsDir, 'barodamart.png');
+  if (fs.existsSync(barodamartPath)) {
+    const destPath = path.join(publicAssetsDir, 'barodamart.png');
+    fs.copyFileSync(barodamartPath, destPath);
+    console.log('Copied BarodaMart logo: barodamart.png');
   }
 }
 
@@ -233,7 +233,7 @@ copyProductImages();
 copyBannerImage();
 copyShopByStoreImages();
 copyLoginVideo();
-copyApnaSabjiWalaLogo();
+copyBarodaMartLogo();
 copyDeliveryIcon();
 console.log('Image copy completed!');
 

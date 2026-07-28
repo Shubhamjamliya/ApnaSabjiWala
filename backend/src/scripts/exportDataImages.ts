@@ -11,7 +11,7 @@ import HeaderCategory from '../models/HeaderCategory';
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ApnaSabjiWala';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/BarodaMart';
 
 async function exportImagesData() {
   try {

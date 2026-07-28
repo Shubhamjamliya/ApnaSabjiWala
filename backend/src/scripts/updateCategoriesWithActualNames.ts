@@ -19,7 +19,7 @@ function log(msg: any) {
 }
 
 // --- Configuration ---
-const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/ApnaSabjiWala";
+const MONGO_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/BarodaMart";
 
 log("Starting Update Categories with Actual Names Script");
 log(`MONGO_URI: ${MONGO_URI}`);

@@ -986,7 +986,7 @@ export default function AdminDashboard() {
       <div className="text-center text-sm text-neutral-500 py-4">
         Copyright Â© 2025. Developed By{" "}
         <a href="#" className="text-teal-600 hover:text-teal-700">
-          Apna Sabji Wala - 10 Minute App
+          BarodaMart - 10 Minute App
         </a>
       </div>
     </div>

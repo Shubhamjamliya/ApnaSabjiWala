@@ -341,7 +341,7 @@ export default function AdminSubCategory() {
 
     // Upload image if provided
     if (data.imageFile) {
-      const uploadResult = await uploadImage(data.imageFile, "apnasabjiwala/subcategories");
+      const uploadResult = await uploadImage(data.imageFile, "barodamart/subcategories");
       imageUrl = uploadResult.secureUrl;
     }
 

@@ -95,7 +95,7 @@ export default function AdminHeaderCategory() {
       // Handle Image Upload to Cloudinary
       if (imageFile) {
         setUploadingImage(true);
-        const uploadRes = await uploadImage(imageFile, 'apnasabjiwala/header_categories');
+        const uploadRes = await uploadImage(imageFile, 'barodamart/header_categories');
         finalImageUrl = uploadRes.secureUrl;
         setUploadingImage(false);
       }

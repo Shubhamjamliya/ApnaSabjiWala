@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import apnaSabjiWalaLogo from '@assets/apnasabjiwala.png';
+import barodaMartLogo from '@assets/barodamart.png';
 import { useAuth } from '../../../context/AuthContext';
 
 interface SellerHeaderProps {
@@ -88,14 +88,14 @@ export default function SellerHeader({ onMenuClick, isSidebarOpen }: SellerHeade
               </svg>
             )}
           </button>
-          {/* Apna Sabji Wala Logo */}
+          {/* BarodaMart Logo */}
           <button
             onClick={handleLogoClick}
             className="hover:opacity-80 transition-opacity"
           >
             <img
-              src={apnaSabjiWalaLogo}
-              alt="Apna Sabji Wala"
+              src={barodaMartLogo}
+              alt="BarodaMart"
               className="h-10 sm:h-12 w-auto object-contain cursor-pointer"
               style={{ maxWidth: '200px' }}
             />

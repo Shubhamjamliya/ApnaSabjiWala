@@ -56,7 +56,7 @@ const faqData: FAQItem[] = [
   {
     id: '10',
     question: 'What if I receive a damaged or wrong item?',
-    answer: 'If you receive a damaged or incorrect item, please contact our customer support immediately. We offer 48-hour replacement guarantee. You can report the issue through the order details page or contact us at help@apnasabjiwala.com.',
+    answer: 'If you receive a damaged or incorrect item, please contact our customer support immediately. We offer 48-hour replacement guarantee. You can report the issue through the order details page or contact us at help@barodamart.com.',
   },
   {
     id: '11',
@@ -211,7 +211,7 @@ export default function FAQ() {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <a
-                  href="mailto:help@apnasabjiwala.com"
+                  href="mailto:help@barodamart.com"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm"
                 >
                   <svg

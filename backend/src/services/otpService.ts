@@ -81,7 +81,7 @@ function normalizeTo10Digits(mobile: string): string {
  * Build DLT-compliant message
  */
 function buildOtpMessage(otp: string): string {
-  const appName = process.env.APP_NAME || 'Apna Sabji Wala';
+  const appName = process.env.APP_NAME || 'BarodaMart';
   return `Welcome to the ${appName} powered by SMSINDIAHUB. Your OTP for registration is ${otp}`;
 }
 

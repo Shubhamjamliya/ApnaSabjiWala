@@ -119,7 +119,7 @@ const SellerAccountSettings = () => {
 
         try {
             setUploadingImageType(field);
-            const result = await uploadImage(file, 'apnasabjiwala/seller');
+            const result = await uploadImage(file, 'barodamart/seller');
             setSellerData((prev) => ({
                 ...prev,
                 [field]: result.secureUrl,

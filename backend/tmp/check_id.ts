@@ -7,7 +7,7 @@ import HeaderCategory from '../src/models/HeaderCategory';
 const ID = '69999170f4c9410caafcdb2d';
 
 async function check() {
-  await mongoose.connect('mongodb://localhost:27017/ApnaSabjiWala');
+  await mongoose.connect('mongodb://localhost:27017/BarodaMart');
   console.log('Checking ID:', ID);
 
   const cat = await Category.findById(ID);

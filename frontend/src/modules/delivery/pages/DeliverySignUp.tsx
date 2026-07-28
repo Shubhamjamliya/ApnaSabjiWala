@@ -243,13 +243,13 @@ export default function DeliverySignUp() {
       try {
         const drivingLicenseResult = await uploadDocument(
           drivingLicenseFile,
-          "apnasabjiwala/delivery/documents"
+          "barodamart/delivery/documents"
         );
         drivingLicenseUrl = drivingLicenseResult.secureUrl;
 
         const nationalIdResult = await uploadDocument(
           nationalIdentityCardFile,
-          "apnasabjiwala/delivery/documents"
+          "barodamart/delivery/documents"
         );
         nationalIdentityCardUrl = nationalIdResult.secureUrl;
       } finally {
@@ -351,8 +351,8 @@ export default function DeliverySignUp() {
           }}>
           <div className="mb-2">
             <img
-              src="/assets/apnasabjiwala.png"
-              alt="Apna Sabji Wala Delivery"
+              src="/assets/barodamart.png"
+              alt="BarodaMart Delivery"
               className="h-32 w-full max-w-xs mx-auto object-contain"
             />
           </div>
@@ -749,7 +749,7 @@ export default function DeliverySignUp() {
 
       {/* Footer Text */}
       <p className="mt-6 text-xs text-neutral-500 text-center max-w-md mb-2">
-        By continuing, you agree to Apna Sabji Wala's Terms of Service and Privacy Policy
+        By continuing, you agree to BarodaMart's Terms of Service and Privacy Policy
       </p>
 
       {/* Legal Links */}

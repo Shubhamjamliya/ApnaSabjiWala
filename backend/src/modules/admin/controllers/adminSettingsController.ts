@@ -13,8 +13,8 @@ export const getAppSettings = asyncHandler(
     // Create default settings if none exist
     if (!settings) {
       settings = await AppSettings.create({
-        appName: "Apna Sabji Wala",
-        contactEmail: "contact@apnasabjiwala.com",
+        appName: "BarodaMart",
+        contactEmail: "contact@barodamart.com",
         contactPhone: "1234567890",
       });
     }
@@ -134,8 +134,8 @@ export const updateSMSGatewaySettings = asyncHandler(
 
     if (!settings) {
       settings = await AppSettings.create({
-        appName: "Apna Sabji Wala",
-        contactEmail: "contact@apnasabjiwala.com",
+        appName: "BarodaMart",
+        contactEmail: "contact@barodamart.com",
         contactPhone: "1234567890",
         smsGateway,
       });

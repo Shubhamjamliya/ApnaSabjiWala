@@ -293,8 +293,8 @@ export default function SellerSignUp() {
         <div className="px-6 pt-3 pb-4 text-center border-b border-green-700" style={{ backgroundColor: 'rgb(21 178 74 / var(--tw-bg-opacity, 1))' }}>
           <div className="mb-2">
             <img
-              src="/assets/apnasabjiwala.png"
-              alt="Apna Sabji Wala"
+              src="/assets/barodamart.png"
+              alt="BarodaMart"
               className="h-32 w-full max-w-xs mx-auto object-contain"
             />
           </div>
@@ -726,7 +726,7 @@ export default function SellerSignUp() {
 
       {/* Footer Text */}
       <p className="mt-6 text-xs text-neutral-500 text-center max-w-md mb-2">
-        By continuing, you agree to Apna Sabji Wala's Terms of Service and Privacy Policy
+        By continuing, you agree to BarodaMart's Terms of Service and Privacy Policy
       </p>
 
       {/* Legal Links */}

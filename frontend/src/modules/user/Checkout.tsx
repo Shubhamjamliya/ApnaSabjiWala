@@ -83,7 +83,7 @@ export default function Checkout() {
 
 
   // Check if user has placeholder data (needs profile completion)
-  const isPlaceholderUser = user?.name === 'User' || user?.email?.endsWith('@apnasabjiwala.temp');
+  const isPlaceholderUser = user?.name === 'User' || user?.email?.endsWith('@barodamart.temp');
 
   // Redirect if empty
   useEffect(() => {
@@ -337,7 +337,7 @@ export default function Checkout() {
 
     // Check if user needs to complete their profile first
     if (!bypassProfileCheck && isPlaceholderUser) {
-      setProfileFormData({ name: user?.name === 'User' ? '' : (user?.name || ''), email: user?.email?.endsWith('@apnasabjiwala.temp') ? '' : (user?.email || '') });
+      setProfileFormData({ name: user?.name === 'User' ? '' : (user?.name || ''), email: user?.email?.endsWith('@barodamart.temp') ? '' : (user?.email || '') });
       setShowProfileModal(true);
       return;
     }
@@ -1602,7 +1602,7 @@ export default function Checkout() {
         </button>
       </div>
 
-      {/* Made with love by Apna Sabji Wala */}
+      {/* Made with love by BarodaMart */}
       <div className="px-4 py-2">
         <div className="w-full flex flex-col items-center justify-center">
           <div className="flex items-center gap-1.5 text-neutral-500">
@@ -1615,7 +1615,7 @@ export default function Checkout() {
               ❤️
             </motion.span>
             <span className="text-[10px] font-medium">by</span>
-            <span className="text-[10px] font-semibold text-green-600">Apna Sabji Wala</span>
+            <span className="text-[10px] font-semibold text-green-600">BarodaMart</span>
           </div>
         </div>
       </div>
@@ -1725,7 +1725,7 @@ export default function Checkout() {
               <div>
                 <h3 className="font-bold text-neutral-900 mb-2">Contact Support</h3>
                 <p>
-                  For any cancellation requests or queries, please contact our customer support team at support@apnasabjiwala.com or call +91-XXXXX-XXXXX
+                  For any cancellation requests or queries, please contact our customer support team at support@barodamart.com or call +91-XXXXX-XXXXX
                 </p>
               </div>
             </div>

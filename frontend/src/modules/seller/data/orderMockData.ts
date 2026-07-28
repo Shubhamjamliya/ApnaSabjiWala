@@ -130,7 +130,7 @@ export const getOrderDetailById = (id: number): SellerOrderDetail | null => {
         items.push({
           srNo: srNo++,
           product: product.name,
-          soldBy: 'Apna Sabji Wala Store',
+          soldBy: 'BarodaMart Store',
           unit: product.unit,
           price: product.basePrice,
           tax: itemTax,
@@ -147,7 +147,7 @@ export const getOrderDetailById = (id: number): SellerOrderDetail | null => {
         items.push({
           srNo: srNo++,
           product: product.name,
-          soldBy: 'Apna Sabji Wala Store',
+          soldBy: 'BarodaMart Store',
           unit: product.unit,
           price: product.basePrice,
           tax: lastTax,
@@ -168,7 +168,7 @@ export const getOrderDetailById = (id: number): SellerOrderDetail | null => {
       items.push({
         srNo: 1,
         product: product.name,
-        soldBy: 'apnasabjiwala Store',
+        soldBy: 'barodamart Store',
         unit: product.unit,
         price: product.basePrice,
         tax: itemTax,

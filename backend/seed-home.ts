@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import HeaderCategory from "./src/models/HeaderCategory";
-mongoose.connect("mongodb://127.0.0.1:27017/ApnaSabjiWala").then(async () => {
+mongoose.connect("mongodb://127.0.0.1:27017/BarodaMart").then(async () => {
     let home = await HeaderCategory.findOne({ slug: "all" });
     if (!home) {
         home = new HeaderCategory({

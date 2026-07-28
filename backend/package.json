@@ -1,7 +1,7 @@
 {
-  "name": "apna-sabji-wala-backend",
+  "name": "baroda-mart-backend",
   "version": "1.0.0",
-  "description": "apna sabji wala Backend API Server",
+  "description": "barodamart Backend API Server",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
