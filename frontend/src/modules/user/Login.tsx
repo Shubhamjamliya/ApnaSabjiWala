@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { sendOTP, verifyOTP } from '../../services/api/auth/customerAuthService';
 import { useAuth } from '../../context/AuthContext';
 import OTPInput from '../../components/OTPInput';
+import { useAppSettings } from '../../context/AppSettingsContext';
 
 export default function Login() {
   const RESEND_OTP_COOLDOWN = 30;
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { userLogo } = useAppSettings();
   const redirectPath = new URLSearchParams(window.location.search).get('redirect') || '/';
   const [mobileNumber, setMobileNumber] = useState('');
   const [showOTP, setShowOTP] = useState(false);
@@ -15,8 +17,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (resendTimer <= 0) return;
@@ -48,7 +48,7 @@ export default function Login() {
       setShowOTP(true);
       setResendTimer(RESEND_OTP_COOLDOWN);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to initiate call. Please try again.');
+      setError(err.response?.data?.message || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -61,7 +61,6 @@ export default function Login() {
     try {
       const response = await verifyOTP(mobileNumber, otp, sessionId);
       if (response.success && response.data) {
-        // Update auth context with user data
         login(response.data.token, {
           id: response.data.user.id,
           name: response.data.user.name,
@@ -82,166 +81,146 @@ export default function Login() {
     }
   };
 
-  const handleZomatoLogin = () => {
-    // Handle Zomato login logic here
-    navigate('/');
-  };
-
-
-
   return (
-    <div className="h-screen bg-white flex flex-col" style={{ overflow: 'hidden', backgroundColor: '#ffffff', width: '100%', margin: 0, padding: 0, boxSizing: 'border-box' }}>
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-green-50 flex flex-col items-center justify-center px-4 py-8 relative">
       {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
-        className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-neutral-50 transition-colors"
+        className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-neutral-50 transition-colors"
         aria-label="Back"
       >
-        <svg width="18" height="18" className="sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
 
-      {/* Video Section */}
-      <div
-        className="overflow-hidden relative flex-1"
-        style={{ minHeight: 0, padding: 0, margin: 0, backgroundColor: '#ffffff', zIndex: 0, width: '100%', position: 'relative' }}
-      >
-        <video
-          ref={videoRef}
-          src="/assets/login/barodamart-login-video.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-          key="login-video-v2"
-          onLoadedMetadata={() => {
-            if (videoRef.current) {
-              videoRef.current.playbackRate = 1.5;
-            }
-          }}
-          style={{
-            display: 'block',
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            zIndex: 0
-          }}
-        />
-      </div>
+      {/* Login Card */}
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
+        {/* Header Section */}
+        <div className="relative pt-8 pb-6 px-6 text-center bg-gradient-to-br from-green-500 to-green-600 overflow-hidden">
+          {/* Decorative Circles */}
+          <div className="absolute -top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="absolute top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
 
-
-
-      {/* Login Section */}
-      <div
-        className="bg-white flex flex-col items-center flex-shrink-0 relative"
-        style={{ marginTop: '-100px', backgroundColor: '#ffffff', zIndex: 1, padding: '4px 0px 12px', paddingTop: '6px', width: '100%', borderTopLeftRadius: '20px', borderTopRightRadius: '20px' }}
-      >
-        {!showOTP ? (
-          <>
-            {/* Mobile Number Input */}
-            <div className="w-full mb-4 px-5 relative z-10">
-              <label className="block text-xs font-semibold text-neutral-500 mb-1.5 ml-1">
-                Enter Mobile Number
-              </label>
-              <div className="flex items-center bg-white border border-neutral-200 rounded-xl overflow-hidden focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/10 transition-all shadow-sm h-12">
-                <div className="pl-3.5 pr-3 h-full flex items-center justify-center bg-neutral-50 border-r border-neutral-100">
-                  <span className="text-sm font-bold text-neutral-700">+91</span>
-                </div>
-                <input
-                  type="tel"
-                  value={mobileNumber}
-                  onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  placeholder="Enter mobile number"
-                  className="flex-1 px-4 h-full text-base font-medium text-neutral-900 placeholder:text-neutral-400 focus:outline-none bg-transparent"
-                  maxLength={10}
-                  disabled={loading}
-                />
-              </div>
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="w-28 h-28 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-2 flex items-center justify-center mb-4 border border-green-400/30 transform hover:scale-105 transition-transform duration-300">
+              <img
+                src={userLogo || "/assets/barodamart.png"}
+                alt="BarodaMart"
+                className="w-full h-full object-contain"
+              />
             </div>
 
-            {error && (
-              <div className="w-full mb-1 px-4 relative z-10 text-xs text-red-600 bg-red-50 p-2 rounded">
-                {error}
-              </div>
-            )}
+            <h1 className="text-2xl font-bold text-white mb-1 tracking-tight drop-shadow-sm">
+              Login
+            </h1>
+            <p className="text-green-50 text-sm font-medium bg-green-700/30 px-3 py-1 rounded-full border border-green-400/20">
+              Fast Grocery & Daily Essentials
+            </p>
+          </div>
+        </div>
 
-            {/* Continue Button */}
-            <div className="w-full mb-1 px-4 relative z-10" style={{ maxWidth: '100%' }}>
+        {/* Login Form Body */}
+        <div className="p-6 space-y-4">
+          {!showOTP ? (
+            /* Mobile Login Form */
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Mobile Number
+                </label>
+                <div className="flex items-center bg-white border border-neutral-300 rounded-lg overflow-hidden focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-200 transition-all">
+                  <div className="px-3 py-2.5 text-sm font-medium text-neutral-600 border-r border-neutral-300 bg-neutral-50">
+                    +91
+                  </div>
+                  <input
+                    type="tel"
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="Enter mobile number"
+                    className="flex-1 px-3 py-2.5 text-sm placeholder:text-neutral-400 focus:outline-none"
+                    maxLength={10}
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                  {error}
+                </div>
+              )}
+
               <button
                 onClick={handleContinue}
                 disabled={mobileNumber.length !== 10 || loading}
-                className={`w-full py-2 sm:py-2.5 rounded-lg font-semibold text-sm transition-colors border px-3 ${mobileNumber.length === 10 && !loading
-                  ? 'bg-orange-50 text-orange-600 border-orange-500 hover:bg-orange-100'
-                  : 'bg-neutral-300 text-neutral-500 cursor-not-allowed border-neutral-300'
+                className={`w-full py-2.5 rounded-lg font-semibold text-sm transition-colors ${mobileNumber.length === 10 && !loading
+                  ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-md'
+                  : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
                   }`}
               >
-                {loading ? 'Calling...' : 'Continue'}
+                {loading ? 'Sending OTP...' : 'Continue'}
               </button>
             </div>
-
-
-          </>
-        ) : (
-          <>
-            {/* OTP Verification */}
-            <div className="w-full mb-2 px-4 relative z-10 text-center">
-              <p className="text-xs text-neutral-600 mb-2">
-                Enter the 4-digit OTP sent via voice call to
-              </p>
-              <p className="text-xs font-semibold text-neutral-800">+91 {mobileNumber}</p>
-            </div>
-            <div className="w-full mb-2 px-4 relative z-10 flex justify-center">
-              <OTPInput onComplete={handleOTPComplete} disabled={loading} />
-            </div>
-            {error && (
-              <div className="w-full mb-1 px-4 relative z-10 text-xs text-red-600 bg-red-50 p-2 rounded text-center">
-                {error}
+          ) : (
+            /* OTP Verification Form */
+            <div className="space-y-4">
+              <div className="text-center">
+                <p className="text-sm text-neutral-600 mb-2">
+                  Enter the 4-digit OTP sent to
+                </p>
+                <p className="text-sm font-semibold text-neutral-800">+91 {mobileNumber}</p>
               </div>
-            )}
-            <div className="w-full mb-1 px-4 relative z-10 flex gap-2">
-              <button
-                onClick={() => {
-                  setShowOTP(false);
-                  setError('');
-                  setResendTimer(0);
-                }}
-                disabled={loading}
-                className="flex-1 py-2 rounded-lg font-semibold text-xs bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors border border-neutral-300"
-              >
-                Change Number
-              </button>
-              <button
-                onClick={handleContinue}
-                disabled={loading || resendTimer > 0}
-                className={`flex-1 py-2 rounded-lg font-semibold text-xs border transition-colors ${loading || resendTimer > 0
+
+              <div className="flex justify-center">
+                <OTPInput onComplete={handleOTPComplete} disabled={loading} />
+              </div>
+
+              {error && (
+                <div className="text-sm text-red-600 bg-red-50 p-2 rounded text-center">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowOTP(false);
+                    setError('');
+                    setResendTimer(0);
+                  }}
+                  disabled={loading}
+                  className="flex-1 py-2.5 rounded-lg font-semibold text-sm bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors border border-neutral-300"
+                >
+                  Change Number
+                </button>
+                <button
+                  onClick={handleContinue}
+                  disabled={loading || resendTimer > 0}
+                  className={`flex-1 py-2.5 rounded-lg font-semibold text-sm border transition-colors ${loading || resendTimer > 0
                     ? 'bg-neutral-100 text-neutral-400 border-neutral-300 cursor-not-allowed'
-                    : 'bg-orange-50 text-orange-600 border-orange-500 hover:bg-orange-100'
-                  }`}
-              >
-                {loading ? 'Sending...' : resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
-              </button>
+                    : 'bg-teal-600 text-white border-teal-600 hover:bg-teal-700'
+                    }`}
+                >
+                  {loading ? 'Sending...' : resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
+                </button>
+              </div>
             </div>
-          </>
-        )}
+          )}
 
+          {/* Customer Notice */}
+          <div className="text-center pt-2 border-t border-neutral-200">
+            <p className="text-xs text-neutral-500">
+              Access your saved addresses from BarodaMart automatically!
+            </p>
+          </div>
 
-
-        {/* Privacy Text */}
-        <p className="text-[9px] sm:text-[10px] text-neutral-500 text-center max-w-sm leading-tight px-4 relative z-10 pb-1">
-          Access your saved addresses from BarodaMart automatically!
-        </p>
-
-        {/* Legal Links */}
-        <div className="flex justify-center gap-4 mt-2 mb-2 text-[10px] text-neutral-500 relative z-10">
-          <Link to="/customer/policy" className="hover:text-neutral-800 underline">Privacy Policy</Link>
-          <Link to="/customer/terms" className="hover:text-neutral-800 underline">Terms & Conditions</Link>
-          <Link to="/customer/support" className="hover:text-neutral-800 underline">Support</Link>
+          {/* Legal Links */}
+          <div className="flex justify-center gap-4 mt-2 text-xs text-neutral-500">
+            <Link to="/customer/policy" className="hover:text-neutral-800 underline">Privacy Policy</Link>
+            <Link to="/customer/terms" className="hover:text-neutral-800 underline">Terms & Conditions</Link>
+            <Link to="/customer/support" className="hover:text-neutral-800 underline">Support</Link>
+          </div>
         </div>
       </div>
     </div>

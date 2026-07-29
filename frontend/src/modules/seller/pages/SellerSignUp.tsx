@@ -5,6 +5,7 @@ import { removeAuthToken } from '../../../services/api/config';
 import OTPInput from '../../../components/OTPInput';
 import GoogleMapsAutocomplete from '../../../components/GoogleMapsAutocomplete';
 import { useAuth } from '../../../context/AuthContext';
+import { useAppSettings } from '../../../context/AppSettingsContext';
 import { getHeaderCategoriesPublic, HeaderCategory } from '../../../services/api/headerCategoryService';
 import LocationPickerMap from '../../../components/LocationPickerMap';
 import { useEffect } from 'react';
@@ -18,6 +19,7 @@ export default function SellerSignUp() {
 
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { sellerLogo } = useAppSettings();
   const [formData, setFormData] = useState({
     sellerName: '',
     mobile: '',
@@ -293,7 +295,7 @@ export default function SellerSignUp() {
         <div className="px-6 pt-3 pb-4 text-center border-b border-green-700" style={{ backgroundColor: 'rgb(21 178 74 / var(--tw-bg-opacity, 1))' }}>
           <div className="mb-2">
             <img
-              src="/assets/barodamart.png"
+              src={sellerLogo || "/assets/barodamart.png"}
               alt="BarodaMart"
               className="h-32 w-full max-w-xs mx-auto object-contain"
             />

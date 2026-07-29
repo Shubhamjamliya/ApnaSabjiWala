@@ -4,6 +4,10 @@ export interface IAppSettings extends Document {
   // App Info
   appName: string;
   appLogo?: string;
+  userLogo?: string;
+  adminLogo?: string;
+  sellerLogo?: string;
+  deliveryLogo?: string;
   appFavicon?: string;
 
   // Contact Info
@@ -153,7 +157,23 @@ const AppSettingsSchema = new Schema<IAppSettings>(
     },
 
     // App Info
-    appName: {
+    appLogo: {
+      type: String,
+      trim: true,
+    },
+    userLogo: {
+      type: String,
+      trim: true,
+    },
+    adminLogo: {
+      type: String,
+      trim: true,
+    },
+    sellerLogo: {
+      type: String,
+      trim: true,
+    },
+    deliveryLogo: {
       type: String,
       trim: true,
     },

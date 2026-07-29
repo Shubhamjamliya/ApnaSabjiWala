@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom';
+import { useAppSettings } from '../../context/AppSettingsContext';
 
 export default function AboutUs() {
     const navigate = useNavigate();
+    const { userLogo } = useAppSettings();
 
     return (
         <div className="pb-24 md:pb-8 bg-white min-h-screen">
@@ -27,10 +29,8 @@ export default function AboutUs() {
             <div className="px-4 md:px-6 lg:px-8 py-6 max-w-3xl mx-auto">
                 {/* Logo/Brand Section */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 mb-4 shadow-lg">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
-                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="currentColor" />
-                        </svg>
+                    <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-white mb-4 shadow-md p-3 border border-neutral-100">
+                        <img src={userLogo || '/assets/barodamart.png'} alt="BarodaMart" className="max-h-full max-w-full object-contain" />
                     </div>
                     <h2 className="text-3xl font-bold text-neutral-900 mb-2">BarodaMart</h2>
                     <p className="text-sm text-neutral-600">Your Trusted Delivery Partner</p>

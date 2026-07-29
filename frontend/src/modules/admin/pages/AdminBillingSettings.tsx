@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '../../../context/ToastContext';
 import { getAppSettings, updateAppSettings, AppSettings } from '../../../services/api/admin/adminSettingsService';
+import { uploadImage } from '../../../services/api/uploadService';
+import { useAppSettings } from '../../../context/AppSettingsContext';
 import { motion } from 'framer-motion';
 
 export default function AdminBillingSettings() {
     const { showToast } = useToast();
+    const { refreshSettings } = useAppSettings();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState<AppSettings | null>(null);
+
+    // Multi-Portal Logo State
+    const [userLogo, setUserLogo] = useState<string>('');
+    const [adminLogo, setAdminLogo] = useState<string>('');
+    const [sellerLogo, setSellerLogo] = useState<string>('');
+    const [deliveryLogo, setDeliveryLogo] = useState<string>('');
+    const [uploadingLogoType, setUploadingLogoType] = useState<string | null>(null);
 
     // Form State
     const [platformFee, setPlatformFee] = useState<number>(0);
@@ -37,6 +47,12 @@ export default function AdminBillingSettings() {
                 const data = response.data;
                 setSettings(data);
 
+                // Initialize Logos
+                setUserLogo(data.userLogo || data.appLogo || '');
+                setAdminLogo(data.adminLogo || '');
+                setSellerLogo(data.sellerLogo || '');
+                setDeliveryLogo(data.deliveryLogo || '');
+
                 // Initialize State
                 setPlatformFee(data.platformFee || 0);
                 setFreeDeliveryThreshold(data.freeDeliveryThreshold || 0);
@@ -54,7 +70,6 @@ export default function AdminBillingSettings() {
                     setDeliveryBoyKmRate(data.deliveryConfig.deliveryBoyKmRate || 0);
                     setGoogleMapsKey(data.deliveryConfig.googleMapsKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '');
                 } else {
-                    // If no config exists, try to pre-fill from env
                     setGoogleMapsKey(import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '');
                 }
             }
@@ -66,11 +81,38 @@ export default function AdminBillingSettings() {
         }
     };
 
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, portal: 'user' | 'admin' | 'seller' | 'delivery') => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setUploadingLogoType(portal);
+            const result = await uploadImage(file, 'barodamart/logos');
+            const url = result.secureUrl || result.url;
+            if (portal === 'user') setUserLogo(url);
+            if (portal === 'admin') setAdminLogo(url);
+            if (portal === 'seller') setSellerLogo(url);
+            if (portal === 'delivery') setDeliveryLogo(url);
+            showToast(`${portal.toUpperCase()} logo uploaded! Click Save to apply.`);
+        } catch (err: any) {
+            console.error(err);
+            showToast(err.message || 'Failed to upload logo', 'error');
+        } finally {
+            setUploadingLogoType(null);
+        }
+    };
+
     const handleSave = async () => {
         try {
             setSaving(true);
 
             const updatePayload: any = {
+                userLogo,
+                adminLogo,
+                sellerLogo,
+                deliveryLogo,
+                appLogo: userLogo || adminLogo || sellerLogo || deliveryLogo,
+                appFavicon: userLogo || adminLogo || sellerLogo || deliveryLogo,
                 platformFee,
                 freeDeliveryThreshold,
                 deliveryCharges,
@@ -89,8 +131,9 @@ export default function AdminBillingSettings() {
 
             const response = await updateAppSettings(updatePayload);
             if (response.success) {
-                showToast('Billing settings updated successfully');
+                showToast('Settings updated successfully');
                 setSettings(response.data);
+                await refreshSettings();
             } else {
                 showToast('Failed to update settings', 'error');
             }
@@ -138,6 +181,198 @@ export default function AdminBillingSettings() {
             </div>
 
             <div className="space-y-6">
+                {/* Multi-Portal Brand Logos Section */}
+                <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+                    <div className="flex items-center justify-between mb-4 pb-2 border-b">
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-900">Multi-Portal Brand Logos</h2>
+                            <p className="text-xs text-gray-500">Upload distinct dynamic logos for each panel (User App, Admin, Seller, and Delivery Partner).</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* User App Logo */}
+                        <div className="border border-neutral-200 rounded-xl p-4 bg-neutral-50/50">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="font-semibold text-gray-800 text-sm">🛒 User App Logo</h3>
+                                {userLogo && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setUserLogo('')}
+                                        className="text-xs text-red-600 hover:underline"
+                                    >
+                                        Reset to Default
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-4 mb-3">
+                                <div className="h-16 w-28 bg-white rounded-lg border border-neutral-200 p-2 flex items-center justify-center overflow-hidden">
+                                    <img
+                                        src={userLogo || '/assets/barodamart.png'}
+                                        alt="User App Logo"
+                                        className="max-h-full max-w-full object-contain"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="inline-block px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 cursor-pointer shadow-sm">
+                                        {uploadingLogoType === 'user' ? 'Uploading...' : 'Choose File'}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => handleLogoUpload(e, 'user')}
+                                            className="hidden"
+                                            disabled={uploadingLogoType === 'user'}
+                                        />
+                                    </label>
+                                    <p className="text-[11px] text-gray-400 mt-1">PNG/SVG recommended (max 2MB)</p>
+                                </div>
+                            </div>
+                            <input
+                                type="text"
+                                value={userLogo}
+                                onChange={(e) => setUserLogo(e.target.value)}
+                                placeholder="Or enter image URL"
+                                className="w-full text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 bg-white"
+                            />
+                        </div>
+
+                        {/* Admin Portal Logo */}
+                        <div className="border border-neutral-200 rounded-xl p-4 bg-neutral-50/50">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="font-semibold text-gray-800 text-sm">⚙️ Admin Portal Logo</h3>
+                                {adminLogo && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setAdminLogo('')}
+                                        className="text-xs text-red-600 hover:underline"
+                                    >
+                                        Reset to Default
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-4 mb-3">
+                                <div className="h-16 w-28 bg-white rounded-lg border border-neutral-200 p-2 flex items-center justify-center overflow-hidden">
+                                    <img
+                                        src={adminLogo || '/assets/barodamart.png'}
+                                        alt="Admin Portal Logo"
+                                        className="max-h-full max-w-full object-contain"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="inline-block px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 cursor-pointer shadow-sm">
+                                        {uploadingLogoType === 'admin' ? 'Uploading...' : 'Choose File'}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => handleLogoUpload(e, 'admin')}
+                                            className="hidden"
+                                            disabled={uploadingLogoType === 'admin'}
+                                        />
+                                    </label>
+                                    <p className="text-[11px] text-gray-400 mt-1">PNG/SVG recommended (max 2MB)</p>
+                                </div>
+                            </div>
+                            <input
+                                type="text"
+                                value={adminLogo}
+                                onChange={(e) => setAdminLogo(e.target.value)}
+                                placeholder="Or enter image URL"
+                                className="w-full text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 bg-white"
+                            />
+                        </div>
+
+                        {/* Seller Portal Logo */}
+                        <div className="border border-neutral-200 rounded-xl p-4 bg-neutral-50/50">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="font-semibold text-gray-800 text-sm">🏪 Seller Portal Logo</h3>
+                                {sellerLogo && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSellerLogo('')}
+                                        className="text-xs text-red-600 hover:underline"
+                                    >
+                                        Reset to Default
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-4 mb-3">
+                                <div className="h-16 w-28 bg-white rounded-lg border border-neutral-200 p-2 flex items-center justify-center overflow-hidden">
+                                    <img
+                                        src={sellerLogo || '/assets/barodamart.png'}
+                                        alt="Seller Portal Logo"
+                                        className="max-h-full max-w-full object-contain"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="inline-block px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 cursor-pointer shadow-sm">
+                                        {uploadingLogoType === 'seller' ? 'Uploading...' : 'Choose File'}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => handleLogoUpload(e, 'seller')}
+                                            className="hidden"
+                                            disabled={uploadingLogoType === 'seller'}
+                                        />
+                                    </label>
+                                    <p className="text-[11px] text-gray-400 mt-1">PNG/SVG recommended (max 2MB)</p>
+                                </div>
+                            </div>
+                            <input
+                                type="text"
+                                value={sellerLogo}
+                                onChange={(e) => setSellerLogo(e.target.value)}
+                                placeholder="Or enter image URL"
+                                className="w-full text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 bg-white"
+                            />
+                        </div>
+
+                        {/* Delivery Partner Logo */}
+                        <div className="border border-neutral-200 rounded-xl p-4 bg-neutral-50/50">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="font-semibold text-gray-800 text-sm">🛵 Delivery Partner Logo</h3>
+                                {deliveryLogo && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setDeliveryLogo('')}
+                                        className="text-xs text-red-600 hover:underline"
+                                    >
+                                        Reset to Default
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-4 mb-3">
+                                <div className="h-16 w-28 bg-white rounded-lg border border-neutral-200 p-2 flex items-center justify-center overflow-hidden">
+                                    <img
+                                        src={deliveryLogo || '/assets/barodamart.png'}
+                                        alt="Delivery Partner Logo"
+                                        className="max-h-full max-w-full object-contain"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="inline-block px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 cursor-pointer shadow-sm">
+                                        {uploadingLogoType === 'delivery' ? 'Uploading...' : 'Choose File'}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => handleLogoUpload(e, 'delivery')}
+                                            className="hidden"
+                                            disabled={uploadingLogoType === 'delivery'}
+                                        />
+                                    </label>
+                                    <p className="text-[11px] text-gray-400 mt-1">PNG/SVG recommended (max 2MB)</p>
+                                </div>
+                            </div>
+                            <input
+                                type="text"
+                                value={deliveryLogo}
+                                onChange={(e) => setDeliveryLogo(e.target.value)}
+                                placeholder="Or enter image URL"
+                                className="w-full text-xs px-3 py-1.5 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 bg-white"
+                            />
+                        </div>
+                    </div>
+                </div>
+
                 {/* General Billing Section */}
                 <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">General Charges</h2>

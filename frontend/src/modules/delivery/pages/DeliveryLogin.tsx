@@ -3,12 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { sendOTP, verifyOTP } from '../../../services/api/auth/deliveryAuthService';
 import OTPInput from '../../../components/OTPInput';
 import { useAuth } from '../../../context/AuthContext';
+import { useAppSettings } from '../../../context/AppSettingsContext';
 import { removeAuthToken } from '../../../services/api/config';
 
 export default function DeliveryLogin() {
   const RESEND_OTP_COOLDOWN = 30;
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { deliveryLogo } = useAppSettings();
   const [mobileNumber, setMobileNumber] = useState('');
   const [sessionId, setSessionId] = useState('');
   const [showOTP, setShowOTP] = useState(false);
@@ -123,7 +125,7 @@ export default function DeliveryLogin() {
           <div className="relative z-10 flex flex-col items-center">
             <div className="w-28 h-28 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-2 flex items-center justify-center mb-4 border border-green-400/30 transform hover:scale-105 transition-transform duration-300">
               <img
-                src="/assets/barodamart.png"
+                src={deliveryLogo || "/assets/barodamart.png"}
                 alt="BarodaMart"
                 className="w-full h-full object-contain"
               />

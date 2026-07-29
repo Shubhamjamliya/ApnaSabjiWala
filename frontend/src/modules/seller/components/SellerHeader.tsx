@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import barodaMartLogo from '@assets/barodamart.png';
 import { useAuth } from '../../../context/AuthContext';
+import { useAppSettings } from '../../../context/AppSettingsContext';
 
 interface SellerHeaderProps {
   onMenuClick: () => void;
@@ -14,6 +15,7 @@ export default function SellerHeader({ onMenuClick, isSidebarOpen }: SellerHeade
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const { user, logout } = useAuth();
+  const { sellerLogo } = useAppSettings();
   const settingsRef = useRef<HTMLDivElement>(null);
   const locationRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +96,7 @@ export default function SellerHeader({ onMenuClick, isSidebarOpen }: SellerHeade
             className="hover:opacity-80 transition-opacity"
           >
             <img
-              src={barodaMartLogo}
+              src={sellerLogo || barodaMartLogo}
               alt="BarodaMart"
               className="h-10 sm:h-12 w-auto object-contain cursor-pointer"
               style={{ maxWidth: '200px' }}

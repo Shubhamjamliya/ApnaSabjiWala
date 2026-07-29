@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { useAppSettings } from '../../../context/AppSettingsContext';
 import barodaMartLogo from '@assets/barodamart.png';
 
 interface AdminHeaderProps {
@@ -12,6 +13,7 @@ export default function AdminHeader({ onMenuClick, isSidebarOpen }: AdminHeaderP
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
+  const { adminLogo } = useAppSettings();
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,7 +82,7 @@ export default function AdminHeader({ onMenuClick, isSidebarOpen }: AdminHeaderP
             className="hover:opacity-80 transition-opacity"
           >
             <img
-              src={barodaMartLogo}
+              src={adminLogo || barodaMartLogo}
               alt="BarodaMart"
               className="h-10 sm:h-12 w-auto object-contain cursor-pointer"
               style={{ maxWidth: '200px' }}

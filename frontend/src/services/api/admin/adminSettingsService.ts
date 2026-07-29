@@ -59,6 +59,10 @@ export interface AppSettings {
   _id: string;
   appName: string;
   appLogo?: string;
+  userLogo?: string;
+  adminLogo?: string;
+  sellerLogo?: string;
+  deliveryLogo?: string;
   appFavicon?: string;
   contactEmail: string;
   contactPhone: string;

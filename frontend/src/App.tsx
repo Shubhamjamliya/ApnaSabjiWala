@@ -6,6 +6,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { LocationProvider } from "./context/LocationContext";
 import { ToastProvider } from "./context/ToastContext";
+import { AppSettingsProvider } from "./context/AppSettingsContext";
 
 import { LoadingProvider } from "./context/LoadingContext";
 import { AxiosLoadingInterceptor } from "./context/AxiosLoadingInterceptor";
@@ -169,7 +170,8 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <LoadingProvider>
+      <AppSettingsProvider>
+        <LoadingProvider>
         <AxiosLoadingInterceptor>
           <IconLoader />
           <AuthProvider>
@@ -453,7 +455,8 @@ function App() {
           </AuthProvider>
         </AxiosLoadingInterceptor>
       </LoadingProvider>
-    </ErrorBoundary>
+    </AppSettingsProvider>
+  </ErrorBoundary>
   );
 }
 

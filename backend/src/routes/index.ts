@@ -68,10 +68,16 @@ router.get("/app-settings", async (_req, res) => {
     res.json({
       success: true,
       data: {
+        appName: settings.appName || "BarodaMart",
+        appLogo: settings.appLogo || "",
+        userLogo: settings.userLogo || settings.appLogo || "",
+        adminLogo: settings.adminLogo || "",
+        sellerLogo: settings.sellerLogo || "",
+        deliveryLogo: settings.deliveryLogo || "",
         modules: settings.modules,
         appPolicies: settings.appPolicies,
         appTerms: settings.appTerms,
-        appSupport: settings.appSupport
+        appSupport: settings.appSupport,
       }
     });
   } catch (error) {

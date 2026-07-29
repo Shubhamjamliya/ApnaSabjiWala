@@ -9,8 +9,10 @@ import { removeAuthToken } from "../../../services/api/config";
 import { uploadDocument } from "../../../services/api/uploadService";
 import { validateDocumentFile } from "../../../utils/imageUpload";
 import OTPInput from "../../../components/OTPInput";
+import { useAppSettings } from "../../../context/AppSettingsContext";
 
 export default function DeliverySignUp() {
+  const { deliveryLogo } = useAppSettings();
   const ALPHABET_ONLY_REGEX = /^[A-Za-z ]+$/;
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const DOB_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -351,7 +353,7 @@ export default function DeliverySignUp() {
           }}>
           <div className="mb-2">
             <img
-              src="/assets/barodamart.png"
+              src={deliveryLogo || "/assets/barodamart.png"}
               alt="BarodaMart Delivery"
               className="h-32 w-full max-w-xs mx-auto object-contain"
             />
