@@ -405,7 +405,7 @@ export default function Checkout() {
         }
       }
     } catch (error: any) {
-      console.error("Order placement failed", error);
+      console.error("[Developer Error] Order placement failed:", error.developerError || error.response?.data?.developerError || error);
       const errorMessage = error.message || error.response?.data?.message || "Failed to place order. Please try again.";
       showGlobalToast(errorMessage, 'error');
     } finally {

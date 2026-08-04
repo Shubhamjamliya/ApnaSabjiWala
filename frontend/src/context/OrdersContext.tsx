@@ -112,6 +112,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
         items: order.items.map((item) => ({
           product: {
             id: item.product.id || (item.product as { _id?: string })._id || '',
+            name: item.product.name || (item.product as any).productName || '',
           },
           quantity: item.quantity,
           variant: item.variant, // Pass variant if available
@@ -131,23 +132,16 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
         return orderData._id || orderData.id;
       }
       return undefined;
-    } catch (error: unknown) {
-      console.error("Failed to create order", error);
-      // Extract and log the actual error message from the backend
-      const apiError = error as ApiError;
-      if (apiError.response?.data) {
-        console.error("Backend error details:", apiError.response.data);
-        const errorMessage = apiError.response.data.message || apiError.message || 'Failed to create order';
-        const errorDetails = apiError.response.data.details;
-        if (errorDetails) {
-          console.error("Validation details:", errorDetails);
-        }
-        // Re-throw with more details
-        const enhancedError = new Error(errorMessage) as Error & { details?: unknown };
-        enhancedError.details = errorDetails;
-        throw enhancedError;
-      }
-      throw error;
+    } catch (error: any) {
+      // Log full developer error details to console
+      const developerErr = error.response?.data?.developerError || error.response?.data || error;
+      console.error("[Developer Error] Order creation failed:", developerErr);
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to place order';
+      const enhancedError = new Error(errorMessage) as Error & { details?: unknown; developerError?: any };
+      enhancedError.details = error.response?.data?.details;
+      enhancedError.developerError = developerErr;
+      throw enhancedError;
     }
   };
 

@@ -154,110 +154,99 @@ export const createOrder = async (req: Request, res: Response) => {
         const sellerIds = new Set<string>(); // Track unique sellers
 
         for (const item of items) {
-            if (!item.product || !item.product.id) {
-                throw new Error("Invalid item structure: product.id is missing");
+            const productId = item?.product?.id || item?.product?._id;
+            if (!productId) {
+                throw new Error("Invalid item structure: product ID is missing.");
             }
 
             const qty = Number(item.quantity) || 0;
             if (qty <= 0) {
-                throw new Error("Invalid item quantity");
+                throw new Error("Invalid item quantity.");
             }
 
-            // Atomically check stock and decrement to prevent race conditions
-            let product;
-            // The frontend sends variation info as 'variant' or 'variation'
-            // In the product model, it's stored in 'variations' array
-            const variationValue = item.variant || item.variation;
+            // Extract variation identifier string if passed as string or object
+            const rawVar = item.variant || item.variation;
+            let variationValue: string | undefined = undefined;
+            if (typeof rawVar === 'string') {
+                variationValue = rawVar;
+            } else if (rawVar && typeof rawVar === 'object') {
+                variationValue = rawVar.name || rawVar.value || rawVar.pack || rawVar.title || (rawVar._id ? String(rawVar._id) : undefined);
+            }
 
-            if (variationValue) {
-                // Try to decrement stock for the specific variation first
-                // We check variations._id, variations.value, variations.title, or variations.pack
+            // Fetch product first to verify existence and get human-readable product name
+            const checkProduct = await Product.findById(productId);
+            if (!checkProduct) {
+                throw new Error("One of the items in your cart is no longer available.");
+            }
+
+            const productName = checkProduct.productName || item?.product?.name || 'Product';
+
+            let product;
+            if (checkProduct.variations && checkProduct.variations.length > 0) {
+                // Product has variations
+                let targetVarIdx = -1;
+                if (variationValue) {
+                    targetVarIdx = checkProduct.variations.findIndex((v: any) =>
+                        (v._id && v._id.toString() === variationValue) ||
+                        v.name === variationValue ||
+                        v.value === variationValue ||
+                        v.title === variationValue ||
+                        v.pack === variationValue
+                    );
+                }
+
+                if (targetVarIdx === -1) {
+                    targetVarIdx = 0; // Fallback to first variation if unspecified
+                }
+
+                const targetVar = checkProduct.variations[targetVarIdx];
+                const availableVarStock = Number(targetVar?.stock) || 0;
+
+                if (availableVarStock < qty) {
+                    const varLabel = targetVar?.name || targetVar?.value || targetVar?.pack || '';
+                    const fullLabel = varLabel && varLabel.toLowerCase() !== 'variation' && varLabel.toLowerCase() !== 'standard' ? ` (${varLabel})` : '';
+                    throw new Error(`"${productName}"${fullLabel} is currently out of stock.`);
+                }
+
+                // Decrement variation stock atomically
+                const incQuery: any = {};
+                incQuery[`variations.${targetVarIdx}.stock`] = -qty;
+                if (checkProduct.stock >= qty) {
+                    incQuery['stock'] = -qty;
+                }
+
                 product = session
                     ? await Product.findOneAndUpdate(
-                        {
-                            _id: item.product.id,
-                            $or: [
-                                { "variations._id": mongoose.isValidObjectId(variationValue) ? variationValue : new mongoose.Types.ObjectId() },
-                                { "variations.name": variationValue },
-                                { "variations.value": variationValue },
-                                { "variations.title": variationValue },
-                                { "variations.pack": variationValue }
-                            ],
-                            "variations.stock": { $gte: qty }
-                        },
-                        { $inc: { "variations.$.stock": -qty, stock: -qty } },
+                        { _id: productId, [`variations.${targetVarIdx}.stock`]: { $gte: qty } },
+                        { $inc: incQuery },
                         { session, new: true }
                     )
                     : await Product.findOneAndUpdate(
-                        {
-                            _id: item.product.id,
-                            $or: [
-                                { "variations._id": mongoose.isValidObjectId(variationValue) ? variationValue : new mongoose.Types.ObjectId() },
-                                { "variations.name": variationValue },
-                                { "variations.value": variationValue },
-                                { "variations.title": variationValue },
-                                { "variations.pack": variationValue }
-                            ],
-                            "variations.stock": { $gte: qty }
-                        },
-                        { $inc: { "variations.$.stock": -qty, stock: -qty } },
+                        { _id: productId, [`variations.${targetVarIdx}.stock`]: { $gte: qty } },
+                        { $inc: incQuery },
+                        { new: true }
+                    );
+            } else {
+                // No variations - check top-level stock
+                if (checkProduct.stock < qty) {
+                    throw new Error(`"${productName}" is currently out of stock.`);
+                }
+
+                product = session
+                    ? await Product.findOneAndUpdate(
+                        { _id: productId, stock: { $gte: qty } },
+                        { $inc: { stock: -qty } },
+                        { session, new: true }
+                    )
+                    : await Product.findOneAndUpdate(
+                        { _id: productId, stock: { $gte: qty } },
+                        { $inc: { stock: -qty } },
                         { new: true }
                     );
             }
 
             if (!product) {
-                // If we are here, either variationValue wasn't provided, or it didn't match any variation with enough stock.
-                // We'll try to find the product first to see if it has variations.
-                const checkProduct = await Product.findById(item.product.id);
-
-                if (checkProduct && checkProduct.variations && checkProduct.variations.length > 0) {
-                    // Product has variations, but we didn't match one.
-                    // If a variation was provided, it means that specific variation is out of stock.
-                    if (variationValue && variationValue !== 'Standard') {
-                        throw new Error(`Insufficient stock for variation: ${variationValue}`);
-                    }
-
-                    // If variationValue is 'Standard' but not found, or not provided,
-                    // we'll try to find the product again and decrement from the first variation.
-                    // This is handled by falling through to the findOneAndUpdate below.
-
-                    // No variation was provided, but the product has them.
-                    // To maintain data consistency, we'll try to decrement from the first variation.
-                    product = session
-                        ? await Product.findOneAndUpdate(
-                            {
-                                _id: item.product.id,
-                                "variations.0.stock": { $gte: qty }
-                            },
-                            { $inc: { "variations.0.stock": -qty, stock: -qty } },
-                            { session, new: true }
-                        )
-                        : await Product.findOneAndUpdate(
-                            {
-                                _id: item.product.id,
-                                "variations.0.stock": { $gte: qty }
-                            },
-                            { $inc: { "variations.0.stock": -qty, stock: -qty } },
-                            { new: true }
-                        );
-                } else {
-                    // No variations, just decrement top-level stock
-                    product = session
-                        ? await Product.findOneAndUpdate(
-                            { _id: item.product.id, stock: { $gte: qty } },
-                            { $inc: { stock: -qty } },
-                            { session, new: true }
-                        )
-                        : await Product.findOneAndUpdate(
-                            { _id: item.product.id, stock: { $gte: qty } },
-                            { $inc: { stock: -qty } },
-                            { new: true }
-                        );
-                }
-            }
-
-            if (!product) {
-                throw new Error(`Insufficient stock or product not found: ${item.product.name || 'ID: ' + item.product.id}${variationValue ? ' (' + variationValue + ')' : ''}`);
+                throw new Error(`"${productName}" is currently out of stock or being purchased by another customer.`);
             }
 
             // Track seller IDs to validate location
@@ -500,19 +489,23 @@ export const createOrder = async (req: Request, res: Response) => {
             body: req.body
         });
 
-        // Return a more informative error message if it's a validation error
-        let errorMessage = "Error creating order. " + error.message;
+        // Clean user-friendly message without 'Error creating order.' prefix
+        let userMessage = error.message || "Unable to place order. Please try again.";
         if (error.name === 'ValidationError') {
-            const fields = Object.keys(error.errors).join(', ');
-            errorMessage = `Validation failed for fields: ${fields}. ${error.message}`;
+            const fields = Object.keys(error.errors || {}).join(', ');
+            userMessage = `Please check required fields (${fields}) and try again.`;
         }
 
-        return res.status(500).json({
+        return res.status(400).json({
             success: false,
-            message: errorMessage,
+            message: userMessage,
             error: error.message,
-            details: error.errors,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            developerError: {
+                message: error.message,
+                name: error.name,
+                stack: error.stack,
+                details: error.errors
+            }
         });
     } finally {
         if (session) session.endSession();
