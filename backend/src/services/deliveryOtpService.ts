@@ -63,8 +63,8 @@ export async function verifyDeliveryOtp(orderId: string, otp: string): Promise<{
       throw new Error('Customer delivery OTP not found. Please contact support.');
     }
 
-    // Developer bypass for testing
-    if ((process.env.NODE_ENV !== 'production' || process.env.USE_MOCK_OTP === 'true') && otp === '9999') {
+    // Developer bypass for testing (only when USE_MOCK_OTP=true)
+    if (process.env.USE_MOCK_OTP === 'true' && otp === '9999') {
       order.deliveryOtpVerified = true;
       order.status = 'Delivered';
       order.deliveredAt = new Date();

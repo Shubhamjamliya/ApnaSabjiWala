@@ -81,8 +81,7 @@ function normalizeTo10Digits(mobile: string): string {
  * Build DLT-compliant message
  */
 function buildOtpMessage(otp: string): string {
-  const appName = process.env.APP_NAME || 'BarodaMart';
-  return `Welcome to the ${appName} powered by SMSINDIAHUB. Your OTP for registration is ${otp}`;
+  return `Welcome to the BarodaMart powered by Appzeto.Your OTP for registration is ${otp}.BGADEC`;
 }
 
 /**
@@ -138,6 +137,7 @@ async function sendSmsViaApi(mobile: string, message: string): Promise<void> {
   };
 
   if (dltTemplateId?.trim()) {
+    params.TemplateId = dltTemplateId.trim();
     params.DLT_TE_ID = dltTemplateId.trim();
   }
 
@@ -216,10 +216,7 @@ function isSpecialBypass(mobile: string): boolean {
  * Check if mock mode should be used
  */
 function isMockMode(): boolean {
-  const apiKey = process.env.SMS_INDIA_HUB_API_KEY;
-  const senderId = process.env.SMS_INDIA_HUB_SENDER_ID;
-
-  return process.env.USE_MOCK_OTP === 'true' || !apiKey || !senderId;
+  return process.env.USE_MOCK_OTP === 'true';
 }
 
 /**
@@ -228,10 +225,8 @@ function isMockMode(): boolean {
 function isDeveloperBypass(otp: string): boolean {
   const defaultOtp = (process.env.DEFAULT_OTP || '9999').trim();
   const inputOtp = String(otp).trim();
-  
-  const isDevOrMock = process.env.NODE_ENV !== 'production' || process.env.USE_MOCK_OTP === 'true';
-  
-  return isDevOrMock && (inputOtp === defaultOtp || inputOtp === '999999');
+
+  return process.env.USE_MOCK_OTP === 'true' && (inputOtp === defaultOtp || inputOtp === '999999');
 }
 
 // ==========================================
