@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   register,
@@ -58,6 +58,66 @@ export default function DeliverySignUp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isCityLoading, setIsCityLoading] = useState(false);
+
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [cameraError, setCameraError] = useState("");
+
+  const startCamera = async () => {
+    setIsCameraOpen(true);
+    setCameraError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      setCameraError("Unable to access camera. Please allow camera permissions in your browser.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      const tracks = stream.getTracks();
+      tracks.forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraOpen(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const context = canvas.getContext("2d");
+      if (context) {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const file = new File([blob], "live_photo.jpg", {
+                type: "image/jpeg",
+              });
+              setLivePhotoFile(file);
+              setError(""); // Clear any required doc errors
+            }
+          },
+          "image/jpeg",
+          0.9
+        );
+
+        stopCamera();
+      }
+    }
+  };
 
   const sanitizeAlphabetValue = (value: string) =>
     value.replace(/[^A-Za-z ]/g, "").replace(/\s+/g, " ").trimStart();
@@ -743,34 +803,26 @@ export default function DeliverySignUp() {
                     Live Photo <span className="text-red-500">*</span>
                   </label>
                   <div className="space-y-2 flex flex-col items-start">
-                    <input
-                      id="livePhotoInput"
-                      type="file"
-                      name="livePhoto"
-                      onChange={handleFileChange}
-                      accept="image/*"
-                      capture="user"
-                      className="hidden"
-                      disabled={loading || uploadingDocs}
-                    />
-                    <label
-                      htmlFor="livePhotoInput"
+                    <button
+                      type="button"
+                      onClick={startCamera}
                       className={`inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-lg border transition-colors cursor-pointer w-full ${
                         loading || uploadingDocs
                           ? "bg-neutral-100 text-neutral-400 border-neutral-300 cursor-not-allowed"
                           : "bg-white text-teal-600 border-teal-600 hover:bg-teal-50"
                       }`}
+                      disabled={loading || uploadingDocs}
                     >
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                       </svg>
-                      Click Photo
-                    </label>
+                      {livePhotoFile ? "Retake Photo" : "Click Photo"}
+                    </button>
                     {livePhotoFile && (
-                      <p className="text-xs text-neutral-600 mt-1">
-                        {livePhotoFile.name}
-                      </p>
+                      <div className="mt-2 flex items-center justify-center w-full">
+                         <img src={URL.createObjectURL(livePhotoFile)} alt="Live Photo" className="w-24 h-24 rounded-full object-cover border-2 border-teal-500" />
+                      </div>
                     )}
                   </div>
                 </div>
@@ -896,6 +948,62 @@ export default function DeliverySignUp() {
         <Link to="/delivery/terms" className="hover:text-neutral-800 underline">Terms & Conditions</Link>
         <Link to="/delivery/support" className="hover:text-neutral-800 underline">Support</Link>
       </div>
+
+      {/* Camera Modal */}
+      {isCameraOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl flex flex-col items-center">
+            <h3 className="text-lg font-bold text-neutral-800 mb-4">Capture Live Photo</h3>
+            
+            {cameraError ? (
+              <div className="text-red-500 text-center mb-4 text-sm bg-red-50 p-3 rounded-lg border border-red-100">
+                {cameraError}
+              </div>
+            ) : (
+              <div className="relative w-64 h-64 mb-6">
+                <div className="absolute inset-0 rounded-full overflow-hidden border-4 border-teal-500 shadow-inner bg-black">
+                  <video 
+                    ref={videoRef}
+                    autoPlay 
+                    playsInline 
+                    muted
+                    className="w-full h-full object-cover transform -scale-x-100"
+                  />
+                </div>
+                {/* Face outline overlay */}
+                <div className="absolute inset-0 pointer-events-none rounded-full flex items-center justify-center">
+                   <div className="w-[70%] h-[80%] border-[3px] border-dashed border-white/70 rounded-[50%]"></div>
+                </div>
+              </div>
+            )}
+            
+            <canvas ref={canvasRef} className="hidden" />
+
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="flex-1 py-2.5 rounded-xl font-semibold text-sm bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors"
+              >
+                Cancel
+              </button>
+              {!cameraError && (
+                <button
+                  type="button"
+                  onClick={capturePhoto}
+                  className="flex-1 py-2.5 rounded-xl font-semibold text-sm bg-teal-600 text-white hover:bg-teal-700 transition-colors shadow-md flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                  Capture
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
