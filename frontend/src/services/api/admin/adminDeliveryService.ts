@@ -13,6 +13,10 @@ export interface DeliveryBoy {
   pincode?: string;
   drivingLicense?: string;
   nationalIdentityCard?: string;
+  aadhaarFrontPhoto?: string;
+  aadhaarBackPhoto?: string;
+  livePhoto?: string;
+  panCardPhoto?: string;
   bankAccountNumber: string;
   bankName: string;
   accountName: string;
@@ -45,6 +49,10 @@ export interface CreateDeliveryBoyData {
   pincode?: string;
   drivingLicense?: string;
   nationalIdentityCard?: string;
+  aadhaarFrontPhoto?: string;
+  aadhaarBackPhoto?: string;
+  livePhoto?: string;
+  panCardPhoto?: string;
   bankAccountNumber: string;
   bankName: string;
   accountName: string;
@@ -66,6 +74,10 @@ export interface UpdateDeliveryBoyData {
   pincode?: string;
   drivingLicense?: string;
   nationalIdentityCard?: string;
+  aadhaarFrontPhoto?: string;
+  aadhaarBackPhoto?: string;
+  livePhoto?: string;
+  panCardPhoto?: string;
   bankAccountNumber?: string;
   bankName?: string;
   accountName?: string;

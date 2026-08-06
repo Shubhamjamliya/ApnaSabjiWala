@@ -12,6 +12,10 @@ export interface IDelivery extends Document {
   // Documents (URLs pointing to cloud storage)
   drivingLicense?: string;
   nationalIdentityCard?: string;
+  aadhaarFrontPhoto?: string;
+  aadhaarBackPhoto?: string;
+  livePhoto?: string;
+  panCardPhoto?: string;
 
   // Bank Account Information
   accountName?: string;
@@ -107,6 +111,22 @@ const DeliverySchema = new Schema<IDelivery>(
       trim: true,
     },
     nationalIdentityCard: {
+      type: String,
+      trim: true,
+    },
+    aadhaarFrontPhoto: {
+      type: String,
+      trim: true,
+    },
+    aadhaarBackPhoto: {
+      type: String,
+      trim: true,
+    },
+    livePhoto: {
+      type: String,
+      trim: true,
+    },
+    panCardPhoto: {
       type: String,
       trim: true,
     },

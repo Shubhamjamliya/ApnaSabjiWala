@@ -411,6 +411,18 @@ export default function AdminManageDeliveryBoy() {
                                         National ID
                                     </th>
                                     <th className="p-4">
+                                        Aadhaar Front
+                                    </th>
+                                    <th className="p-4">
+                                        Aadhaar Back
+                                    </th>
+                                    <th className="p-4">
+                                        Live Photo
+                                    </th>
+                                    <th className="p-4">
+                                        Pan Card
+                                    </th>
+                                    <th className="p-4">
                                         Action
                                     </th>
                                 </tr>
@@ -486,6 +498,62 @@ export default function AdminManageDeliveryBoy() {
                                                 {deliveryBoy.nationalIdentityCard ? (
                                                     <a
                                                         href={deliveryBoy.nationalIdentityCard}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-teal-600 hover:text-teal-700 text-xs font-medium"
+                                                    >
+                                                        View
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-xs text-neutral-400">Not Uploaded</span>
+                                                )}
+                                            </td>
+                                            <td className="p-4 align-middle">
+                                                {deliveryBoy.aadhaarFrontPhoto ? (
+                                                    <a
+                                                        href={deliveryBoy.aadhaarFrontPhoto}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-teal-600 hover:text-teal-700 text-xs font-medium"
+                                                    >
+                                                        View
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-xs text-neutral-400">Not Uploaded</span>
+                                                )}
+                                            </td>
+                                            <td className="p-4 align-middle">
+                                                {deliveryBoy.aadhaarBackPhoto ? (
+                                                    <a
+                                                        href={deliveryBoy.aadhaarBackPhoto}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-teal-600 hover:text-teal-700 text-xs font-medium"
+                                                    >
+                                                        View
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-xs text-neutral-400">Not Uploaded</span>
+                                                )}
+                                            </td>
+                                            <td className="p-4 align-middle">
+                                                {deliveryBoy.livePhoto ? (
+                                                    <a
+                                                        href={deliveryBoy.livePhoto}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-teal-600 hover:text-teal-700 text-xs font-medium"
+                                                    >
+                                                        View
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-xs text-neutral-400">Not Uploaded</span>
+                                                )}
+                                            </td>
+                                            <td className="p-4 align-middle">
+                                                {deliveryBoy.panCardPhoto ? (
+                                                    <a
+                                                        href={deliveryBoy.panCardPhoto}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-teal-600 hover:text-teal-700 text-xs font-medium"

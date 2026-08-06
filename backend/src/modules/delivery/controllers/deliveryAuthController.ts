@@ -136,6 +136,10 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     accountNumber,
     ifscCode,
     bonusType,
+    aadhaarFrontPhoto,
+    aadhaarBackPhoto,
+    livePhoto,
+    panCardPhoto,
   } = req.body;
 
   // Validation
@@ -182,6 +186,10 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     },
     drivingLicense,
     nationalIdentityCard,
+    aadhaarFrontPhoto,
+    aadhaarBackPhoto,
+    livePhoto,
+    panCardPhoto,
     accountName,
     bankName,
     accountNumber,

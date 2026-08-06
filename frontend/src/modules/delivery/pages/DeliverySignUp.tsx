@@ -36,6 +36,10 @@ export default function DeliverySignUp() {
     accountNumber: "",
     ifscCode: "",
     bonusType: "",
+    aadhaarFrontPhotoUrl: "",
+    aadhaarBackPhotoUrl: "",
+    livePhotoUrl: "",
+    panCardPhotoUrl: "",
   });
 
   // File state for UI
@@ -44,6 +48,10 @@ export default function DeliverySignUp() {
   );
   const [nationalIdentityCardFile, setNationalIdentityCardFile] =
     useState<File | null>(null);
+  const [aadhaarFrontFile, setAadhaarFrontFile] = useState<File | null>(null);
+  const [aadhaarBackFile, setAadhaarBackFile] = useState<File | null>(null);
+  const [livePhotoFile, setLivePhotoFile] = useState<File | null>(null);
+  const [panCardFile, setPanCardFile] = useState<File | null>(null);
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
   const [sessionId, setSessionId] = useState("");
@@ -158,6 +166,14 @@ export default function DeliverySignUp() {
       setDrivingLicenseFile(file);
     } else if (name === "nationalIdentityCard") {
       setNationalIdentityCardFile(file);
+    } else if (name === "aadhaarFrontPhoto") {
+      setAadhaarFrontFile(file);
+    } else if (name === "aadhaarBackPhoto") {
+      setAadhaarBackFile(file);
+    } else if (name === "livePhoto") {
+      setLivePhotoFile(file);
+    } else if (name === "panCardPhoto") {
+      setPanCardFile(file);
     }
     setError("");
   };
@@ -228,8 +244,8 @@ export default function DeliverySignUp() {
       return;
     }
 
-    if (!drivingLicenseFile || !nationalIdentityCardFile) {
-      setError("Please upload both required documents");
+    if (!drivingLicenseFile || !nationalIdentityCardFile || !aadhaarFrontFile || !aadhaarBackFile || !livePhotoFile || !panCardFile) {
+      setError("Please upload all required documents");
       return;
     }
 
@@ -240,6 +256,10 @@ export default function DeliverySignUp() {
       // Upload required documents
       let drivingLicenseUrl = formData.drivingLicenseUrl;
       let nationalIdentityCardUrl = formData.nationalIdentityCardUrl;
+      let aadhaarFrontPhotoUrl = formData.aadhaarFrontPhotoUrl;
+      let aadhaarBackPhotoUrl = formData.aadhaarBackPhotoUrl;
+      let livePhotoUrl = formData.livePhotoUrl;
+      let panCardPhotoUrl = formData.panCardPhotoUrl;
 
       setUploadingDocs(true);
       try {
@@ -254,6 +274,18 @@ export default function DeliverySignUp() {
           "barodamart/delivery/documents"
         );
         nationalIdentityCardUrl = nationalIdResult.secureUrl;
+
+        const aadhaarFrontResult = await uploadDocument(aadhaarFrontFile, "barodamart/delivery/documents");
+        aadhaarFrontPhotoUrl = aadhaarFrontResult.secureUrl;
+
+        const aadhaarBackResult = await uploadDocument(aadhaarBackFile, "barodamart/delivery/documents");
+        aadhaarBackPhotoUrl = aadhaarBackResult.secureUrl;
+
+        const livePhotoResult = await uploadDocument(livePhotoFile, "barodamart/delivery/documents");
+        livePhotoUrl = livePhotoResult.secureUrl;
+
+        const panCardResult = await uploadDocument(panCardFile, "barodamart/delivery/documents");
+        panCardPhotoUrl = panCardResult.secureUrl;
       } finally {
         setUploadingDocs(false);
       }
@@ -272,6 +304,10 @@ export default function DeliverySignUp() {
         pincode: formData.pincode,
         drivingLicense: drivingLicenseUrl || undefined,
         nationalIdentityCard: nationalIdentityCardUrl || undefined,
+        aadhaarFrontPhoto: aadhaarFrontPhotoUrl || undefined,
+        aadhaarBackPhoto: aadhaarBackPhotoUrl || undefined,
+        livePhoto: livePhotoUrl || undefined,
+        panCardPhoto: panCardPhotoUrl || undefined,
         accountName: formData.accountName || undefined,
         bankName: formData.bankName || undefined,
         accountNumber: formData.accountNumber || undefined,
@@ -655,6 +691,106 @@ export default function DeliverySignUp() {
                     {nationalIdentityCardFile && (
                       <p className="text-xs text-neutral-600">
                         {nationalIdentityCardFile.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Aadhaar Front Photo <span className="text-red-500">*</span>
+                  </label>
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      name="aadhaarFrontPhoto"
+                      onChange={handleFileChange}
+                      accept="image/*,.pdf"
+                      className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                      disabled={loading || uploadingDocs}
+                    />
+                    {aadhaarFrontFile && (
+                      <p className="text-xs text-neutral-600">
+                        {aadhaarFrontFile.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Aadhaar Back Photo <span className="text-red-500">*</span>
+                  </label>
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      name="aadhaarBackPhoto"
+                      onChange={handleFileChange}
+                      accept="image/*,.pdf"
+                      className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                      disabled={loading || uploadingDocs}
+                    />
+                    {aadhaarBackFile && (
+                      <p className="text-xs text-neutral-600">
+                        {aadhaarBackFile.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Live Photo <span className="text-red-500">*</span>
+                  </label>
+                  <div className="space-y-2 flex flex-col items-start">
+                    <input
+                      id="livePhotoInput"
+                      type="file"
+                      name="livePhoto"
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      capture="user"
+                      className="hidden"
+                      disabled={loading || uploadingDocs}
+                    />
+                    <label
+                      htmlFor="livePhotoInput"
+                      className={`inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-lg border transition-colors cursor-pointer w-full ${
+                        loading || uploadingDocs
+                          ? "bg-neutral-100 text-neutral-400 border-neutral-300 cursor-not-allowed"
+                          : "bg-white text-teal-600 border-teal-600 hover:bg-teal-50"
+                      }`}
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      </svg>
+                      Click Photo
+                    </label>
+                    {livePhotoFile && (
+                      <p className="text-xs text-neutral-600 mt-1">
+                        {livePhotoFile.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Pan Card Photo <span className="text-red-500">*</span>
+                  </label>
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      name="panCardPhoto"
+                      onChange={handleFileChange}
+                      accept="image/*,.pdf"
+                      className="w-full px-3 py-2.5 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                      disabled={loading || uploadingDocs}
+                    />
+                    {panCardFile && (
+                      <p className="text-xs text-neutral-600">
+                        {panCardFile.name}
                       </p>
                     )}
                   </div>

@@ -44,6 +44,10 @@ export interface RegisterData {
   accountNumber?: string;
   ifscCode?: string;
   bonusType?: string;
+  aadhaarFrontPhoto?: string;
+  aadhaarBackPhoto?: string;
+  livePhoto?: string;
+  panCardPhoto?: string;
 }
 
 export interface RegisterResponse {

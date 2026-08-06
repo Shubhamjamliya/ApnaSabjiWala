@@ -26,6 +26,10 @@ export const createDeliveryBoy = asyncHandler(
       accountNumber,
       ifscCode,
       bonusType,
+      aadhaarFrontPhoto,
+      aadhaarBackPhoto,
+      livePhoto,
+      panCardPhoto,
     } = req.body;
 
     if (!name || !mobile || !email || !password || !address || !city) {
@@ -69,6 +73,10 @@ export const createDeliveryBoy = asyncHandler(
       accountNumber,
       ifscCode,
       bonusType,
+      aadhaarFrontPhoto,
+      aadhaarBackPhoto,
+      livePhoto,
+      panCardPhoto,
       status: "Inactive", // New delivery boys start as inactive
     });
 
