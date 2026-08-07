@@ -1,5 +1,12 @@
 import api, { setAuthToken, removeAuthToken, setUserData } from '../config';
 
+const handleApiError = (error: any) => {
+  if (error.response && error.response.data && error.response.data.message) {
+    throw new Error(error.response.data.message);
+  }
+  throw new Error(error.message || 'An unexpected error occurred');
+};
+
 export interface SendOTPResponse {
   success: boolean;
   message: string;
@@ -50,36 +57,48 @@ export interface RegisterResponse {
  * Send OTP to admin mobile number
  */
 export const sendOTP = async (mobile: string): Promise<SendOTPResponse> => {
-  const response = await api.post<SendOTPResponse>('/auth/admin/send-otp', { mobile });
-  return response.data;
+  try {
+    const response = await api.post<SendOTPResponse>('/auth/admin/send-otp', { mobile });
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
+  }
 };
 
 /**
  * Verify OTP and login admin
  */
 export const verifyOTP = async (mobile: string, otp: string): Promise<VerifyOTPResponse> => {
-  const response = await api.post<VerifyOTPResponse>('/auth/admin/verify-otp', { mobile, otp });
+  try {
+    const response = await api.post<VerifyOTPResponse>('/auth/admin/verify-otp', { mobile, otp });
 
-  if (response.data.success && response.data.data.token) {
-    setAuthToken(response.data.data.token, 'admin');
-    setUserData(response.data.data.user, 'admin');
+    if (response.data.success && response.data.data.token) {
+      setAuthToken(response.data.data.token, 'admin');
+      setUserData(response.data.data.user, 'admin');
+    }
+
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  return response.data;
 };
 
 /**
  * Register new admin
  */
 export const register = async (data: RegisterData): Promise<RegisterResponse> => {
-  const response = await api.post<RegisterResponse>('/auth/admin/register', data);
+  try {
+    const response = await api.post<RegisterResponse>('/auth/admin/register', data);
 
-  if (response.data.success && response.data.data.token) {
-    setAuthToken(response.data.data.token, 'admin');
-    setUserData(response.data.data.user, 'admin');
+    if (response.data.success && response.data.data.token) {
+      setAuthToken(response.data.data.token, 'admin');
+      setUserData(response.data.data.user, 'admin');
+    }
+
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  return response.data;
 };
 
 /**
@@ -106,8 +125,12 @@ export interface AdminProfileResponse {
  * Get admin profile
  */
 export const getAdminProfile = async (): Promise<AdminProfileResponse> => {
-  const response = await api.get<AdminProfileResponse>('/auth/admin/profile');
-  return response.data;
+  try {
+    const response = await api.get<AdminProfileResponse>('/auth/admin/profile');
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
+  }
 };
 
 /**
@@ -120,6 +143,10 @@ export const updateAdminProfile = async (data: {
   currentPassword?: string;
   newPassword?: string;
 }): Promise<AdminProfileResponse> => {
-  const response = await api.put<AdminProfileResponse>('/auth/admin/profile', data);
-  return response.data;
+  try {
+    const response = await api.put<AdminProfileResponse>('/auth/admin/profile', data);
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
+  }
 };

@@ -1,5 +1,12 @@
 import api, { setAuthToken, removeAuthToken, setUserData } from '../config';
 
+const handleApiError = (error: any) => {
+  if (error.response && error.response.data && error.response.data.message) {
+    throw new Error(error.response.data.message);
+  }
+  throw new Error(error.message || 'An unexpected error occurred');
+};
+
 export interface SendOTPResponse {
   success: boolean;
   message: string;
@@ -28,8 +35,12 @@ export interface VerifyOTPResponse {
  * Send SMS OTP to customer mobile number
  */
 export const sendOTP = async (mobile: string): Promise<SendOTPResponse> => {
-  const response = await api.post<SendOTPResponse>('/auth/customer/send-sms-otp', { mobile });
-  return response.data;
+  try {
+    const response = await api.post<SendOTPResponse>('/auth/customer/send-sms-otp', { mobile });
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
+  }
 };
 
 /**
@@ -37,19 +48,23 @@ export const sendOTP = async (mobile: string): Promise<SendOTPResponse> => {
  * Auto-creates customer if not exists
  */
 export const verifyOTP = async (mobile: string, otp: string, sessionId?: string): Promise<VerifyOTPResponse> => {
-  const response = await api.post<VerifyOTPResponse>('/auth/customer/verify-sms-otp', { mobile, otp, sessionId });
+  try {
+    const response = await api.post<VerifyOTPResponse>('/auth/customer/verify-sms-otp', { mobile, otp, sessionId });
 
-  if (response.data.success && response.data.data.token) {
-    setAuthToken(response.data.data.token, 'customer');
-    // Add userType to user data for proper identification
-    const userData = {
-      ...response.data.data.user,
-      userType: 'Customer'
-    };
-    setUserData(userData, 'customer');
+    if (response.data.success && response.data.data.token) {
+      setAuthToken(response.data.data.token, 'customer');
+      // Add userType to user data for proper identification
+      const userData = {
+        ...response.data.data.user,
+        userType: 'Customer'
+      };
+      setUserData(userData, 'customer');
+    }
+
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  return response.data;
 };
 
 /**

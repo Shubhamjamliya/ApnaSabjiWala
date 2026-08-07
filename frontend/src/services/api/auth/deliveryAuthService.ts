@@ -68,8 +68,12 @@ export interface RegisterResponse {
 
 // Send SMS OTP
 export const sendOTP = async (mobile: string): Promise<SendOTPResponse> => {
-  const response = await api.post('/auth/delivery/send-sms-otp', { mobile });
-  return response.data;
+  try {
+    const response = await api.post('/auth/delivery/send-sms-otp', { mobile });
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
+  }
 };
 
 // Verify SMS OTP
@@ -78,26 +82,34 @@ export const verifyOTP = async (
   otp: string,
   sessionId?: string
 ): Promise<VerifyOTPResponse> => {
-  const response = await api.post('/auth/delivery/verify-sms-otp', {
-    mobile,
-    otp,
-    sessionId,
-  });
+  try {
+    const response = await api.post('/auth/delivery/verify-sms-otp', {
+      mobile,
+      otp,
+      sessionId,
+    });
 
-  if (response.data.success && response.data.data?.token) {
-    setAuthToken(response.data.data.token, 'delivery');
-    setUserData(response.data.data.user, 'delivery');
+    if (response.data.success && response.data.data?.token) {
+      setAuthToken(response.data.data.token, 'delivery');
+      setUserData(response.data.data.user, 'delivery');
+    }
+
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
   }
-
-  return response.data;
 };
 
 /**
  * Register new delivery partner
  */
 export const register = async (data: RegisterData): Promise<RegisterResponse> => {
-  const response = await api.post<RegisterResponse>('/auth/delivery/register', data);
-  return response.data;
+  try {
+    const response = await api.post<RegisterResponse>('/auth/delivery/register', data);
+    return response.data;
+  } catch (error) {
+    return handleApiError(error);
+  }
 };
 
 /**
