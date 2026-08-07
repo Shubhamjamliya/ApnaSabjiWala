@@ -59,8 +59,10 @@ const calculateCartTotal = async (cartId: any, nearbySellerIds: mongoose.Types.O
     for (const item of items) {
         const product = item.product as any;
         if (product && product.status === 'Active' && product.publish) {
-            // Check if seller is in range
-            const isAvailable = nearbySellerIds.some(id => id.toString() === product.seller.toString());
+            // Check if seller is in range (if nearbySellerIds provided)
+            const isAvailable = nearbySellerIds.length > 0
+                ? nearbySellerIds.some(id => id.toString() === product.seller?.toString())
+                : true;
             if (isAvailable) {
                 const price = calculateItemPrice(product, item.variation);
                 total += price * item.quantity;
@@ -157,16 +159,8 @@ export const getCart = async (req: Request, res: Response) => {
         const userLat = latitude ? parseFloat(latitude as string) : null;
         const userLng = longitude ? parseFloat(longitude as string) : null;
 
-        // Strictly enforce location
-        if (userLat === null || userLng === null || isNaN(userLat) || isNaN(userLng)) {
-            return res.status(200).json({
-                success: true,
-                message: 'Location required to view available items',
-                data: { items: [], total: 0 }
-            });
-        }
-
-        const nearbySellerIds = await findSellersWithinRange(userLat, userLng);
+        const hasLocation = userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng);
+        const nearbySellerIds = hasLocation ? await findSellersWithinRange(userLat, userLng) : [];
 
         let cart = await Cart.findOne({ customer: userId }).populate({
             path: 'items',
@@ -181,19 +175,26 @@ export const getCart = async (req: Request, res: Response) => {
             return res.status(200).json({ success: true, data: cart });
         }
 
-        // Filter items based on location availability and update total
-        const filteredItems = [];
+        const itemsWithAvailability = [];
         let total = 0;
 
         for (const item of (cart.items as any)) {
             const product = item.product;
             if (product && product.status === 'Active' && product.publish) {
-                const isAvailable = nearbySellerIds.some(id => id.toString() === product.seller.toString());
+                const isAvailable = hasLocation && nearbySellerIds.length > 0
+                    ? nearbySellerIds.some(id => id.toString() === product.seller?.toString())
+                    : true;
+
+                const itemObj = typeof item.toObject === 'function' ? item.toObject() : { ...item };
+                itemObj.isAvailable = isAvailable;
+                if (!isAvailable) {
+                    itemObj.unserviceableReason = 'This product is not deliverable to your selected location';
+                }
+                itemsWithAvailability.push(itemObj);
+
                 if (isAvailable) {
-                    filteredItems.push(item);
                     const price = calculateItemPrice(product, item.variation);
                     total += price * item.quantity;
-                    console.log(`[DEBUG CartLoop] Item: ${product.productName}, Price: ${price}, Qty: ${item.quantity}, RunningTotal: ${total}`);
                 }
             }
         }
@@ -205,13 +206,14 @@ export const getCart = async (req: Request, res: Response) => {
         }
 
         // Calculate fees
-        const fees = await calculateDeliveryStuff(total, filteredItems, userLat, userLng);
+        const availableItemsForFees = itemsWithAvailability.filter(i => i.isAvailable);
+        const fees = await calculateDeliveryStuff(total, availableItemsForFees, userLat, userLng);
 
         return res.status(200).json({
             success: true,
             data: {
                 ...cart.toObject(),
-                items: filteredItems,
+                items: itemsWithAvailability,
                 total,
                 ...fees
             }

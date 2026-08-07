@@ -313,6 +313,14 @@ export const createOrder = async (req: Request, res: Response) => {
                 "location.coordinates": { $exists: true, $ne: null },
             });
 
+            if (sellers.length < uniqueSellerIds.length) {
+                if (session) await session.abortTransaction();
+                return res.status(403).json({
+                    success: false,
+                    message: "One or more items in your order are from sellers outside your delivery area or currently unavailable.",
+                });
+            }
+
             // Check each seller can deliver to user's location
             for (const seller of sellers) {
                 if (!seller.location || !seller.location.coordinates) {

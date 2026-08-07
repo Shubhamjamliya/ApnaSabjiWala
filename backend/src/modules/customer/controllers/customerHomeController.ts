@@ -15,10 +15,13 @@ import { findSellersWithinRange } from "../../../utils/locationHelper";
 // Helper function to fetch data for a home section based on its configuration
 async function fetchSectionData(
   section: any,
-  nearbySellerIds?: mongoose.Types.ObjectId[]
+  nearbySellerIds?: mongoose.Types.ObjectId[],
+  hasLocation: boolean = false
 ): Promise<any[]> {
   try {
     const { categories, subCategories, products, displayType, limit } = section;
+
+    const sellerFilter = hasLocation ? { seller: { $in: nearbySellerIds || [] } } : {};
 
     // 1. If section has manual products, fetch those directly (Simple mode)
     if (products && products.length > 0) {
@@ -26,41 +29,41 @@ async function fetchSectionData(
         _id: { $in: products },
         status: "Active",
         publish: true,
+        ...sellerFilter,
       })
         .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller variations")
         .lean();
 
+      // Filter out products not in seller range
+      const validManualProducts = hasLocation
+        ? manualProducts.filter((p: any) => p.seller && nearbySellerIds?.some(id => id.toString() === p.seller.toString()))
+        : manualProducts;
+
       // Sort according to the order in the products array
-      const productMap = new Map(manualProducts.map((p: any) => [p._id.toString(), p]));
+      const productMap = new Map(validManualProducts.map((p: any) => [p._id.toString(), p]));
       const sortedProducts = products
         .map((id: any) => productMap.get(id.toString()))
         .filter(Boolean);
 
-      return sortedProducts.map((p: any) => {
-        const isAvailable = nearbySellerIds && nearbySellerIds.length > 0 && p.seller
-          ? nearbySellerIds.some(id => id.toString() === p.seller.toString())
-          : false;
-
-        return {
-          id: p._id.toString(),
-          productId: p._id.toString(),
-          name: p.productName,
-          productName: p.productName,
-          image: p.mainImage,
-          mainImage: p.mainImage,
-          price: p.price,
-          compareAtPrice: p.compareAtPrice,
-          mrp: p.compareAtPrice || p.price,
-          discount: p.discount || (p.compareAtPrice && p.price ? Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100) : 0),
-          rating: p.rating || 0,
-          reviewsCount: p.reviewsCount || 0,
-          pack: p.pack || "",
-          type: "product",
-          isAvailable,
-          seller: p.seller,
-          variations: p.variations,
-        };
-      });
+      return sortedProducts.map((p: any) => ({
+        id: p._id.toString(),
+        productId: p._id.toString(),
+        name: p.productName,
+        productName: p.productName,
+        image: p.mainImage,
+        mainImage: p.mainImage,
+        price: p.price,
+        compareAtPrice: p.compareAtPrice,
+        mrp: p.compareAtPrice || p.price,
+        discount: p.discount || (p.compareAtPrice && p.price ? Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100) : 0),
+        rating: p.rating || 0,
+        reviewsCount: p.reviewsCount || 0,
+        pack: p.pack || "",
+        type: "product",
+        isAvailable: true,
+        seller: p.seller,
+        variations: p.variations,
+      }));
     }
 
     // 2. Fallback to category-based fetching (Automated mode)
@@ -93,6 +96,7 @@ async function fetchSectionData(
           { isShopByStoreOnly: { $ne: true } },
           { isShopByStoreOnly: { $exists: false } },
         ],
+        ...sellerFilter
       };
 
       if (categories && categories.length > 0) {
@@ -111,31 +115,25 @@ async function fetchSectionData(
         .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller variations")
         .lean();
 
-      return products.map((p: any) => {
-        const isAvailable = nearbySellerIds && nearbySellerIds.length > 0 && p.seller
-          ? nearbySellerIds.some(id => id.toString() === p.seller.toString())
-          : false;
-
-        return {
-          id: p._id.toString(),
-          productId: p._id.toString(),
-          name: p.productName,
-          productName: p.productName,
-          image: p.mainImage,
-          mainImage: p.mainImage,
-          price: p.price,
-          compareAtPrice: p.compareAtPrice,
-          mrp: p.compareAtPrice || p.price,
-          discount: p.discount || (p.compareAtPrice && p.price ? Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100) : 0),
-          rating: p.rating || 0,
-          reviewsCount: p.reviewsCount || 0,
-          pack: p.pack || "",
-          type: "product",
-          isAvailable,
-          seller: p.seller,
-          variations: p.variations,
-        };
-      });
+      return products.map((p: any) => ({
+        id: p._id.toString(),
+        productId: p._id.toString(),
+        name: p.productName,
+        productName: p.productName,
+        image: p.mainImage,
+        mainImage: p.mainImage,
+        price: p.price,
+        compareAtPrice: p.compareAtPrice,
+        mrp: p.compareAtPrice || p.price,
+        discount: p.discount || (p.compareAtPrice && p.price ? Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100) : 0),
+        rating: p.rating || 0,
+        reviewsCount: p.reviewsCount || 0,
+        pack: p.pack || "",
+        type: "product",
+        isAvailable: true,
+        seller: p.seller,
+        variations: p.variations,
+      }));
     }
 
     if (displayType === "categories" && categories && categories.length > 0) {
@@ -175,10 +173,13 @@ export const getHomeContent = async (req: Request, res: Response) => {
     const userLat = latitude ? parseFloat(latitude as string) : null;
     const userLng = longitude ? parseFloat(longitude as string) : null;
 
+    const hasLocation = userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng);
     let nearbySellerIds: mongoose.Types.ObjectId[] = [];
-    if (userLat !== null && userLng !== null) {
+    if (hasLocation) {
       nearbySellerIds = await findSellersWithinRange(userLat, userLng);
     }
+
+    const sellerFilter = hasLocation ? { seller: { $in: nearbySellerIds } } : {};
 
     // 2. Header Category Identification
     let headerCatId: any = null;
@@ -307,7 +308,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
     const baseProductQuery: any = {
       status: "Active",
       publish: true,
-      ...(nearbySellerIds.length > 0 ? { seller: { $in: nearbySellerIds } } : {}),
+      ...sellerFilter,
       // Only restrict base query by header if we are NOT on the main HOME tab
       ...(!isMainHome && headerCatId ? { headerCategoryId: headerCatId } : {})
     };
@@ -382,7 +383,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
 
     let formattedLowestPrices = lpDocs.map((item: any) => {
       const p = item.product;
-      if (!p) return null;
+      if (!p || (hasLocation && (!p.seller || !nearbySellerIds.some(id => id.toString() === p.seller.toString())))) return null;
       return {
         ...p,
         id: p._id.toString(),
@@ -581,15 +582,18 @@ export const getHomeContent = async (req: Request, res: Response) => {
           title: card.title || card.subCategoryId?.subcategoryName || card.subCategoryId?.name || "Offer",
           badge: card.badge || `Save ${card.discountPercentage || 0}%`,
         })),
-        featuredProducts: dbPromoStrip.featuredProducts.map((p: any) => ({
-          ...p,
-          id: p._id.toString(),
-          name: p.productName,
-          imageUrl: p.mainImage,
-          mrp: p.mrp || p.price,
-          categoryId: p.category?.toString(),
-          variations: p.variations,
-        })),
+        featuredProducts: (dbPromoStrip.featuredProducts || [])
+          .filter((p: any) => p && p.status === "Active" && p.publish)
+          .filter((p: any) => !hasLocation || (p.seller && nearbySellerIds.some(id => id.toString() === p.seller.toString())))
+          .map((p: any) => ({
+            ...p,
+            id: p._id.toString(),
+            name: p.productName,
+            imageUrl: p.mainImage,
+            mrp: p.mrp || p.price,
+            categoryId: p.category?.toString(),
+            variations: p.variations,
+          })),
       };
     }
 
@@ -621,7 +625,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
 
     const dynamicSections = await Promise.all(
       homeSections.map(async (section: any) => {
-        const sectionData = await fetchSectionData(section, nearbySellerIds);
+        const sectionData = await fetchSectionData(section, nearbySellerIds, hasLocation);
         return {
           id: section._id.toString(),
           title: section.title,
@@ -672,9 +676,14 @@ export const getHomeContent = async (req: Request, res: Response) => {
             _id: { $in: card.products },
             status: "Active",
             publish: true,
+            ...sellerFilter,
           })
-            .select("mainImage productName")
+            .select("mainImage productName seller")
             .lean();
+
+          if (hasLocation) {
+            products = products.filter((p: any) => p.seller && nearbySellerIds.some(id => id.toString() === p.seller.toString()));
+          }
 
           // Sort products according to the order in the card.products array
           const productMap = new Map(products.map((p: any) => [p._id.toString(), p]));
@@ -693,7 +702,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
             _id: { $nin: existingIds },
             status: "Active",
             publish: true,
-            ...(nearbySellerIds.length > 0 ? { seller: { $in: nearbySellerIds } } : {}),
+            ...sellerFilter,
           })
             .sort({ popular: -1, rating: -1 })
             .limit(remainingLimit)

@@ -4,6 +4,8 @@ export interface CartItem {
   product: Product;
   quantity: number;
   variant?: any;
+  isAvailable?: boolean;
+  unserviceableReason?: string;
 }
 
 export interface Cart {

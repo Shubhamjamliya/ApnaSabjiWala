@@ -331,7 +331,13 @@ export default function Checkout() {
       return;
     }
 
-    if (!selectedAddress || cart.items.length === 0) {
+    if (!selectedAddress) {
+      showGlobalToast('Please select a delivery address first', 'error');
+      return;
+    }
+
+    if (cart.items.length === 0) {
+      showGlobalToast('Your cart is empty', 'error');
       return;
     }
 
@@ -345,7 +351,7 @@ export default function Checkout() {
     // Validate required address fields
     if (!selectedAddress.city || !selectedAddress.pincode) {
       console.error("Address is missing required fields (city or pincode)");
-      alert("Please ensure your address has city and pincode.");
+      showGlobalToast("Please select an address with valid city and pincode.", 'error');
       return;
     }
 
@@ -356,7 +362,17 @@ export default function Checkout() {
     // Validate that we have location data (either from address or user's current location)
     if (finalLatitude == null || finalLongitude == null) {
       console.error("Address is missing location data (latitude/longitude) and user location is not available");
-      alert("Location is required for delivery. Please ensure your address has location data or enable location access.");
+      showGlobalToast("Location is required for delivery. Please update address location on map.", 'error');
+      return;
+    }
+
+    // Check if any items are unserviceable at current selected location
+    const unserviceableItems = (cart.items || []).filter((item: any) => item.isAvailable === false);
+    if (unserviceableItems.length > 0) {
+      showGlobalToast(
+        "Some items in your cart are not deliverable to this location. Please change address or remove unserviceable items.",
+        "error"
+      );
       return;
     }
 
@@ -406,7 +422,10 @@ export default function Checkout() {
       }
     } catch (error: any) {
       console.error("[Developer Error] Order placement failed:", error.developerError || error.response?.data?.developerError || error);
-      const errorMessage = error.message || error.response?.data?.message || "Failed to place order. Please try again.";
+      let errorMessage = error.message || error.response?.data?.message || "Failed to place order. Please try again.";
+      if (typeof errorMessage !== 'string') {
+        errorMessage = "Failed to place order. Please check delivery location or try again.";
+      }
       showGlobalToast(errorMessage, 'error');
     } finally {
       setIsPlacingOrder(false);
@@ -788,6 +807,21 @@ export default function Checkout() {
         </div>
       </div>
 
+      {/* Unserviceable items warning banner */}
+      {(cart.items || []).some((item: any) => item.isAvailable === false) && (
+        <div className="px-4 md:px-6 lg:px-8 py-2.5 bg-red-50 border-b border-red-200">
+          <div className="flex items-start gap-2">
+            <span className="text-base flex-shrink-0">⚠️</span>
+            <div className="text-xs">
+              <p className="font-bold text-red-900">Delivery Unavailable at Selected Address</p>
+              <p className="text-red-700 mt-0.5">
+                Some items in your cart cannot be delivered to this location. Please change your delivery address or remove unserviceable items.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Ordering for someone else */}
       <div className="px-4 md:px-6 lg:px-8 py-2 md:py-3 bg-neutral-50 border-b border-neutral-200">
         <div className="flex items-center justify-between">
@@ -930,6 +964,11 @@ export default function Checkout() {
                   <p className="text-[10px] text-neutral-600 mb-0.5">
                     {item.quantity} × {item.variant || (item.product as any).variantTitle || (item.product as any).pack || item.product?.pack}
                   </p>
+                  {item.isAvailable === false && (
+                    <div className="text-[10px] text-red-600 font-semibold bg-red-50 border border-red-200 rounded px-1.5 py-0.5 inline-block mb-1">
+                      ⚠️ Not deliverable to selected location
+                    </div>
+                  )}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
