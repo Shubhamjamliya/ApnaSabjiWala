@@ -6,6 +6,7 @@ import { getProfile } from "../modules/delivery/controllers/deliveryAuthControll
 
 import * as deliveryProfileController from "../modules/delivery/controllers/deliveryProfileController";
 import * as deliveryNotificationController from "../modules/delivery/controllers/deliveryNotificationController";
+import * as deliveryAvailableOrderController from "../modules/delivery/controllers/deliveryAvailableOrderController";
 
 const router = Router();
 
@@ -30,6 +31,9 @@ router.get("/help", deliveryDashboardController.getHelpSupport);
 router.get("/orders/history", deliveryOrderController.getAllOrdersHistory);
 router.get("/orders/today", deliveryOrderController.getTodayOrders);
 router.get("/orders/pending", deliveryOrderController.getPendingOrders);
+router.get("/orders/available", deliveryAvailableOrderController.getAvailableOrders);
+router.post("/orders/available/:id/accept", deliveryAvailableOrderController.acceptAvailableOrder);
+router.post("/orders/available/:id/reject", deliveryAvailableOrderController.rejectAvailableOrder);
 router.get("/orders/returns", deliveryOrderController.getReturnOrders);
 router.get("/orders/:id", deliveryOrderController.getOrderDetails); // Specific order details
 router.get("/orders/:id/seller-locations", deliveryOrderController.getSellerLocationsForOrder);

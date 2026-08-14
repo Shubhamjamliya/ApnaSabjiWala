@@ -149,6 +149,7 @@ router.put("/products/bulk-update", productController.bulkUpdateProducts);
 // ==================== Order Routes ====================
 router.get("/orders", orderController.getAllOrders);
 router.get("/orders/status/:status", orderController.getOrdersByStatus);
+router.get("/orders/:id/available-delivery-boys", orderController.getAvailableDeliveryBoysForOrder);
 router.get("/orders/:id", orderController.getOrderById);
 router.patch("/orders/:id/status", orderController.updateOrderStatus);
 router.patch("/orders/:id/assign-delivery", orderController.assignDeliveryBoy);

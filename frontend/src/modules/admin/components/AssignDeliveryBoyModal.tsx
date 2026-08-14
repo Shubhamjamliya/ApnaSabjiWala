@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
-import { getDeliveryBoys, type DeliveryBoy } from '../../../services/api/admin/adminDeliveryService';
-import { assignDeliveryBoy } from '../../../services/api/admin/adminOrderService';
+import {
+    assignDeliveryBoy,
+    getAvailableDeliveryBoysForOrder,
+    type EligibleDeliveryBoy,
+    type Order,
+} from '../../../services/api/admin/adminOrderService';
 
 interface AssignDeliveryBoyModalProps {
     isOpen: boolean;
@@ -8,7 +12,7 @@ interface AssignDeliveryBoyModalProps {
     orderId: string;
     orderNumber: string;
     currentDeliveryBoy?: { name: string; _id: string } | string;
-    onAssignSuccess: () => void;
+    onAssignSuccess: (order: Order) => void;
 }
 
 export default function AssignDeliveryBoyModal({
@@ -19,7 +23,7 @@ export default function AssignDeliveryBoyModal({
     currentDeliveryBoy,
     onAssignSuccess,
 }: AssignDeliveryBoyModalProps) {
-    const [deliveryBoys, setDeliveryBoys] = useState<DeliveryBoy[]>([]);
+    const [deliveryBoys, setDeliveryBoys] = useState<EligibleDeliveryBoy[]>([]);
     const [selectedDeliveryBoyId, setSelectedDeliveryBoyId] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -35,10 +39,6 @@ export default function AssignDeliveryBoyModal({
     useEffect(() => {
         if (isOpen) {
             fetchDeliveryBoys();
-            // Pre-select current delivery boy if exists
-            if (currentDeliveryBoyId) {
-                setSelectedDeliveryBoyId(currentDeliveryBoyId);
-            }
         }
     }, [isOpen, currentDeliveryBoyId]);
 
@@ -46,12 +46,14 @@ export default function AssignDeliveryBoyModal({
         try {
             setLoading(true);
             setError(null);
-            const response = await getDeliveryBoys({
-                status: 'Active',
-                limit: 100, // Get all active delivery boys
-            });
+            const response = await getAvailableDeliveryBoysForOrder(orderId);
             if (response.success && response.data) {
                 setDeliveryBoys(response.data);
+                setSelectedDeliveryBoyId(
+                    response.data.some((boy) => boy._id === currentDeliveryBoyId)
+                        ? currentDeliveryBoyId
+                        : ''
+                );
             }
         } catch (err: any) {
             console.error('Error fetching delivery boys:', err);
@@ -75,7 +77,7 @@ export default function AssignDeliveryBoyModal({
             });
 
             if (response.success) {
-                onAssignSuccess();
+                onAssignSuccess(response.data);
                 onClose();
             } else {
                 setError(response.message || 'Failed to assign delivery boy');
@@ -157,7 +159,7 @@ export default function AssignDeliveryBoyModal({
                         ) : deliveryBoys.length === 0 ? (
                             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                                 <p className="text-sm text-yellow-800">
-                                    No active delivery boys available. Please add delivery boys first.
+                                    No online delivery boys are currently within this seller's service radius.
                                 </p>
                             </div>
                         ) : (
@@ -171,7 +173,7 @@ export default function AssignDeliveryBoyModal({
                                 {deliveryBoys.map((deliveryBoy) => (
                                     <option key={deliveryBoy._id} value={deliveryBoy._id}>
                                         {deliveryBoy.name} - {deliveryBoy.mobile}
-                                        {deliveryBoy.available === 'Available' ? ' (Available)' : ' (Not Available)'}
+                                        {' (Online)'}
                                     </option>
                                 ))}
                             </select>
@@ -188,15 +190,12 @@ export default function AssignDeliveryBoyModal({
                                     <div className="space-y-1">
                                         <p className="text-sm font-medium text-blue-900">{selected.name}</p>
                                         <p className="text-xs text-blue-700">Mobile: {selected.mobile}</p>
-                                        <p className="text-xs text-blue-700">City: {selected.city}</p>
+                                        {selected.city && <p className="text-xs text-blue-700">City: {selected.city}</p>}
                                         <p className="text-xs">
                                             <span
-                                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${selected.available === 'Available'
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-red-100 text-red-800'
-                                                    }`}
+                                                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
                                             >
-                                                {selected.available}
+                                                Online · Within seller radius
                                             </span>
                                         </p>
                                     </div>

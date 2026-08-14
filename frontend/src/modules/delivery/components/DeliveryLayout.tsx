@@ -20,7 +20,7 @@ function DeliveryLayoutContent({ children }: DeliveryLayoutContentProps) {
     currentNotification,
     acceptOrder,
     rejectOrder,
-  } = useDeliveryOrderNotifications();
+  } = useDeliveryOrderNotifications(isOnline);
 
   useEffect(() => {
     const fetchProfile = async () => {

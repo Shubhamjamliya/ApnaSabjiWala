@@ -79,7 +79,8 @@ export const sendNotification = async (
       body: message,
       data: {
         ...(options?.data || {}),
-        type: options?.type || "Info",
+        type: options?.data?.type || options?.type || "Info",
+        notificationType: options?.type || "Info",
         link: options?.link || "",
         notificationId: notification._id.toString(),
       }

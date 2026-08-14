@@ -16,6 +16,28 @@ export interface OrderNotificationState {
 
 export const notificationStates = new Map<string, OrderNotificationState>();
 
+export function registerDeliveryBoyForOrderNotification(
+    orderId: string,
+    deliveryBoyId: string,
+): OrderNotificationState {
+    const normalizedDeliveryBoyId = String(deliveryBoyId).trim();
+    const existing = notificationStates.get(orderId);
+
+    if (existing) {
+        existing.notifiedDeliveryBoys.add(normalizedDeliveryBoyId);
+        return existing;
+    }
+
+    const state: OrderNotificationState = {
+        orderId,
+        notifiedDeliveryBoys: new Set([normalizedDeliveryBoyId]),
+        rejectedDeliveryBoys: new Set(),
+        acceptedBy: null,
+    };
+    notificationStates.set(orderId, state);
+    return state;
+}
+
 /**
  * Calculate distance between two coordinates using Haversine formula
  * Returns distance in kilometers
@@ -64,7 +86,8 @@ export async function findAvailableDeliveryBoys(): Promise<mongoose.Types.Object
 export async function findDeliveryBoysNearLocation(
     latitude: number,
     longitude: number,
-    radiusKm: number = 10
+    radiusKm: number = 10,
+    includeDeliveryBoysWithoutLocation: boolean = true,
 ): Promise<{ deliveryBoyId: mongoose.Types.ObjectId; distance: number }[]> {
     try {
         // 1. Try to find delivery boys using the new GeoJSON location field in Delivery model
@@ -157,16 +180,16 @@ export async function findDeliveryBoysNearLocation(
             }
         }
 
-        // Also include delivery boys who don't have tracking data yet (they might be new)
-        // but give them a default distance
-        const trackedIds = new Set(trackingRecords.map(r => r._id.toString()));
-        for (const db of allDeliveryBoys) {
-            if (!trackedIds.has(db._id.toString())) {
-                // Include untracked delivery boys with a default distance
-                nearbyDeliveryBoys.push({
-                    deliveryBoyId: db._id as mongoose.Types.ObjectId,
-                    distance: radiusKm / 2, // Default to half the radius
-                });
+        if (includeDeliveryBoysWithoutLocation) {
+            // Preserve the automatic-assignment fallback for newly registered partners.
+            const trackedIds = new Set(trackingRecords.map(r => r._id.toString()));
+            for (const db of allDeliveryBoys) {
+                if (!trackedIds.has(db._id.toString())) {
+                    nearbyDeliveryBoys.push({
+                        deliveryBoyId: db._id as mongoose.Types.ObjectId,
+                        distance: radiusKm / 2,
+                    });
+                }
             }
         }
 
@@ -186,7 +209,8 @@ export async function findDeliveryBoysNearLocation(
  * Aggregates all unique sellers from order items and finds delivery boys within their service radius
  */
 export async function findDeliveryBoysNearSellerLocations(
-    order: any
+    order: any,
+    fallbackToAllAvailable: boolean = true,
 ): Promise<mongoose.Types.ObjectId[]> {
     try {
         // Get unique seller IDs from order items
@@ -202,7 +226,7 @@ export async function findDeliveryBoysNearSellerLocations(
 
         if (sellerIds.length === 0) {
             console.log('No sellers found in order, falling back to all available delivery boys');
-            return findAvailableDeliveryBoys();
+            return fallbackToAllAvailable ? findAvailableDeliveryBoys() : [];
         }
 
         // Get seller locations
@@ -212,7 +236,7 @@ export async function findDeliveryBoysNearSellerLocations(
 
         if (sellers.length === 0) {
             console.log('No seller data found, falling back to all available delivery boys');
-            return findAvailableDeliveryBoys();
+            return fallbackToAllAvailable ? findAvailableDeliveryBoys() : [];
         }
 
         // Find delivery boys near each seller location
@@ -238,7 +262,12 @@ export async function findDeliveryBoysNearSellerLocations(
             }
 
             const radius = seller.serviceRadiusKm || 10; // Default 10km
-            const nearbyBoys = await findDeliveryBoysNearLocation(lat, lng, radius);
+            const nearbyBoys = await findDeliveryBoysNearLocation(
+                lat,
+                lng,
+                radius,
+                fallbackToAllAvailable,
+            );
 
             for (const boy of nearbyBoys) {
                 const boyId = boy.deliveryBoyId.toString();
@@ -251,7 +280,7 @@ export async function findDeliveryBoysNearSellerLocations(
 
         if (nearbyDeliveryBoyMap.size === 0) {
             console.log('No delivery boys found near seller locations, falling back to all available');
-            return findAvailableDeliveryBoys();
+            return fallbackToAllAvailable ? findAvailableDeliveryBoys() : [];
         }
 
         // Sort by distance and return IDs
@@ -263,7 +292,7 @@ export async function findDeliveryBoysNearSellerLocations(
         return sortedBoys;
     } catch (error) {
         console.error('Error finding delivery boys near seller locations:', error);
-        return findAvailableDeliveryBoys();
+        return fallbackToAllAvailable ? findAvailableDeliveryBoys() : [];
     }
 }
 
@@ -380,12 +409,14 @@ export async function notifyDeliveryBoysOfNewOrder(
                 notifiedIds.add(idString);
             }
 
-            // Always send push notification as backup even if connected via socket
-            try {
-                const { sendTaskAvailableNotification } = await import('./notificationService');
-                await sendTaskAvailableNotification(idString, orderId, order.orderNumber);
-            } catch (pushErr) {
-                console.error(`Failed to send push notification to delivery boy ${idString}:`, pushErr);
+            // FCM is a fallback only when no live socket is present.
+            if (!room || room.size === 0) {
+                try {
+                    const { sendTaskAvailableNotification } = await import('./notificationService');
+                    await sendTaskAvailableNotification(idString, orderId, order.orderNumber);
+                } catch (pushErr) {
+                    console.error(`Failed to send push notification to delivery boy ${idString}:`, pushErr);
+                }
             }
         }
 
@@ -441,8 +472,6 @@ export async function handleOrderAcceptance(
                 return { success: false, message: 'You have already rejected this order' };
             }
 
-            // Mark as accepted in memory
-            state.acceptedBy = normalizedDeliveryBoyId;
         } else {
             console.log(`⚠️ Notification state missing for order ${orderId}. Checking database for fallback...`);
             // 2. Database Fallback (For server restarts/stale notifications)
@@ -450,24 +479,38 @@ export async function handleOrderAcceptance(
             // We assume if they have the ID, they were notified effectively.
         }
 
-        // Update order in database
-        const order = await Order.findById(orderId);
+        // Claim atomically so socket and polling responses cannot assign twice.
+        const order = await Order.findOneAndUpdate(
+            {
+                _id: orderId,
+                status: 'Accepted',
+                $or: [
+                    { deliveryBoy: { $exists: false } },
+                    { deliveryBoy: null },
+                ],
+            },
+            {
+                $set: {
+                    deliveryBoy: new mongoose.Types.ObjectId(normalizedDeliveryBoyId),
+                    deliveryBoyStatus: 'Assigned',
+                    assignedAt: new Date(),
+                    status: 'Processed',
+                },
+            },
+            { new: true },
+        );
+
         if (!order) {
-            return { success: false, message: 'Order not found' };
+            const existingOrder = await Order.findById(orderId).select('deliveryBoy status');
+            if (!existingOrder) {
+                return { success: false, message: 'Order not found' };
+            }
+            return { success: false, message: 'Order already assigned or no longer available' };
         }
 
-        // Check if order already has a delivery boy assigned
-        if (order.deliveryBoy) {
-            return { success: false, message: 'Order already assigned to another delivery boy' };
+        if (state) {
+            state.acceptedBy = normalizedDeliveryBoyId;
         }
-
-        // Assign order to delivery boy
-        order.deliveryBoy = new mongoose.Types.ObjectId(normalizedDeliveryBoyId);
-        order.deliveryBoyStatus = 'Assigned';
-        order.assignedAt = new Date();
-        order.status = 'Processed'; // Mark as processed when assigned
-
-        await order.save();
 
         // Emit order-accepted event to stop notifications for all delivery boys
         io.to('delivery-notifications').emit('order-accepted', {

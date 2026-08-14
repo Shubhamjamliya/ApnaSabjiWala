@@ -1,4 +1,5 @@
 import { Socket } from 'socket.io-client';
+import api from '../config';
 
 export interface OrderNotificationData {
     orderId: string;
@@ -28,6 +29,21 @@ export interface RejectOrderResponse {
     message: string;
     allRejected: boolean;
 }
+
+export const getAvailableOrderNotifications = async (): Promise<OrderNotificationData[]> => {
+    const response = await api.get('/delivery/orders/available');
+    return response.data.data || [];
+};
+
+export const acceptOrderViaApi = async (orderId: string): Promise<AcceptOrderResponse> => {
+    const response = await api.post(`/delivery/orders/available/${orderId}/accept`);
+    return response.data;
+};
+
+export const rejectOrderViaApi = async (orderId: string): Promise<RejectOrderResponse> => {
+    const response = await api.post(`/delivery/orders/available/${orderId}/reject`);
+    return response.data;
+};
 
 /**
  * Accept an order via WebSocket

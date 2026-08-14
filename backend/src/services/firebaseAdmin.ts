@@ -77,17 +77,24 @@ export async function sendPushNotification(
             };
         }
 
-        const message = {
-            notification: {
-                title: payload.title,
-                body: payload.body
-            },
+        const isDeliveryTask = payload.data?.type === 'TASK';
+        const message: admin.messaging.MulticastMessage = {
             data: {
                 ...(payload.data || {}),
+                ...(isDeliveryTask && { title: payload.title, body: payload.body }),
                 ...(payload.icon && { icon: payload.icon })
             },
             tokens: tokens
         };
+
+        // Delivery tasks use data-only FCM so our service worker shows exactly
+        // one actionable notification. Other notification types keep native FCM display.
+        if (!isDeliveryTask) {
+            message.notification = {
+                title: payload.title,
+                body: payload.body,
+            };
+        }
 
         const response = await admin.messaging().sendEachForMulticast(message);
 

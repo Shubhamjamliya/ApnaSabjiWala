@@ -17,6 +17,7 @@ import PageLoader from "../../components/PageLoader";
 
 import { apiCache } from "../../utils/apiCache";
 import { useThemeContext } from "../../context/ThemeContext";
+import UserHomeFooter from "./components/UserHomeFooter";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -453,6 +454,8 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      <UserHomeFooter />
     </div>
   );
 }

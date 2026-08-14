@@ -5,9 +5,9 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-comp
 // Firebase configuration (Production credentials)
 const firebaseConfig = {
     apiKey: 'AIzaSyC4qGF2SyoQMkIbB4unTJMpwOpEqip0Ge0',
-    authDomain: 'barodamart-4ceaa.firebaseapp.com',
-    projectId: 'barodamart-4ceaa',
-    storageBucket: 'barodamart-4ceaa.firebasestorage.app',
+    authDomain: 'apnasabjiwala-4ceaa.firebaseapp.com',
+    projectId: 'apnasabjiwala-4ceaa',
+    storageBucket: 'apnasabjiwala-4ceaa.firebasestorage.app',
     messagingSenderId: '313907744091',
     appId: '1:313907744091:web:6db8bcfaaa9282c4c31e7e',
     measurementId: 'G-0YHQNFZ17P'
@@ -23,14 +23,14 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message', payload);
 
-    const notificationTitle = payload.notification?.title || 'New Notification';
+    const notificationTitle = payload.notification?.title || payload.data?.title || 'New Notification';
     const notificationOptions = {
-        body: payload.notification?.body || '',
+        body: payload.notification?.body || payload.data?.body || '',
         icon: payload.notification?.icon || '/favicon.png',
         badge: '/favicon.png',
         data: payload.data || {},
         tag: payload.data?.type || 'default',
-        requireInteraction: false
+        requireInteraction: payload.data?.type === 'TASK'
     };
 
     self.registration.showNotification(notificationTitle, notificationOptions);

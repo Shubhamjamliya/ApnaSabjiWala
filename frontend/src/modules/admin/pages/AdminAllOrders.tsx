@@ -6,6 +6,7 @@ import {
   type Order,
 } from "../../../services/api/admin/adminOrderService";
 import { useAuth } from "../../../context/AuthContext";
+import AssignDeliveryBoyModal from "../components/AssignDeliveryBoyModal";
 
 type SortField =
   | "orderId"
@@ -33,6 +34,8 @@ export default function AdminAllOrders() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // Fetch sellers on mount
   useEffect(() => {
@@ -789,7 +792,20 @@ export default function AdminAllOrders() {
                         ₹{order.total?.toFixed(2) || "0.00"}
                       </td>
                       <td className="px-4 sm:px-6 py-3">
-                        <Link to={`/admin/orders/${order._id}`}>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setAssignModalOpen(true);
+                            }}
+                            className={`px-2 py-1.5 text-xs font-medium rounded transition-colors ${order.deliveryBoy
+                              ? "bg-green-100 text-green-700 hover:bg-green-200"
+                              : "bg-blue-600 text-white hover:bg-blue-700"
+                              }`}
+                            title={order.deliveryBoy ? "Re-assign delivery boy" : "Assign delivery boy"}>
+                            {order.deliveryBoy ? "Re-assign" : "Assign"}
+                          </button>
+                          <Link to={`/admin/orders/${order._id}`}>
                           <button
                             className="bg-teal-600 hover:bg-teal-700 text-white p-2 rounded transition-colors"
                             aria-label="View order">
@@ -817,7 +833,8 @@ export default function AdminAllOrders() {
                               />
                             </svg>
                           </button>
-                        </Link>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -879,6 +896,28 @@ export default function AdminAllOrders() {
           </div>
         </div>
       </div>
+
+      {assignModalOpen && selectedOrder && (
+        <AssignDeliveryBoyModal
+          isOpen={assignModalOpen}
+          onClose={() => {
+            setAssignModalOpen(false);
+            setSelectedOrder(null);
+          }}
+          orderId={selectedOrder._id}
+          orderNumber={selectedOrder.orderNumber}
+          currentDeliveryBoy={selectedOrder.deliveryBoy}
+          onAssignSuccess={(assignedOrder) => {
+            setOrders((currentOrders) =>
+              currentOrders.map((order) =>
+                order._id === assignedOrder._id ? assignedOrder : order
+              )
+            );
+            setAssignModalOpen(false);
+            setSelectedOrder(null);
+          }}
+        />
+      )}
 
       {/* Footer */}
       <div className="text-center py-4 text-xs sm:text-sm text-neutral-600">

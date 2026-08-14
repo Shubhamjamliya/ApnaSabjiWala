@@ -97,6 +97,15 @@ export interface AssignDeliveryBoyData {
   deliveryBoyId: string;
 }
 
+export interface EligibleDeliveryBoy {
+  _id: string;
+  name: string;
+  mobile: string;
+  city?: string;
+  available?: "Available" | "Not Available";
+  isOnline: boolean;
+}
+
 export interface ReturnRequest {
   _id: string;
   order: string | Order;
@@ -186,6 +195,18 @@ export const assignDeliveryBoy = async (
   const response = await api.patch<ApiResponse<Order>>(
     `/admin/orders/${id}/assign-delivery`,
     data
+  );
+  return response.data;
+};
+
+/**
+ * Get online delivery boys within the order seller's service radius.
+ */
+export const getAvailableDeliveryBoysForOrder = async (
+  id: string
+): Promise<ApiResponse<EligibleDeliveryBoy[]>> => {
+  const response = await api.get<ApiResponse<EligibleDeliveryBoy[]>>(
+    `/admin/orders/${id}/available-delivery-boys`
   );
   return response.data;
 };

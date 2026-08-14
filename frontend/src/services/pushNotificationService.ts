@@ -172,8 +172,8 @@ export function setupForegroundNotificationHandler(handler?: (payload: any) => v
             console.log('🔔 Current Notification Permission:', Notification.permission);
             if (Notification.permission === 'granted') {
                 try {
-                    const notification = new Notification(payload.notification?.title || 'New Notification', {
-                        body: payload.notification?.body || '',
+                    const notification = new Notification(payload.notification?.title || payload.data?.title || 'New Notification', {
+                        body: payload.notification?.body || payload.data?.body || '',
                         icon: payload.notification?.icon || '/favicon.png',
                         badge: '/favicon.png',
                         tag: payload.data?.type || 'notification',

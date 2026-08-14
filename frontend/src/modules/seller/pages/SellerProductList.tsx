@@ -11,6 +11,7 @@ import {
   getCategories,
   Category as apiCategory,
 } from "../../../services/api/categoryService";
+import { getTaxes, Tax } from "../../../services/api/taxService";
 import { useAuth } from "../../../context/AuthContext";
 
 // ... (interfaces remain same)
@@ -39,6 +40,7 @@ export default function SellerProductList() {
     pages: number;
   } | null>(null);
   const [allCategories, setAllCategories] = useState<apiCategory[]>([]);
+  const [taxes, setTaxes] = useState<Tax[]>([]);
   const { user } = useAuth();
 
   // Price Modal State
@@ -55,20 +57,49 @@ export default function SellerProductList() {
     return compact.slice(-8);
   };
 
-  // Fetch categories
+  // Fetch product metadata used in the list
   useEffect(() => {
-    const fetchCats = async () => {
-      try {
-        const response = await getCategories();
+    const fetchMetadata = async () => {
+      const [categoryResult, taxResult] = await Promise.allSettled([
+        getCategories(),
+        getTaxes(),
+      ]);
+
+      if (categoryResult.status === "fulfilled") {
+        const response = categoryResult.value;
         if (response.success && response.data) {
           setAllCategories(response.data);
         }
-      } catch (err) {
-        console.error("Failed to fetch categories:", err);
+      } else {
+        console.error("Failed to fetch categories:", categoryResult.reason);
+      }
+
+      if (taxResult.status === "fulfilled") {
+        const response = taxResult.value;
+        if (response.success && response.data) {
+          setTaxes(response.data);
+        }
+      } else {
+        console.error("Failed to fetch taxes:", taxResult.reason);
       }
     };
-    fetchCats();
+
+    fetchMetadata();
   }, []);
+
+  const getTaxLabel = (productTax: Product["tax"]) => {
+    if (!productTax) return "-";
+
+    if (typeof productTax === "object") {
+      const percentage = productTax.percentage ?? productTax.rate;
+      return productTax.name
+        ? `${productTax.name}${percentage !== undefined ? ` (${percentage}%)` : ""}`
+        : "-";
+    }
+
+    const tax = taxes.find((item) => item._id === productTax);
+    return tax ? `${tax.name} (${tax.percentage}%)` : "-";
+  };
 
   // Fetch products
   const fetchProducts = async () => {
@@ -204,6 +235,7 @@ export default function SellerProductList() {
         brandName: (product.brand as any)?.name || "-",
         category: (product.category as any)?.name || "-",
         subCategory: (product.subcategory as any)?.name || "-",
+        taxLabel: getTaxLabel(product.tax),
         price: (product as any).price || 0,
         discPrice: (product as any).discPrice || 0,
         variation: "Default",
@@ -223,6 +255,7 @@ export default function SellerProductList() {
       brandName: (product.brand as any)?.name || "-",
       category: (product.category as any)?.name || "-",
       subCategory: (product.subcategory as any)?.name || "-",
+      taxLabel: getTaxLabel(product.tax),
       price: variation.price,
       discPrice: variation.discPrice,
       variation:
@@ -402,6 +435,7 @@ export default function SellerProductList() {
                   "Seller Name",
                   "Brand Name",
                   "Category",
+                  "Tax",
                   "Price",
                   "Disc Price",
                   "Variation",
@@ -416,6 +450,7 @@ export default function SellerProductList() {
                       `"${v.sellerName}"`,
                       `"${v.brandName}"`,
                       `"${v.category}"`,
+                      `"${v.taxLabel}"`,
                       v.price,
                       v.discPrice,
                       `"${v.variation}"`,
@@ -560,6 +595,13 @@ export default function SellerProductList() {
                 </th>
                 <th
                   className="p-4 border border-neutral-200 cursor-pointer hover:bg-neutral-100 transition-colors"
+                  onClick={() => handleSort("taxLabel")}>
+                  <div className="flex items-center justify-between">
+                    Tax <SortIcon column="taxLabel" />
+                  </div>
+                </th>
+                <th
+                  className="p-4 border border-neutral-200 cursor-pointer hover:bg-neutral-100 transition-colors"
                   onClick={() => handleSort("price")}>
                   <div className="flex items-center justify-between">
                     Price <SortIcon column="price" />
@@ -675,6 +717,9 @@ export default function SellerProductList() {
                     <td className="p-4 align-middle border border-neutral-200">
                       {variation.subCategory}
                     </td>
+                    <td className="p-4 align-middle border border-neutral-200 whitespace-nowrap">
+                      {variation.taxLabel}
+                    </td>
                     <td 
                       className="p-4 align-middle border border-neutral-200 cursor-pointer hover:bg-neutral-100 transition-colors text-teal-600 font-medium"
                       onClick={() => openPriceModal(variation)}
@@ -738,7 +783,7 @@ export default function SellerProductList() {
               {displayedVariations.length === 0 && (
                 <tr>
                   <td
-                    colSpan={12}
+                    colSpan={13}
                     className="p-8 text-center text-neutral-400 border border-neutral-200">
                     No products found.
                   </td>

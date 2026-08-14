@@ -113,6 +113,24 @@ export function DeliveryStatusProvider({ children }: { children: ReactNode }) {
     };
   }, [isAuthenticated, token, user?.id]);
 
+  // Show the same in-app assignment popup when FCM is used because the socket is disconnected.
+  useEffect(() => {
+    const handleAssignmentPush = (event: Event) => {
+      const payload = (event as CustomEvent<any>).detail;
+      const data = payload?.data;
+      if (data?.type !== 'ORDER_ASSIGNED') return;
+
+      setNewOrder({
+        orderId: data.id,
+        orderNumber: data.orderNumber,
+        message: data.message || `New order #${data.orderNumber} assigned to you!`,
+      });
+    };
+
+    window.addEventListener('fcm-message', handleAssignmentPush as EventListener);
+    return () => window.removeEventListener('fcm-message', handleAssignmentPush as EventListener);
+  }, []);
+
   // Location Tracking Logic
   useEffect(() => {
     if (isOnline && isAuthenticated) {

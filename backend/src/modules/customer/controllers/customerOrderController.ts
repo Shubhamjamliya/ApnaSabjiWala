@@ -11,6 +11,10 @@ import { generateDeliveryOtp } from "../../../services/deliveryOtpService";
 import AppSettings from "../../../models/AppSettings";
 import { getRoadDistances } from "../../../services/mapService";
 import { Server as SocketIOServer } from "socket.io";
+import {
+    hasEnteredLowStock,
+    sendLowStockNotification,
+} from "../../../services/lowStockNotificationService";
 
 // Create a new order
 export const createOrder = async (req: Request, res: Response) => {
@@ -152,6 +156,15 @@ export const createOrder = async (req: Request, res: Response) => {
         let calculatedSubtotal = 0;
         const orderItemIds: mongoose.Types.ObjectId[] = [];
         const sellerIds = new Set<string>(); // Track unique sellers
+        const pendingLowStockAlerts: Array<{
+            sellerId: string;
+            productId: string;
+            productName: string;
+            previousStock: number;
+            currentStock: number;
+            variationId?: string;
+            variationName?: string;
+        }> = [];
 
         for (const item of items) {
             const productId = item?.product?.id || item?.product?._id;
@@ -182,6 +195,12 @@ export const createOrder = async (req: Request, res: Response) => {
             const productName = checkProduct.productName || item?.product?.name || 'Product';
 
             let product;
+            let stockChange: {
+                previousStock: number;
+                currentStock: number;
+                variationId?: string;
+                variationName?: string;
+            } | null = null;
             if (checkProduct.variations && checkProduct.variations.length > 0) {
                 // Product has variations
                 let targetVarIdx = -1;
@@ -226,6 +245,13 @@ export const createOrder = async (req: Request, res: Response) => {
                         { $inc: incQuery },
                         { new: true }
                     );
+
+                stockChange = {
+                    previousStock: availableVarStock,
+                    currentStock: availableVarStock - qty,
+                    variationId: targetVar?._id?.toString(),
+                    variationName: targetVar?.name || targetVar?.value || targetVar?.title || targetVar?.pack,
+                };
             } else {
                 // No variations - check top-level stock
                 if (checkProduct.stock < qty) {
@@ -243,6 +269,11 @@ export const createOrder = async (req: Request, res: Response) => {
                         { $inc: { stock: -qty } },
                         { new: true }
                     );
+
+                stockChange = {
+                    previousStock: Number(checkProduct.stock) || 0,
+                    currentStock: (Number(checkProduct.stock) || 0) - qty,
+                };
             }
 
             if (!product) {
@@ -252,6 +283,21 @@ export const createOrder = async (req: Request, res: Response) => {
             // Track seller IDs to validate location
             if (product.seller) {
                 sellerIds.add(product.seller.toString());
+
+                if (
+                    stockChange &&
+                    hasEnteredLowStock(
+                        stockChange.previousStock,
+                        stockChange.currentStock,
+                    )
+                ) {
+                    pendingLowStockAlerts.push({
+                        sellerId: product.seller.toString(),
+                        productId: product._id.toString(),
+                        productName,
+                        ...stockChange,
+                    });
+                }
             }
 
             // Determine the price based on variation and discounts
@@ -433,6 +479,10 @@ export const createOrder = async (req: Request, res: Response) => {
             }
             await newOrder.save();
         }
+
+        await Promise.allSettled(
+            pendingLowStockAlerts.map(alert => sendLowStockNotification(alert)),
+        );
 
 
         // Emit notification to all available delivery boys

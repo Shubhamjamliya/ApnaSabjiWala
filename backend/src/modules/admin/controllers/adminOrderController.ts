@@ -7,6 +7,41 @@ import DeliveryAssignment from "../../../models/DeliveryAssignment";
 import Return from "../../../models/Return";
 import { notifySellersOfOrderUpdate } from "../../../services/sellerNotificationService";
 import { Server as SocketIOServer } from "socket.io";
+import { findDeliveryBoysNearSellerLocations } from "../../../services/orderNotificationService";
+
+/**
+ * Get online delivery boys whose latest location is within a seller's radius.
+ */
+export const getAvailableDeliveryBoysForOrder = asyncHandler(
+  async (req: Request, res: Response) => {
+    const order = await Order.findById(req.params.id).populate({
+      path: "items",
+      select: "seller",
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    const nearbyIds = await findDeliveryBoysNearSellerLocations(order, false);
+    const deliveryBoys = await Delivery.find({
+      _id: { $in: nearbyIds },
+      status: "Active",
+      isOnline: true,
+    }).select("name mobile city available isOnline");
+
+    const byId = new Map(deliveryBoys.map((boy) => [boy._id.toString(), boy]));
+    const sortedDeliveryBoys = nearbyIds
+      .map((deliveryBoyId) => byId.get(deliveryBoyId.toString()))
+      .filter(Boolean);
+
+    return res.status(200).json({
+      success: true,
+      message: "Online delivery boys within seller radius fetched successfully",
+      data: sortedDeliveryBoys,
+    });
+  },
+);
 
 /**
  * Get all orders with filters
@@ -230,7 +265,18 @@ export const assignDeliveryBoy = asyncHandler(
       });
     }
 
-    // Verify delivery boy exists and is active
+    const order = await Order.findById(id).populate({
+      path: "items",
+      select: "seller",
+    });
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // Verify delivery boy exists, is active and is currently online.
     const deliveryBoy = await Delivery.findById(deliveryBoyId);
     if (!deliveryBoy) {
       return res.status(404).json({
@@ -246,11 +292,21 @@ export const assignDeliveryBoy = asyncHandler(
       });
     }
 
-    const order = await Order.findById(id);
-    if (!order) {
-      return res.status(404).json({
+    if (!deliveryBoy.isOnline) {
+      return res.status(400).json({
         success: false,
-        message: "Order not found",
+        message: "Delivery boy is currently offline",
+      });
+    }
+
+    const nearbyIds = await findDeliveryBoysNearSellerLocations(order, false);
+    const isWithinSellerRadius = nearbyIds.some(
+      (nearbyId) => nearbyId.toString() === deliveryBoyId.toString(),
+    );
+    if (!isWithinSellerRadius) {
+      return res.status(400).json({
+        success: false,
+        message: "Delivery boy is outside the seller service radius",
       });
     }
 
@@ -258,6 +314,9 @@ export const assignDeliveryBoy = asyncHandler(
     order.deliveryBoy = deliveryBoyId as any;
     order.deliveryBoyStatus = "Assigned";
     order.assignedAt = new Date();
+    if (["Received", "Pending", "Accepted"].includes(order.status)) {
+      order.status = "Processed";
+    }
     await order.save();
 
     // Create or update delivery assignment
@@ -278,14 +337,38 @@ export const assignDeliveryBoy = asyncHandler(
       .populate("deliveryBoy", "name mobile email")
       .populate("items");
 
-    // Notify delivery boy via socket
+    // Notify through the live socket, with FCM as the disconnected/app-closed fallback.
     const io: SocketIOServer = req.app.get("io");
-    if (io) {
-      io.to(`delivery-${deliveryBoyId}`).emit("order-assigned", {
+    const roomName = `delivery-${deliveryBoyId}`;
+    const assignmentPayload = {
         orderId: order._id,
         orderNumber: order.orderNumber,
         message: `New order #${order.orderNumber} assigned to you!`,
-      });
+    };
+    const hasLiveSocket = Boolean(io?.sockets.adapter.rooms.get(roomName)?.size);
+
+    if (hasLiveSocket) {
+      io.to(roomName).emit("order-assigned", assignmentPayload);
+    } else {
+      const { sendNotification } = await import("../../../services/notificationService");
+      await sendNotification(
+        "Delivery",
+        deliveryBoyId.toString(),
+        "New Order Assigned",
+        assignmentPayload.message,
+        {
+          type: "Order",
+          link: `/delivery/orders/${order._id}`,
+          actionLabel: "View Order",
+          priority: "High",
+          data: {
+            type: "ORDER_ASSIGNED",
+            id: order._id.toString(),
+            orderNumber: order.orderNumber,
+            message: assignmentPayload.message,
+          },
+        },
+      );
     }
 
     return res.status(200).json({

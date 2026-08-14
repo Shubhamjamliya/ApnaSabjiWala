@@ -164,7 +164,7 @@ function App() {
     // Setup foreground notification handler
     setupForegroundNotificationHandler((payload) => {
       console.log('Notification received in app:', payload);
-      // You can add custom handling here (e.g., show toast, update UI)
+      window.dispatchEvent(new CustomEvent('fcm-message', { detail: payload }));
     });
   }, []);
 

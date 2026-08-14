@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Product from "../../../models/Product";
 import Shop from "../../../models/Shop";
 import { asyncHandler } from "../../../utils/asyncHandler";
+import { sendLowStockNotification } from "../../../services/lowStockNotificationService";
 
 /**
  * Create a new product
@@ -443,6 +444,18 @@ export const updateStock = asyncHandler(async (req: Request, res: Response) => {
   const { id, variationId } = req.params;
   const { stock, status } = req.body;
 
+  const normalizedStock = Number(stock);
+  if (
+    stock === undefined ||
+    !Number.isInteger(normalizedStock) ||
+    normalizedStock < 0
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Stock must be a whole number of 0 or more",
+    });
+  }
+
   const query: any = { _id: id };
   if ((req as any).user?.userType !== "Admin") {
     query.seller = sellerId;
@@ -466,14 +479,13 @@ export const updateStock = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  if (stock !== undefined) {
-    variation.stock = stock;
-    // Automatically update status based on stock
-    if (stock === 0) {
-      variation.status = "Sold out";
-    } else if (stock > 0 && variation.status === "Sold out") {
-      variation.status = "Available";
-    }
+  const previousStock = Number(variation.stock) || 0;
+  variation.stock = normalizedStock;
+  // Automatically update status based on stock
+  if (normalizedStock === 0) {
+    variation.status = "Sold out";
+  } else if (variation.status === "Sold out") {
+    variation.status = "Available";
   }
   if (status) {
     variation.status = status;
@@ -481,7 +493,21 @@ export const updateStock = asyncHandler(async (req: Request, res: Response) => {
 
   // Mark variations as modified since we updated a sub-document field
   product.markModified("variations");
+  product.stock = product.variations.reduce(
+    (total: number, item: any) => total + (Number(item.stock) || 0),
+    0
+  );
   await product.save();
+
+  await sendLowStockNotification({
+    sellerId: product.seller.toString(),
+    productId: product._id.toString(),
+    productName: product.productName,
+    variationId,
+    variationName: variation.name || variation.value || variation.title,
+    previousStock,
+    currentStock: normalizedStock,
+  });
 
   return res.status(200).json({
     success: true,
@@ -620,12 +646,22 @@ export const bulkUpdateStock = asyncHandler(
           (v: any) => v._id?.toString() === variationId
         );
         if (variation) {
+          const previousStock = Number(variation.stock) || 0;
           variation.stock = stock;
           if (stock === 0) variation.status = "Sold out";
           else if (stock > 0 && variation.status === "Sold out")
             variation.status = "In stock";
 
           await product.save();
+          await sendLowStockNotification({
+            sellerId: product.seller.toString(),
+            productId: product._id.toString(),
+            productName: product.productName,
+            variationId,
+            variationName: variation.name || variation.value || variation.title,
+            previousStock,
+            currentStock: Number(stock),
+          });
           results.push({ productId, variationId, success: true });
         } else {
           results.push({
