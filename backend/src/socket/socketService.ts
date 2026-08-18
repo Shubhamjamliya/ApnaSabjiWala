@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { handleOrderAcceptance, handleOrderRejection } from '../services/orderNotificationService';
 import Order from '../models/Order';
 import DeliveryTracking from '../models/DeliveryTracking';
+import { getPendingSellerOrderNotifications } from '../services/sellerNotificationService';
 
 // In-memory cache for order destinations (lat, lng) to avoid DB reads on every update
 // Key: orderId, Value: { latitude, longitude }
@@ -186,8 +187,20 @@ export const initializeSocket = (httpServer: HttpServer) => {
         });
 
         // Seller joins their notification room
-        socket.on('join-seller-room', (sellerId: string) => {
-            const normalizedSellerId = String(sellerId).trim();
+        socket.on('join-seller-room', async (sellerId: string) => {
+            const socketUser = (socket as any).user;
+            const authenticatedSellerId = socketUser?.userType === 'Seller'
+                ? String(socketUser.userId)
+                : '';
+            const normalizedSellerId = String(sellerId || '').trim();
+
+            if (!authenticatedSellerId || normalizedSellerId !== authenticatedSellerId) {
+                socket.emit('seller-room-error', {
+                    message: 'Authenticated seller identity is required',
+                });
+                return;
+            }
+
             console.log(`🏪 Seller ${normalizedSellerId} joined notifications room`);
             socket.join(`seller-${normalizedSellerId}`);
 
@@ -196,6 +209,30 @@ export const initializeSocket = (httpServer: HttpServer) => {
                 message: 'Successfully joined seller notifications room',
                 sellerId: normalizedSellerId
             });
+
+            try {
+                const pendingOrders = await getPendingSellerOrderNotifications(normalizedSellerId);
+                socket.emit('seller-pending-orders', pendingOrders);
+            } catch (error) {
+                console.error(`Error fetching pending orders for seller ${normalizedSellerId}:`, error);
+            }
+        });
+
+        socket.on('fetch-seller-pending-orders', async () => {
+            const socketUser = (socket as any).user;
+            if (socketUser?.userType !== 'Seller' || !socketUser.userId) {
+                socket.emit('seller-room-error', {
+                    message: 'Authenticated seller identity is required',
+                });
+                return;
+            }
+
+            try {
+                const pendingOrders = await getPendingSellerOrderNotifications(String(socketUser.userId));
+                socket.emit('seller-pending-orders', pendingOrders);
+            } catch (error) {
+                console.error('Error refreshing pending seller orders:', error);
+            }
         });
 
         // Delivery boy joins notification room

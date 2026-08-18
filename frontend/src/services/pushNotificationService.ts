@@ -1,8 +1,10 @@
-import { messaging, getToken, onMessage } from './firebase';
+import { messaging, deleteToken, getToken, onMessage } from './firebase';
 import { getAuthToken, removeAuthToken } from './api/config';
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BL6zx7ldM8gHbypngBAly0E2GiZp6AIaa3cFn37QThi6e5ObtcriTSCEFIYNPl2-PtvJbR49hezN98iqVIY1XZk';
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1').trim();
+const FCM_TOKEN_REFRESH_KEY = 'fcm_token_last_refresh';
+const FCM_TOKEN_REFRESH_INTERVAL = 24 * 60 * 60 * 1000;
 
 console.log('📡 Push Notification Service Config:', {
     hasVapid: !!VAPID_KEY,
@@ -125,12 +127,29 @@ export async function registerFCMToken(forceUpdate: boolean = false): Promise<st
         // localStorage is shared by every role in this browser. Re-save an
         // existing token so it belongs to the account that is logged in now.
         const savedToken = localStorage.getItem('fcm_token_web');
-        if (savedToken && !forceUpdate) {
+        const lastRefresh = Number(localStorage.getItem(FCM_TOKEN_REFRESH_KEY) || 0);
+        const tokenNeedsRefresh = forceUpdate
+            || !lastRefresh
+            || Date.now() - lastRefresh >= FCM_TOKEN_REFRESH_INTERVAL;
+
+        if (savedToken && !tokenNeedsRefresh) {
             const synced = await saveTokenToBackend(savedToken);
             if (synced) {
                 console.log('ℹ️ Existing FCM token synced with current account');
                 return savedToken;
             }
+        }
+
+        // Firebase can keep returning a locally cached token after the server
+        // has rejected it. Delete it before a forced/periodic refresh.
+        if (savedToken && tokenNeedsRefresh && messaging) {
+            try {
+                await deleteToken(messaging);
+            } catch (error) {
+                console.warn('Could not delete the stale FCM token before refresh:', error);
+            }
+            localStorage.removeItem('fcm_token_web');
+            localStorage.removeItem(FCM_TOKEN_REFRESH_KEY);
         }
 
         // Request permission
@@ -149,6 +168,7 @@ export async function registerFCMToken(forceUpdate: boolean = false): Promise<st
 
         if (await saveTokenToBackend(token)) {
             localStorage.setItem('fcm_token_web', token);
+            localStorage.setItem(FCM_TOKEN_REFRESH_KEY, String(Date.now()));
             console.log('✅ FCM token registered with backend');
             return token;
         } else {
@@ -261,6 +281,7 @@ export async function removeFCMToken(providedAuthToken?: string): Promise<void> 
         // Keep the local token when the backend request fails so cleanup can
         // be retried instead of silently leaving a stale database entry.
         localStorage.removeItem('fcm_token_web');
+        localStorage.removeItem(FCM_TOKEN_REFRESH_KEY);
         console.log('✅ FCM token removed');
     } catch (error) {
         console.error('❌ Error removing FCM token:', error);

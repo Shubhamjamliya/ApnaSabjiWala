@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../../../context/AuthContext';
 import { getSocketBaseURL, getAuthToken } from '../../../services/api/config';
@@ -50,23 +50,23 @@ export const useSellerSocket = (onNotificationReceived?: (notification: SellerNo
 
     const sellerId =
         user?.id ||
-        (user as any)?._id ||
-        (user as any)?.userId ||
-        (user as any)?.sellerId ||
-        (user as any)?.seller?._id ||
-        (user as any)?.seller?.id ||
+        user?._id ||
+        user?.userId ||
+        user?.sellerId ||
+        user?.seller?._id ||
+        user?.seller?.id ||
         getSellerIdFromStorage();
 
     useEffect(() => {
         const resolvedToken = token || getAuthToken('seller') || getAuthToken();
-        const normalizedUserType = String((user as any)?.userType || '').toLowerCase();
+        const normalizedUserType = String(user?.userType || '').toLowerCase();
         const isSellerUser = normalizedUserType === 'seller' || window.location.pathname.startsWith('/seller');
 
         if (!isSellerUser || !sellerId || (!isAuthenticated && !window.location.pathname.startsWith('/seller'))) {
-            if (socket) {
-                socket.disconnect();
-                setSocket(null);
-            }
+            setSocket((currentSocket) => {
+                currentSocket?.disconnect();
+                return null;
+            });
             return;
         }
 
@@ -99,6 +99,19 @@ export const useSellerSocket = (onNotificationReceived?: (notification: SellerNo
             if (onNotificationReceived) {
                 onNotificationReceived(notification);
             }
+        });
+
+        newSocket.on('seller-pending-orders', (notifications: SellerNotification[]) => {
+            console.log('Recovered pending seller orders:', notifications.length);
+            notifications.forEach((notification) => {
+                if (onNotificationReceived) {
+                    onNotificationReceived(notification);
+                }
+            });
+        });
+
+        newSocket.on('seller-room-error', (error) => {
+            console.error('Seller notification room error:', error?.message || error);
         });
 
         newSocket.on('disconnect', () => {

@@ -5,9 +5,22 @@ import { asyncHandler } from "../../../utils/asyncHandler";
 import Seller from "../../../models/Seller";
 import WalletTransaction from "../../../models/WalletTransaction";
 import { notifyDeliveryBoysOfNewOrder, getNotificationState } from "../../../services/orderNotificationService";
-import { notifySellersOfOrderUpdate } from "../../../services/sellerNotificationService";
+import { getPendingSellerOrderNotifications, notifySellersOfOrderUpdate } from "../../../services/sellerNotificationService";
 import { Server as SocketIOServer } from "socket.io";
 import mongoose from "mongoose";
+
+export const getPendingActionOrders = asyncHandler(
+  async (req: Request, res: Response) => {
+    const sellerId = (req as any).user.userId;
+    const notifications = await getPendingSellerOrderNotifications(sellerId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Pending seller orders fetched successfully",
+      data: notifications,
+    });
+  },
+);
 
 /**
  * Get seller's orders with filters, sorting, and pagination

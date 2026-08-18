@@ -120,27 +120,27 @@ router.post('/verify', authenticate, requireUserType('Customer'), async (req: Re
         // Send notifications to sellers now that the order is confirmed
         try {
             const io = req.app.get("io");
-            if (io) {
-                const OrderItem = (await import('../models/OrderItem')).default;
-                const { notifySellersOfOrderUpdate } = await import('../services/sellerNotificationService');
-                
-                const updatedOrder = order || await (await import("../models/NextDayOrder")).default.findById(orderId).lean();
-                
-                if (updatedOrder) {
-                    const orderItems = await OrderItem.find({ order: updatedOrder._id });
-                    const orderWithItems = { ...updatedOrder.toObject ? updatedOrder.toObject() : updatedOrder, items: orderItems };
-                    
-                    await notifySellersOfOrderUpdate(io, orderWithItems, 'NEW_ORDER');
+            const OrderItem = (await import('../models/OrderItem')).default;
+            const { notifySellersOfOrderUpdate } = await import('../services/sellerNotificationService');
 
-                    try {
-                        const { sendNewOrderNotification } = await import('../services/notificationService');
-                        const sellerIdsInOrder = [...new Set(orderItems.map((i: any) => i.seller?.toString()).filter((id: any) => id))];
-                        for (const sellerId of sellerIdsInOrder) {
-                            await sendNewOrderNotification(sellerId as string, String(updatedOrder._id), (updatedOrder as any).orderNumber, updatedOrder.total);
-                        }
-                    } catch (pushErr) {
-                        console.error("Error sending push notifications to sellers after payment:", pushErr);
+            const updatedOrder = order || await (await import("../models/NextDayOrder")).default.findById(orderId).lean();
+
+            if (updatedOrder) {
+                const orderItems = await OrderItem.find({ order: updatedOrder._id });
+                const orderWithItems = { ...updatedOrder.toObject ? updatedOrder.toObject() : updatedOrder, items: orderItems };
+
+                if (io) {
+                    await notifySellersOfOrderUpdate(io, orderWithItems, 'NEW_ORDER');
+                }
+
+                try {
+                    const { sendNewOrderNotification } = await import('../services/notificationService');
+                    const sellerIdsInOrder = [...new Set(orderItems.map((i: any) => i.seller?.toString()).filter((id: any) => id))];
+                    for (const sellerId of sellerIdsInOrder) {
+                        await sendNewOrderNotification(sellerId as string, String(updatedOrder._id), (updatedOrder as any).orderNumber, updatedOrder.total);
                     }
+                } catch (pushErr) {
+                    console.error("Error sending push notifications to sellers after payment:", pushErr);
                 }
             }
         } catch (notificationError) {

@@ -247,7 +247,7 @@ export const sendNewOrderNotification = async (
     `You received a new order #${orderNo} for ₹${amount}.`,
     {
       type: "Order",
-      link: `/orders/${orderId}`,
+      link: `/seller/orders/${orderId}`,
       priority: "High",
       data: { type: "NEW_ORDER", id: orderId },
       idempotencyKey: `new_order_${orderId}_${sellerId}`

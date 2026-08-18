@@ -1,6 +1,99 @@
 import { Server as SocketIOServer } from 'socket.io';
 import OrderItem from '../models/OrderItem';
+import Order from '../models/Order';
 import mongoose from 'mongoose';
+
+export interface SellerOrderNotificationPayload {
+    type: 'NEW_ORDER' | 'STATUS_UPDATE' | 'ORDER_CANCELLED';
+    orderId: string;
+    orderNumber: string;
+    status: string;
+    paymentStatus: string;
+    customer: { name: string; email: string; phone: string; address: any };
+    items: Array<{
+        productName: string;
+        quantity: number;
+        price: number;
+        total: number;
+        variation?: string;
+    }>;
+    totalAmount: number;
+    timestamp: Date;
+}
+
+const buildSellerNotification = (
+    order: any,
+    sellerItems: any[],
+    type: SellerOrderNotificationPayload['type'],
+): SellerOrderNotificationPayload => ({
+    type,
+    orderId: String(order._id),
+    orderNumber: order.orderNumber,
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    customer: {
+        name: order.customerName,
+        email: order.customerEmail,
+        phone: order.customerPhone,
+        address: order.deliveryAddress,
+    },
+    items: sellerItems.map((item: any) => ({
+        productName: item.productName,
+        quantity: item.quantity,
+        price: item.unitPrice,
+        total: item.total,
+        variation: item.variation,
+    })),
+    totalAmount: sellerItems.reduce(
+        (amount: number, item: any) => amount + (Number(item.total) || 0),
+        0,
+    ),
+    timestamp: order.orderDate || order.createdAt || new Date(),
+});
+
+/** Orders that still require this seller to accept or reject them. */
+export async function getPendingSellerOrderNotifications(
+    sellerId: string,
+): Promise<SellerOrderNotificationPayload[]> {
+    if (!mongoose.Types.ObjectId.isValid(sellerId)) return [];
+
+    const orderIds = await OrderItem.find({ seller: sellerId }).distinct('order');
+    if (orderIds.length === 0) return [];
+
+    const orders = await Order.find({
+        _id: { $in: orderIds },
+        $or: [
+            { status: 'Received' },
+            { status: 'Pending', paymentStatus: 'Paid' },
+        ],
+    })
+        .sort({ orderDate: 1 })
+        .limit(50)
+        .lean();
+
+    if (orders.length === 0) return [];
+
+    const sellerItems = await OrderItem.find({
+        seller: sellerId,
+        order: { $in: orders.map(order => order._id) },
+    }).lean();
+
+    const itemsByOrder = new Map<string, any[]>();
+    sellerItems.forEach((item: any) => {
+        const orderId = String(item.order);
+        const items = itemsByOrder.get(orderId) || [];
+        items.push(item);
+        itemsByOrder.set(orderId, items);
+    });
+
+    return orders.map(order =>
+        buildSellerNotification(
+            order,
+            itemsByOrder.get(String(order._id)) || [],
+            'NEW_ORDER',
+        ),
+    );
+}
 
 /**
  * Notify all sellers involved in an order about a new order or status change
@@ -44,28 +137,7 @@ export async function notifySellersOfOrderUpdate(
                 return itemSellerId === sellerId;
             });
 
-            const notificationData = {
-                type,
-                orderId: order._id,
-                orderNumber: order.orderNumber,
-                status: order.status,
-                paymentStatus: order.paymentStatus,
-                customer: {
-                    name: order.customerName,
-                    email: order.customerEmail,
-                    phone: order.customerPhone,
-                    address: order.deliveryAddress
-                },
-                items: sellerSpecificItems.map((item: any) => ({
-                    productName: item.productName,
-                    quantity: item.quantity,
-                    price: item.unitPrice,
-                    total: item.total,
-                    variation: item.variation
-                })),
-                totalAmount: sellerSpecificItems.reduce((acc: number, item: any) => acc + item.total, 0),
-                timestamp: new Date()
-            };
+            const notificationData = buildSellerNotification(order, sellerSpecificItems, type);
 
             // Emit to seller-specific room
             io.to(`seller-${sellerId}`).emit('seller-notification', notificationData);

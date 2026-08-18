@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SellerNotification } from '../hooks/useSellerSocket';
-import { updateOrderStatus } from '../../../services/api/orderService';
+import { updateOrderStatus, UpdateOrderStatusData } from '../../../services/api/orderService';
 import { useNavigate } from 'react-router-dom';
 
 interface SellerNotificationAlertProps {
   notification: SellerNotification | null;
   onClose: () => void;
+  onResolved?: (orderId: string, status: string) => void;
 }
 
-const SellerNotificationAlert: React.FC<SellerNotificationAlertProps> = ({ notification, onClose }) => {
+const SellerNotificationAlert: React.FC<SellerNotificationAlertProps> = ({ notification, onClose, onResolved }) => {
   const [volume, setVolume] = useState(0.8);
   const [timeLeft, setTimeLeft] = useState(120);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -20,12 +21,16 @@ const SellerNotificationAlert: React.FC<SellerNotificationAlertProps> = ({ notif
     : 0;
   const productCount = notification?.items?.length || 0;
 
-  const handleStatusUpdate = async (status: string) => {
+  const handleStatusUpdate = async (status: UpdateOrderStatusData['status']) => {
     if (!notification) return;
     setLoading(true);
     try {
-      await updateOrderStatus(notification.orderId, { status: status as any });
-      onClose();
+      await updateOrderStatus(notification.orderId, { status });
+      if (onResolved) {
+        onResolved(notification.orderId, status);
+      } else {
+        onClose();
+      }
       // Optionally navigate to order detail or just close
       if (status === 'Accepted') {
          navigate(`/seller/orders/${notification.orderId}`);
@@ -42,7 +47,6 @@ const SellerNotificationAlert: React.FC<SellerNotificationAlertProps> = ({ notif
     if (notification) {
       // Play sound when notification arrives
       if (audioRef.current) {
-        audioRef.current.volume = volume;
         audioRef.current.play().catch(err => console.error('Error playing sound:', err));
       }
     }

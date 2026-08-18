@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { deleteToken, getMessaging, getToken, onMessage } from "firebase/messaging";
 
 // Firebase configuration from environment variables with fallbacks for production
 const firebaseConfig = {
@@ -40,5 +40,5 @@ if (app) {
   }
 }
 
-export { messaging, getToken, onMessage };
+export { messaging, deleteToken, getToken, onMessage };
 export default app;

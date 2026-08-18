@@ -1,4 +1,5 @@
 import api from './config';
+import type { SellerNotification } from '../../modules/seller/hooks/useSellerSocket';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -64,7 +65,7 @@ export interface OrderDetail {
 }
 
 export interface UpdateOrderStatusData {
-  status: 'Accepted' | 'On the way' | 'Delivered' | 'Cancelled';
+  status: 'Accepted' | 'Rejected' | 'On the way' | 'Delivered' | 'Cancelled';
 }
 
 export interface GetOrdersParams {
@@ -93,6 +94,12 @@ export interface PaginatedResponse<T> {
  */
 export const getOrders = async (params?: GetOrdersParams): Promise<ApiResponse<Order[]>> => {
   const response = await api.get<ApiResponse<Order[]>>('/orders', { params });
+  return response.data;
+};
+
+/** Get orders that still require the seller to accept or reject them. */
+export const getPendingActionOrders = async (): Promise<ApiResponse<SellerNotification[]>> => {
+  const response = await api.get<ApiResponse<SellerNotification[]>>('/orders/pending-action');
   return response.data;
 };
 
