@@ -526,7 +526,7 @@ export const createOrder = async (req: Request, res: Response) => {
         );
 
 
-        // Notify sellers after the order is committed. Push delivery must not
+        // Notify sellers and customer after the order is committed. Push delivery must not
         // depend on a live Socket.IO instance.
         try {
             const io: SocketIOServer = (req.app.get("io") as SocketIOServer);
@@ -543,18 +543,27 @@ export const createOrder = async (req: Request, res: Response) => {
                     }
 
                     try {
-                        const { sendNewOrderNotification } = await import('../../../services/notificationService');
+                        const { sendNewOrderNotification, sendOrderStatusNotification } = await import('../../../services/notificationService');
                         const sellerIdsInOrder = [...new Set(orderItems.map((i: any) => i.seller?.toString()).filter((id: any) => id))];
                         for (const sellerId of sellerIdsInOrder) {
                             await sendNewOrderNotification(sellerId as string, String(savedOrder._id), savedOrder.orderNumber, savedOrder.total);
                         }
+
+                        // Send push notification to customer confirming order placed
+                        await sendOrderStatusNotification(
+                            (savedOrder as any).orderNumber,
+                            String((savedOrder as any)._id),
+                            String((savedOrder as any).customer),
+                            'Received',
+                            (savedOrder as any).total
+                        );
                     } catch (pushErr) {
-                        console.error("Error sending push notifications to sellers:", pushErr);
+                        console.error("Error sending push notifications for new order:", pushErr);
                     }
                 }
             }
         } catch (notificationError) {
-            console.error("Error notifying sellers:", notificationError);
+            console.error("Error notifying parties for new order:", notificationError);
         }
 
         return res.status(201).json({

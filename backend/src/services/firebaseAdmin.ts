@@ -85,24 +85,52 @@ export async function sendPushNotification(
             };
         }
 
-        const isDeliveryTask = payload.data?.type === 'TASK';
-        const message: admin.messaging.MulticastMessage = {
-            data: {
-                ...(payload.data || {}),
-                ...(isDeliveryTask && { title: payload.title, body: payload.body }),
-                ...(payload.icon && { icon: payload.icon })
-            },
-            tokens: tokens
-        };
+        // Ensure all data values are strings (FCM requirement)
+        const stringData: { [key: string]: string } = {};
+        if (payload.data) {
+            for (const [k, v] of Object.entries(payload.data)) {
+                if (v !== undefined && v !== null) {
+                    stringData[k] = typeof v === 'string' ? v : String(v);
+                }
+            }
+        }
+        stringData.title = payload.title;
+        stringData.body = payload.body;
+        if (payload.icon) {
+            stringData.icon = payload.icon;
+        }
 
-        // Delivery tasks use data-only FCM so our service worker shows exactly
-        // one actionable notification. Other notification types keep native FCM display.
-        if (!isDeliveryTask) {
-            message.notification = {
+        const linkUrl = stringData.link || '/';
+
+        const message: admin.messaging.MulticastMessage = {
+            tokens: tokens,
+            notification: {
                 title: payload.title,
                 body: payload.body,
-            };
-        }
+            },
+            data: stringData,
+            webpush: {
+                notification: {
+                    title: payload.title,
+                    body: payload.body,
+                    icon: payload.icon || '/favicon.png',
+                    badge: '/favicon.png',
+                },
+                fcmOptions: {
+                    link: linkUrl
+                }
+            },
+            android: {
+                priority: 'high',
+                notification: {
+                    title: payload.title,
+                    body: payload.body,
+                    icon: 'default',
+                    sound: 'default',
+                    clickAction: linkUrl,
+                }
+            }
+        };
 
         const response = await admin.messaging().sendEachForMulticast(message);
 

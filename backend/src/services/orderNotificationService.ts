@@ -393,36 +393,31 @@ export async function notifyDeliveryBoysOfNewOrder(
         // Initialize notification state
         const notifiedIds = new Set<string>();
 
-        // Only add delivery boys who are actually connected to the notification room
+        // Notify eligible delivery boys via both Socket and FCM Push Notification
         for (const id of nearbyDeliveryBoyIds) {
             const idString = id.toString().trim();
             const roomName = `delivery-${idString}`;
             const room = io.sockets.adapter.rooms.get(roomName);
 
+            notifiedIds.add(idString);
+
             if (room && room.size > 0) {
-                notifiedIds.add(idString);
                 io.to(roomName).emit('new-order', orderData);
-                console.log(`📤 Emitted new-order to connected delivery boy room: ${roomName}. Room size: ${room.size}`);
-            } else {
-                console.log(`⏩ Room Check: No active socket in room ${roomName} (Found?: ${!!room}, Size: ${room?.size || 0}). Sending via Push backup.`);
-                // We still want to add them to notifiedIds so they can accept via push notification
-                notifiedIds.add(idString);
+                console.log(`📤 Emitted new-order socket event to delivery boy room: ${roomName}`);
             }
 
-            // FCM is a fallback only when no live socket is present.
-            if (!room || room.size === 0) {
-                try {
-                    const { sendTaskAvailableNotification } = await import('./notificationService');
-                    await sendTaskAvailableNotification(idString, orderId, order.orderNumber);
-                } catch (pushErr) {
-                    console.error(`Failed to send push notification to delivery boy ${idString}:`, pushErr);
-                }
+            // Always send FCM push notification so delivery partners get device lock screen alerts
+            try {
+                const { sendTaskAvailableNotification } = await import('./notificationService');
+                await sendTaskAvailableNotification(idString, orderId, order.orderNumber);
+                console.log(`📱 Sent FCM push notification to delivery partner: ${idString}`);
+            } catch (pushErr) {
+                console.error(`Failed to send push notification to delivery boy ${idString}:`, pushErr);
             }
         }
 
         if (notifiedIds.size === 0) {
-            console.log('⚠️ No connected delivery boys found to notify');
-            // Don't emit to general room as it includes offline delivery boys
+            console.log('⚠️ No delivery boys found to notify');
             return;
         }
 
@@ -433,10 +428,7 @@ export async function notifyDeliveryBoysOfNewOrder(
             acceptedBy: null,
         });
 
-        // Only notify individual active delivery boys, not the general room
-        // This prevents offline delivery boys from receiving notifications
-
-        console.log(`📢 Notified ${notifiedIds.size} connected delivery boys near seller locations about order ${order.orderNumber}`);
+        console.log(`📢 Notified ${notifiedIds.size} delivery boys near seller locations about order ${order.orderNumber}`);
     } catch (error) {
         console.error('Error notifying delivery boys:', error);
     }
@@ -474,9 +466,6 @@ export async function handleOrderAcceptance(
 
         } else {
             console.log(`⚠️ Notification state missing for order ${orderId}. Checking database for fallback...`);
-            // 2. Database Fallback (For server restarts/stale notifications)
-            // We skip "notified" and "rejected" checks because that data is lost.
-            // We assume if they have the ID, they were notified effectively.
         }
 
         // Claim atomically so socket and polling responses cannot assign twice.
@@ -530,9 +519,6 @@ export async function handleOrderAcceptance(
             // Clean up notification state
             notificationStates.delete(orderId);
         } else {
-            // If no state, we can't emit to specific originally notified list,
-            // but 'delivery-notifications' room covers the general case.
-            // We can also try to emit to the accepting delivery boy just in case
             io.to(`delivery-${normalizedDeliveryBoyId}`).emit('order-accepted', {
                 orderId,
                 acceptedBy: normalizedDeliveryBoyId,
@@ -545,6 +531,45 @@ export async function handleOrderAcceptance(
             deliveryBoyId: normalizedDeliveryBoyId,
             message: 'Delivery boy accepted your order. Tracking started.',
         });
+
+        // Push notification to Customer: Delivery partner assigned
+        try {
+            const { sendOrderStatusNotification } = await import('./notificationService');
+            await sendOrderStatusNotification(
+                order.orderNumber,
+                order._id.toString(),
+                order.customer.toString(),
+                'Processed',
+                order.total
+            );
+        } catch (pushErr) {
+            console.error("Error sending push notification to customer on order acceptance:", pushErr);
+        }
+
+        // Push notification to involved Sellers: Delivery partner assigned
+        try {
+            const OrderItem = (await import('../models/OrderItem')).default;
+            const { sendNotification } = await import('./notificationService');
+            const items = await OrderItem.find({ order: order._id });
+            const sellerIds = [...new Set(items.map((i: any) => i.seller?.toString()).filter(Boolean))];
+            for (const sellerId of sellerIds) {
+                await sendNotification(
+                    "Seller",
+                    sellerId as string,
+                    "🛵 Delivery Partner Assigned",
+                    `A delivery partner has been assigned for order #${order.orderNumber}.`,
+                    {
+                        type: "Order",
+                        link: `/seller/orders/${order._id}`,
+                        priority: "High",
+                        data: { type: "ORDER_ASSIGNED", id: order._id.toString() },
+                        idempotencyKey: `seller_assigned_${order._id}_${sellerId}`
+                    }
+                );
+            }
+        } catch (sellerPushErr) {
+            console.error("Error sending push notification to sellers on delivery acceptance:", sellerPushErr);
+        }
 
         console.log(`✅ Order ${orderId} accepted by delivery boy ${normalizedDeliveryBoyId} ${state ? '(Memory)' : '(DB Fallback)'}`);
         return { success: true, message: 'Order accepted successfully' };
@@ -656,4 +681,3 @@ export function getNotificationState(orderId: string): OrderNotificationState | 
 export function clearNotificationState(orderId: string): void {
     notificationStates.delete(orderId);
 }
-

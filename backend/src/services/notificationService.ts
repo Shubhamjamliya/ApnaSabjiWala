@@ -186,35 +186,83 @@ export const sendOrderStatusNotification = async (
   total: number
 ) => {
   const statusMessages: Record<string, { title: string; body: string; data: any }> = {
+    Received: {
+      title: "Order Placed! 🛒",
+      body: `Your order #${orderNo} for ₹${total} has been received.`,
+      data: { type: "ORDER", id: orderId }
+    },
+    Accepted: {
+      title: "Order Accepted! 👨‍🍳",
+      body: `The store has accepted your order #${orderNo} and is preparing it.`,
+      data: { type: "ORDER", id: orderId }
+    },
     Processed: {
-      title: "Order Confirmed!",
-      body: `Your order #${orderNo} for ₹${total} is confirmed.`,
+      title: "Order Confirmed! ✅",
+      body: `Your order #${orderNo} for ₹${total} is confirmed and packed.`,
+      data: { type: "ORDER", id: orderId }
+    },
+    "Ready for pickup": {
+      title: "Order Ready! 📦",
+      body: `Your order #${orderNo} is packed and ready for delivery partner pickup.`,
+      data: { type: "ORDER", id: orderId }
+    },
+    "Picked up": {
+      title: "Order Picked Up! 🛵",
+      body: `Delivery partner has picked up your order #${orderNo}.`,
+      data: { type: "ORDER", id: orderId }
+    },
+    "Picked Up": {
+      title: "Order Picked Up! 🛵",
+      body: `Delivery partner has picked up your order #${orderNo}.`,
       data: { type: "ORDER", id: orderId }
     },
     Shipped: {
-      title: "Out for Delivery",
+      title: "Out for Delivery 🚚",
       body: `Your order #${orderNo} is on its way.`,
       data: { type: "ORDER", id: orderId }
     },
+    "On the way": {
+      title: "Out for Delivery 🚚",
+      body: `Your order #${orderNo} is on its way to you.`,
+      data: { type: "ORDER", id: orderId }
+    },
     "Out for Delivery": {
-      title: "Out for Delivery",
+      title: "Out for Delivery 🚚",
       body: `Your order #${orderNo} is out for delivery with our partner.`,
       data: { type: "ORDER", id: orderId }
     },
     Delivered: {
-      title: "Freshness Delivered!",
+      title: "Freshness Delivered! 🎉",
       body: `Hope you enjoy your veggies! Rate your experience for order #${orderNo}.`,
       data: { type: "ORDER", id: orderId }
     },
     Cancelled: {
-      title: "Order Cancelled",
-      body: `Order #${orderNo} was cancelled. Refund processed to wallet.`,
+      title: "Order Cancelled ❌",
+      body: `Order #${orderNo} was cancelled. Refund processed to wallet if applicable.`,
       data: { type: "WALLET" }
     },
+    "Cancelled by Seller": {
+      title: "Order Cancelled by Store ❌",
+      body: `Store was unable to fulfill order #${orderNo}. Refund processed to wallet.`,
+      data: { type: "WALLET" }
+    },
+    Rejected: {
+      title: "Order Rejected ❌",
+      body: `Order #${orderNo} could not be accepted at this time.`,
+      data: { type: "WALLET" }
+    },
+    Returned: {
+      title: "Order Returned 📦",
+      body: `Return processed for order #${orderNo}.`,
+      data: { type: "ORDER", id: orderId }
+    }
   };
 
-  const statusInfo = statusMessages[status];
-  if (!statusInfo) return;
+  const statusInfo = statusMessages[status] || {
+    title: `Order Update: ${status}`,
+    body: `Your order #${orderNo} status is now ${status}.`,
+    data: { type: "ORDER", id: orderId }
+  };
 
   return sendNotification(
     "Customer",
@@ -224,7 +272,7 @@ export const sendOrderStatusNotification = async (
     {
       type: "Order",
       link: `/orders/${orderId}`,
-      priority: status === "Cancelled" ? "High" : "Medium",
+      priority: status === "Cancelled" || status === "Cancelled by Seller" ? "High" : "Medium",
       data: statusInfo.data,
       idempotencyKey: `order_status_${orderId}_${status}`
     },

@@ -134,17 +134,26 @@ router.post('/verify', authenticate, requireUserType('Customer'), async (req: Re
                 }
 
                 try {
-                    const { sendNewOrderNotification } = await import('../services/notificationService');
+                    const { sendNewOrderNotification, sendOrderStatusNotification } = await import('../services/notificationService');
                     const sellerIdsInOrder = [...new Set(orderItems.map((i: any) => i.seller?.toString()).filter((id: any) => id))];
                     for (const sellerId of sellerIdsInOrder) {
                         await sendNewOrderNotification(sellerId as string, String(updatedOrder._id), (updatedOrder as any).orderNumber, updatedOrder.total);
                     }
+
+                    // Push notification to customer confirming payment and order
+                    await sendOrderStatusNotification(
+                        (updatedOrder as any).orderNumber,
+                        updatedOrder._id.toString(),
+                        customerId,
+                        'Processed',
+                        updatedOrder.total
+                    );
                 } catch (pushErr) {
-                    console.error("Error sending push notifications to sellers after payment:", pushErr);
+                    console.error("Error sending push notifications after payment:", pushErr);
                 }
             }
         } catch (notificationError) {
-            console.error("Error notifying sellers after payment:", notificationError);
+            console.error("Error notifying parties after payment:", notificationError);
         }
 
         return res.status(200).json(result);

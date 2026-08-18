@@ -345,6 +345,45 @@ export const updateOrderStatus = asyncHandler(async (req: Request, res: Response
         }
     }
 
+    // Push notification to Customer for status update
+    try {
+        const { sendOrderStatusNotification } = await import("../../../services/notificationService");
+        await sendOrderStatusNotification(
+            order.orderNumber,
+            order._id.toString(),
+            order.customer.toString(),
+            status,
+            order.total
+        );
+    } catch (pushErr) {
+        console.error("Error sending push notification to customer on status update:", pushErr);
+    }
+
+    // If delivered, also push notification to sellers
+    if (status === 'Delivered' && previousStatus !== 'Delivered') {
+        try {
+            const { sendNotification } = await import("../../../services/notificationService");
+            const orderItems = await OrderItem.find({ order: order._id });
+            const sellerIds = [...new Set(orderItems.map((i: any) => i.seller?.toString()).filter(Boolean))];
+            for (const sellerId of sellerIds) {
+                await sendNotification(
+                    "Seller",
+                    sellerId as string,
+                    "Order Delivered ✅",
+                    `Order #${order.orderNumber} has been delivered successfully.`,
+                    {
+                        type: "Order",
+                        link: `/seller/orders/${order._id}`,
+                        priority: "Medium",
+                        idempotencyKey: `delivered_seller_${order._id}_${sellerId}`
+                    }
+                );
+            }
+        } catch (sellerPushErr) {
+            console.error("Error sending delivered push notification to seller:", sellerPushErr);
+        }
+    }
+
     return res.status(200).json({
         success: true,
         message: `Order status updated to ${status}`,
@@ -610,6 +649,43 @@ export const verifyDeliveryOtpController = asyncHandler(async (req: Request, res
                 // Notify sellers of status update
                 notifySellersOfOrderUpdate(io, updatedOrder, 'STATUS_UPDATE');
             }
+
+            // Push notification to customer that order is delivered
+            try {
+                const { sendOrderStatusNotification } = await import("../../../services/notificationService");
+                await sendOrderStatusNotification(
+                    updatedOrder.orderNumber,
+                    updatedOrder._id.toString(),
+                    updatedOrder.customer.toString(),
+                    'Delivered',
+                    updatedOrder.total
+                );
+            } catch (custPushErr) {
+                console.error("Error sending delivered push notification to customer:", custPushErr);
+            }
+
+            // Push notification to sellers that order is delivered
+            try {
+                const { sendNotification } = await import("../../../services/notificationService");
+                const orderItems = await OrderItem.find({ order: updatedOrder._id });
+                const sellerIds = [...new Set(orderItems.map((i: any) => i.seller?.toString()).filter(Boolean))];
+                for (const sellerId of sellerIds) {
+                    await sendNotification(
+                        "Seller",
+                        sellerId as string,
+                        "Order Delivered ✅",
+                        `Order #${updatedOrder.orderNumber} has been delivered successfully.`,
+                        {
+                            type: "Order",
+                            link: `/seller/orders/${updatedOrder._id}`,
+                            priority: "Medium",
+                            idempotencyKey: `otp_delivered_seller_${updatedOrder._id}_${sellerId}`
+                        }
+                    );
+                }
+            } catch (sellerPushErr) {
+                console.error("Error sending delivered push notification to seller:", sellerPushErr);
+            }
         }
 
         return res.status(200).json({
@@ -791,6 +867,20 @@ export const confirmSellerPickup = asyncHandler(async (req: Request, res: Respon
                 orderNumber: order.orderNumber,
                 message: 'All items picked up. Order is now Out for Delivery.'
             });
+
+            // Push notification to customer that order is Out for Delivery
+            try {
+                const { sendOrderStatusNotification } = await import("../../../services/notificationService");
+                await sendOrderStatusNotification(
+                    order.orderNumber,
+                    order._id.toString(),
+                    order.customer.toString(),
+                    'Out for Delivery',
+                    order.total
+                );
+            } catch (outPushErr) {
+                console.error("Error sending out for delivery push notification to customer:", outPushErr);
+            }
         }
     }
 
