@@ -13,6 +13,7 @@ import { ensureDefaultAdmin } from "./utils/ensureDefaultAdmin";
 
 import { initializeSocket } from "./socket/socketService";
 import { initializeFirebaseAdmin } from "./services/firebaseAdmin";
+import { cleanupStalePendingOrders } from "./jobs/paymentCleanupJob";
 
 
 const app: Application = express();
@@ -47,7 +48,8 @@ app.use(cors({
 }));
 
 // Handle preflight requests explicitly
-app.options("*", cors());
+// Razorpay webhook requires raw body buffer for HMAC signature verification
+app.use('/api/v1/payment/webhook', express.raw({ type: 'application/json' }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -88,6 +90,13 @@ async function startServer() {
 
   // Initialize Firebase Admin SDK for push notifications
   initializeFirebaseAdmin();
+
+  // Periodically check and clean up stale pending online orders (every 5 minutes)
+  setInterval(() => {
+    cleanupStalePendingOrders().catch((err) => {
+      console.error("Error in PaymentCleanupJob interval:", err);
+    });
+  }, 5 * 60 * 1000);
 
   httpServer.listen(PORT, () => {
     console.log("\n\x1b[32m✓\x1b[0m \x1b[1mBarodaMart Server Started\x1b[0m");

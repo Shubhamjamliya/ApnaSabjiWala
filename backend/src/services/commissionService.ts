@@ -267,8 +267,8 @@ export const createPendingCommissions = async (orderId: string) => {
 
             console.log(`[Commission] Item: ${product?.productName}, Rate: ${commissionRate}% (${rateSource}), Amount: ${commissionAmount}, Net: ${netEarning}`);
 
-            // Create commission record as PAID immediately
-            const commission = await Commission.create({
+            // Create commission record as PENDING (wallet credit happens upon delivery confirmation)
+            await Commission.create({
                 order: item.order,
                 orderItem: item._id,
                 seller: item.seller,
@@ -276,27 +276,14 @@ export const createPendingCommissions = async (orderId: string) => {
                 orderAmount: item.total,
                 commissionRate,
                 commissionAmount,
-                status: "Paid", // Set to Paid immediately
-                paidAt: new Date()
+                status: "Pending"
             });
-
-            // Credit Wallet Immediately
-            if (seller) {
-                await creditWallet(
-                    seller._id.toString(),
-                    'SELLER',
-                    netEarning,
-                    `Sale proceeds from Order #${order.orderNumber}`,
-                    item.order.toString(),
-                    commission._id.toString()
-                );
-            }
         }
 
-        console.log(`Commissions processed and credited for order ${orderId}`);
+        console.log(`Pending commissions created for order ${orderId}`);
 
     } catch (error) {
-        console.error("Error creating commissions:", error);
+        console.error("Error creating pending commissions:", error);
         throw error;
     }
 };

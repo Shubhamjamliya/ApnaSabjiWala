@@ -7,13 +7,16 @@ export interface IPayment extends Document {
   // Payment Info
   paymentMethod: string;
   paymentGateway?: string;
+  paymentType?: "ORDER_PAYMENT" | "COD_QR_PAYMENT";
   transactionId?: string;
   paymentId?: string;
+  idempotencyKey?: string;
 
   // Razorpay Specific
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   razorpaySignature?: string;
+  razorpayQrCodeId?: string;
 
   // Amount
   amount: number;
@@ -73,6 +76,12 @@ const PaymentSchema = new Schema<IPayment>(
     paymentGateway: {
       type: String,
       trim: true,
+      default: "Razorpay",
+    },
+    paymentType: {
+      type: String,
+      enum: ["ORDER_PAYMENT", "COD_QR_PAYMENT"],
+      default: "ORDER_PAYMENT",
     },
     transactionId: {
       type: String,
@@ -84,19 +93,32 @@ const PaymentSchema = new Schema<IPayment>(
       type: String,
       trim: true,
     },
+    idempotencyKey: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+    },
 
     // Razorpay Specific
     razorpayOrderId: {
       type: String,
       trim: true,
+      sparse: true,
     },
     razorpayPaymentId: {
       type: String,
       trim: true,
+      sparse: true,
     },
     razorpaySignature: {
       type: String,
       trim: true,
+    },
+    razorpayQrCodeId: {
+      type: String,
+      trim: true,
+      sparse: true,
     },
 
     // Amount
@@ -165,12 +187,15 @@ const PaymentSchema = new Schema<IPayment>(
   }
 );
 
-// Indexes for faster queries
+// Indexes for faster queries and uniqueness
 PaymentSchema.index({ order: 1 });
 PaymentSchema.index({ customer: 1 });
 PaymentSchema.index({ status: 1 });
 PaymentSchema.index({ paymentDate: -1 });
+PaymentSchema.index({ razorpayOrderId: 1 }, { unique: true, sparse: true });
+PaymentSchema.index({ razorpayPaymentId: 1 }, { unique: true, sparse: true });
+PaymentSchema.index({ razorpayQrCodeId: 1 }, { unique: true, sparse: true });
 
-const Payment = mongoose.model<IPayment>("Payment", PaymentSchema);
+const Payment = mongoose.models.Payment || mongoose.model<IPayment>("Payment", PaymentSchema);
 
 export default Payment;

@@ -407,7 +407,6 @@ export const createOrder = async (req: Request, res: Response) => {
                     message: "One or more items in your order are from sellers outside your delivery area or currently unavailable.",
                 });
             }
-
             // Check each seller can deliver to user's location
             for (const seller of sellers) {
                 if (!seller.location || !seller.location.coordinates) {
@@ -433,14 +432,15 @@ export const createOrder = async (req: Request, res: Response) => {
             }
         }
 
-        // Apply fees
-        let platformFee = Number(fees?.platformFee) || 0;
+        // Apply server-authoritative fees from AppSettings (never trust client amounts)
+        const appSettings = await AppSettings.getSettings();
+        let platformFee = Number(appSettings?.platformFee) || 0;
         let deliveryFee = Number(fees?.deliveryFee) || 0;
         let deliveryDistanceKm = 0;
 
         // --- Distance-Based Delivery Charge Calculation ---
         try {
-            const settings = await AppSettings.getSettings();
+            const settings = appSettings;
             const freeDeliveryThreshold = settings?.freeDeliveryThreshold || 0;
 
             // Check for Free Delivery eligibility first
@@ -868,7 +868,7 @@ export const cancelOrder = async (req: Request, res: Response) => {
             }
         }
 
-        order.status = 'Cancelled';
+            order.status = 'Cancelled';
         order.cancellationReason = reason;
         order.cancelledAt = new Date();
         order.cancelledBy = new mongoose.Types.ObjectId(userId); // Use Customer ID as canceller
@@ -878,6 +878,17 @@ export const cancelOrder = async (req: Request, res: Response) => {
             await session.commitTransaction();
         } else {
             await order.save();
+        }
+
+        // Process refund if online order was already paid
+        if (order.paymentMethod === 'Online' && order.paymentStatus === 'Paid') {
+            try {
+                const { processRefund } = await import('../../../services/paymentService');
+                await processRefund(order._id.toString(), undefined, reason);
+                console.log(`Auto-refund initiated for cancelled order ${order.orderNumber}`);
+            } catch (refundError) {
+                console.error("Error processing auto-refund for cancelled order:", refundError);
+            }
         }
 
         // Notify

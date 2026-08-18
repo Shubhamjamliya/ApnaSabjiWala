@@ -594,6 +594,14 @@ export const verifyDeliveryOtpController = asyncHandler(async (req: Request, res
         return res.status(403).json({ success: false, message: "This order is not assigned to you" });
     }
 
+    // Payment Verification Gate: order MUST be marked Paid before delivery completion
+    if (order.paymentStatus !== 'Paid') {
+        return res.status(400).json({
+            success: false,
+            message: "Payment must be collected (via Cash or Razorpay QR) before completing the delivery."
+        });
+    }
+
     try {
         const previousStatus = order.status;
         const result = await verifyDeliveryOtp(id, otp);
@@ -952,3 +960,76 @@ export const checkCustomerProximity = asyncHandler(async (req: Request, res: Res
         }
     });
 });
+
+/**
+ * Generate Razorpay Dynamic UPI QR Code for COD Order
+ */
+export const generateCodQr = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const deliveryId = req.user?.userId;
+
+    if (!deliveryId) {
+        return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+
+    try {
+        const { generateCodQrCode } = await import('../../../services/codPaymentService');
+        const result = await generateCodQrCode(id, deliveryId);
+        return res.status(200).json(result);
+    } catch (error: any) {
+        console.error('Error generating COD QR code:', error);
+        return res.status(400).json({
+            success: false,
+            message: error.message || 'Failed to generate QR code',
+        });
+    }
+});
+
+/**
+ * Mark COD payment as collected via Cash
+ */
+export const collectCashPayment = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const deliveryId = req.user?.userId;
+
+    if (!deliveryId) {
+        return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+
+    try {
+        const { markCashCollected } = await import('../../../services/codPaymentService');
+        const result = await markCashCollected(id, deliveryId);
+        return res.status(200).json(result);
+    } catch (error: any) {
+        console.error('Error recording cash collection:', error);
+        return res.status(400).json({
+            success: false,
+            message: error.message || 'Failed to record cash payment',
+        });
+    }
+});
+
+/**
+ * Check/Verify status of Razorpay QR Code payment for COD Order
+ */
+export const verifyCodQrPaymentStatus = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const deliveryId = req.user?.userId;
+
+    if (!deliveryId) {
+        return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+
+    try {
+        const { verifyCodQrPayment } = await import('../../../services/codPaymentService');
+        const result = await verifyCodQrPayment(id, deliveryId);
+        return res.status(200).json(result);
+    } catch (error: any) {
+        console.error('Error verifying COD QR payment status:', error);
+        return res.status(400).json({
+            success: false,
+            message: error.message || 'Failed to verify QR payment',
+        });
+    }
+});
+

@@ -176,22 +176,23 @@ router.post('/webhook', async (req: Request, res: Response) => {
         if (!signature) {
             return res.status(400).json({
                 success: false,
-                message: 'Missing webhook signature',
+                message: 'Missing x-razorpay-signature header',
             });
         }
 
-        const result = await handleWebhook(req.body, signature);
+        const rawBody: Buffer = Buffer.isBuffer(req.body)
+            ? req.body
+            : Buffer.from(typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
 
-        if (!result.success) {
-            return res.status(400).json(result);
-        }
+        const io = req.app.get('io');
+        const result = await handleWebhook(rawBody, signature, io);
 
-        return res.status(200).json(result);
+        return res.status(result.statusCode || (result.success ? 200 : 400)).json(result);
     } catch (error: any) {
-        console.error('Error handling webhook:', error);
+        console.error('Unhandled error in webhook endpoint:', error);
         return res.status(500).json({
             success: false,
-            message: error.message || 'Failed to handle webhook',
+            message: error.message || 'Internal webhook handler error',
         });
     }
 });

@@ -6,7 +6,6 @@ import customerAuthRoutes from "./customerAuthRoutes";
 import deliveryRoutes from "./deliveryRoutes";
 import deliveryAuthRoutes from "./deliveryAuthRoutes";
 
-// ... (other imports)
 import { authenticate, requireUserType } from "../middleware/auth";
 import customerRoutes from "./customerRoutes";
 import sellerRoutes from "./sellerRoutes";
@@ -39,7 +38,9 @@ import nextDayRoutes from "./nextDay.routes";
 import adminRewardRoutes from "./adminRewardRoutes";
 import customerRewardRoutes from "./customerRewardRoutes";
 import customerNotificationRoutes from "../modules/customer/routes/notificationRoutes";
-// import pageConfigRoutes from "./pageConfig.routes";
+import adminPaymentRoutes from "./adminPaymentRoutes";
+import AppSettings from "../models/AppSettings";
+
 import {
   createOrder,
   getMyOrders,
@@ -58,8 +59,6 @@ router.get("/health", (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
-
-import AppSettings from "../models/AppSettings";
 
 // Public App Settings
 router.get("/app-settings", async (_req, res) => {
@@ -110,25 +109,18 @@ router.use(
 );
 
 // Customer routes - Specific routes MUST be registered before general /customer route
-// to prevent Express from matching the broader route first
 router.use("/customer/products", customerProductRoutes);
 router.use("/customer/categories", customerCategoryRoutes);
 
 // Next Day Booking Routes
 router.use("/next-day", nextDayRoutes);
-// router.use("/admin/page-config", pageConfigRoutes);
 
-// Tracking routes (must be before general /customer/orders/:id route)
+// Tracking routes
 router.use("/customer", customerTrackingRoutes);
 
-// Customer orders route - direct registration to avoid module loading issue
-console.log("🔥 REGISTERING CUSTOMER ORDER ROUTES");
+// Customer orders route - direct registration
 router.post(
   "/customer/orders",
-  (_req, _res, next) => {
-    console.log("✅ POST /customer/orders ROUTE MATCHED!");
-    next();
-  },
   authenticate,
   requireUserType("Customer"),
   createOrder
@@ -146,7 +138,8 @@ router.use("/customer/wishlist", wishlistRoutes);
 router.use("/customer/reviews", productReviewRoutes);
 router.use("/customer/rewards", customerRewardRoutes);
 router.use("/customer/notifications", customerNotificationRoutes);
-// General customer route (must be last to avoid intercepting specific routes)
+
+// General customer route
 router.use("/customer", customerRoutes);
 
 // Seller dashboard routes
@@ -156,6 +149,7 @@ router.use("/seller/dashboard", dashboardRoutes);
 router.use("/sellers", sellerRoutes);
 
 // Admin routes (protected, admin only)
+router.use("/admin/payments", authenticate, requireUserType("Admin"), adminPaymentRoutes);
 router.use("/admin/rewards", authenticate, requireUserType("Admin"), adminRewardRoutes);
 router.use("/admin", adminRoutes);
 
@@ -197,11 +191,5 @@ router.use("/delivery/wallet", authenticate, requireUserType("Delivery"), delive
 
 // Admin withdrawal management routes (protected, admin only)
 router.use("/admin/withdrawals", authenticate, requireUserType("Admin"), adminWithdrawalRoutes);
-
-// Admin commission management routes (protected, admin only)
-
-
-// Add more routes here
-// router.use('/users', userRoutes);
 
 export default router;

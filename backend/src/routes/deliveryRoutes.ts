@@ -42,6 +42,11 @@ router.post("/orders/:id/reject", deliveryOrderController.rejectOrder);
 router.post("/orders/:id/send-delivery-otp", deliveryOrderController.sendDeliveryOtp);
 router.post("/orders/:id/verify-delivery-otp", deliveryOrderController.verifyDeliveryOtpController);
 
+// COD Payment Collection
+router.post("/orders/:id/generate-qr", deliveryOrderController.generateCodQr);
+router.post("/orders/:id/collect-cash", deliveryOrderController.collectCashPayment);
+router.get("/orders/:id/verify-qr-payment", deliveryOrderController.verifyCodQrPaymentStatus);
+
 // New proximity and pickup routes
 router.post("/orders/:id/check-seller-proximity", deliveryOrderController.checkSellerProximity);
 router.post("/orders/:id/confirm-seller-pickup", deliveryOrderController.confirmSellerPickup);
