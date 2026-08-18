@@ -111,29 +111,11 @@ router.post("/save", async (req: Request, res: Response): Promise<void> => {
       (savedToken: string) => savedToken !== normalizedToken,
     );
 
-    // Add token to appropriate array based on platform
+    // Store the active token for the user's platform (deduplicated to prevent duplicate push broadcasts)
     if (platform === "web") {
-      if (!user.fcmTokens) {
-        user.fcmTokens = [];
-      }
-      // Only add if not already present
-      if (!user.fcmTokens.includes(normalizedToken)) {
-        user.fcmTokens.push(normalizedToken);
-        // Limit to 10 tokens per platform
-        if (user.fcmTokens.length > 10) {
-          user.fcmTokens = user.fcmTokens.slice(-10);
-        }
-      }
+      user.fcmTokens = [normalizedToken];
     } else if (platform === "app") {
-      if (!user.fcmTokenMobile) {
-        user.fcmTokenMobile = [];
-      }
-      if (!user.fcmTokenMobile.includes(normalizedToken)) {
-        user.fcmTokenMobile.push(normalizedToken);
-        if (user.fcmTokenMobile.length > 10) {
-          user.fcmTokenMobile = user.fcmTokenMobile.slice(-10);
-        }
-      }
+      user.fcmTokenMobile = [normalizedToken];
     }
 
     await user.save();

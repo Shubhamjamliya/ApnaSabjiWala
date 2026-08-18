@@ -198,11 +198,12 @@ export function setupForegroundNotificationHandler(handler?: (payload: any) => v
             console.log('🔔 Current Notification Permission:', Notification.permission);
             if (Notification.permission === 'granted') {
                 try {
+                    const notifTag = payload.data?.idempotencyKey || payload.data?.notificationId || payload.data?.id || payload.data?.type || 'order_alert';
                     const notification = new Notification(payload.notification?.title || payload.data?.title || 'New Notification', {
                         body: payload.notification?.body || payload.data?.body || '',
-                        icon: payload.notification?.icon || '/favicon.png',
+                        icon: payload.notification?.icon || payload.data?.icon || '/favicon.png',
                         badge: '/favicon.png',
-                        tag: payload.data?.type || 'notification',
+                        tag: notifTag,
                         requireInteraction: false,
                         silent: false,
                         data: payload.data

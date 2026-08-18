@@ -16,20 +16,25 @@ const firebaseConfig = {
 // Initialize Firebase in service worker
 firebase.initializeApp(firebaseConfig);
 
-// Get messaging instance
-const messaging = firebase.messaging();
-
-// Handle background messages
+// Handle background messages (only show manually if payload has no notification object)
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message', payload);
 
-    const notificationTitle = payload.notification?.title || payload.data?.title || 'New Notification';
+    // If payload already has a notification object, the Firebase SDK automatically handles it.
+    // Showing it manually here causes duplicate notifications.
+    if (payload.notification) {
+        return;
+    }
+
+    const notificationTitle = payload.data?.title || 'Apna Sabji Wala';
+    const notificationTag = payload.data?.idempotencyKey || payload.data?.notificationId || payload.data?.id || 'order_alert';
     const notificationOptions = {
-        body: payload.notification?.body || payload.data?.body || '',
-        icon: payload.notification?.icon || payload.data?.icon || '/favicon.png',
+        body: payload.data?.body || '',
+        icon: payload.data?.icon || '/favicon.png',
         badge: '/favicon.png',
         data: payload.data || {},
-        tag: payload.data?.type || 'default',
+        tag: notificationTag,
+        renotify: false,
         requireInteraction: payload.data?.type === 'TASK'
     };
 
