@@ -14,11 +14,33 @@ export interface HeaderCategory {
     order?: number;
 }
 
-export const getHeaderCategoriesPublic = async (skipLoader = false): Promise<HeaderCategory[]> => {
-    const response = await api.get<HeaderCategory[]>('/header-categories', {
+let inFlightHeaderCatPromise: Promise<HeaderCategory[]> | null = null;
+let cachedHeaderCats: HeaderCategory[] | null = null;
+let lastHeaderCatsFetchTime = 0;
+const HEADER_CATS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+export const getHeaderCategoriesPublic = async (skipLoader = false, force = false): Promise<HeaderCategory[]> => {
+    const now = Date.now();
+    if (!force && cachedHeaderCats && now - lastHeaderCatsFetchTime < HEADER_CATS_CACHE_TTL) {
+        return cachedHeaderCats;
+    }
+
+    if (!force && inFlightHeaderCatPromise) {
+        return inFlightHeaderCatPromise;
+    }
+
+    const promise = api.get<HeaderCategory[]>('/header-categories', {
         skipLoader
-    } as any);
-    return response.data;
+    } as any).then(res => {
+        cachedHeaderCats = res.data;
+        lastHeaderCatsFetchTime = Date.now();
+        return res.data;
+    }).finally(() => {
+        inFlightHeaderCatPromise = null;
+    });
+
+    inFlightHeaderCatPromise = promise;
+    return promise;
 };
 
 export const getHeaderCategoriesAdmin = async (config?: any): Promise<HeaderCategory[]> => {

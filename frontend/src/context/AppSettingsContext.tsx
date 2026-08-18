@@ -40,24 +40,31 @@ const AppSettingsContext = createContext<AppSettingsContextType>({
   refreshSettings: async () => {},
 });
 
+let cachedSettingsData: any = null;
+let settingsFetchPromise: Promise<any> | null = null;
+
 export const AppSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<AppPortalLogos>(defaultLogos);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const fetchPublicSettings = useCallback(async () => {
+  const fetchPublicSettings = useCallback(async (force = false) => {
     try {
-      const response = await api.get('/app-settings');
-      if (response.data?.success && response.data?.data) {
-        const data = response.data.data;
-        const fallback = data.appLogo || defaultLogo;
-        setSettings({
-          appName: data.appName || 'BarodaMart',
-          appLogo: data.appLogo || defaultLogo,
-          userLogo: data.userLogo || data.appLogo || defaultLogo,
-          adminLogo: data.adminLogo || fallback,
-          sellerLogo: data.sellerLogo || fallback,
-          deliveryLogo: data.deliveryLogo || fallback,
+      if (!force && cachedSettingsData) {
+        applySettings(cachedSettingsData);
+        setLoading(false);
+        return;
+      }
+
+      if (!settingsFetchPromise) {
+        settingsFetchPromise = api.get('/app-settings').then(res => res.data).finally(() => {
+          settingsFetchPromise = null;
         });
+      }
+
+      const responseData = await settingsFetchPromise;
+      if (responseData?.success && responseData?.data) {
+        cachedSettingsData = responseData.data;
+        applySettings(responseData.data);
       }
     } catch (error) {
       console.warn('Failed to fetch public app settings, using default logos:', error);
@@ -65,6 +72,18 @@ export const AppSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setLoading(false);
     }
   }, []);
+
+  const applySettings = (data: any) => {
+    const fallback = data.appLogo || defaultLogo;
+    setSettings({
+      appName: data.appName || 'BarodaMart',
+      appLogo: data.appLogo || defaultLogo,
+      userLogo: data.userLogo || data.appLogo || defaultLogo,
+      adminLogo: data.adminLogo || fallback,
+      sellerLogo: data.sellerLogo || fallback,
+      deliveryLogo: data.deliveryLogo || fallback,
+    });
+  };
 
   useEffect(() => {
     fetchPublicSettings();

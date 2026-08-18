@@ -1,22 +1,17 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import HomeHero from "./components/HomeHero";
-
 import PromoStrip from "./components/PromoStrip";
 import NextDayBookingCard from "./components/NextDayBookingCard";
 import AdsBannerCarousel from "./components/AdsBannerCarousel";
 import LowestPricesEver from "./components/LowestPricesEver";
 import CategoryTileSection from "./components/CategoryTileSection";
-import FeaturedThisWeek from "./components/FeaturedThisWeek";
 import BestsellerCards from "./components/BestsellerCards";
 import ProductCard from "./components/ProductCard";
-import { getHomeContent } from "../../services/api/customerHomeService";
-import { getHeaderCategoriesPublic } from "../../services/api/headerCategoryService";
+import { getHomeContent, getHomeProducts } from "../../services/api/customerHomeService";
 import { useLocation } from "../../hooks/useLocation";
 import { useLoading } from "../../context/LoadingContext";
 import PageLoader from "../../components/PageLoader";
-
-import { apiCache } from "../../utils/apiCache";
 import { useThemeContext } from "../../context/ThemeContext";
 import UserHomeFooter from "./components/UserHomeFooter";
 
@@ -25,13 +20,8 @@ export default function Home() {
   const { location } = useLocation();
   const { activeCategory, setActiveCategory, currentTheme: theme } = useThemeContext();
   const { startRouteLoading, stopRouteLoading } = useLoading();
-  const activeTab = activeCategory; // mapping for existing code compatibility
+  const activeTab = activeCategory;
   const setActiveTab = setActiveCategory;
-
-  // Clear cache on component mount to ensure fresh data for all tabs
-  useEffect(() => {
-    apiCache.clear();
-  }, []);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollHandledRef = useRef(false);
@@ -46,19 +36,23 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [homeData, setHomeData] = useState<any>({
-    bestsellers: [],
     categories: [],
-    subcategories: [], // Tab-specific subcategories
-    homeSections: [], // Dynamic sections created by admin
+    subcategories: [],
+    homeSections: [],
     shops: [],
     promoBanners: [],
     trending: [],
     cookingIdeas: [],
+    lowestPrices: [],
+    bestsellers: [],
     bestsellerCards: [],
     homeBanner: null,
   });
 
   const [products, setProducts] = useState<any[]>([]);
+  const [productsPage, setProductsPage] = useState(1);
+  const [hasMoreProducts, setHasMoreProducts] = useState(false);
+  const [loadingMoreProducts, setLoadingMoreProducts] = useState(false);
 
   // Function to save scroll position before navigation
   const saveScrollPosition = () => {
@@ -79,7 +73,8 @@ export default function Home() {
         startRouteLoading();
         setLoading(true);
         setError(null);
-        // Pass the activeTab as the headerCategorySlug
+        setProductsPage(1);
+
         const response = await getHomeContent(
           activeTab,
           location?.latitude,
@@ -90,8 +85,12 @@ export default function Home() {
 
           if (response.data.allProducts) {
             setProducts(response.data.allProducts);
+            setHasMoreProducts(
+              response.data.allProductsPagination?.hasMore ?? (response.data.allProducts.length >= 20)
+            );
           } else if (response.data.bestsellers) {
             setProducts(response.data.bestsellers);
+            setHasMoreProducts(false);
           }
         } else {
           setError("Failed to load content. Please try again.");
@@ -106,56 +105,39 @@ export default function Home() {
     };
 
     fetchData();
-
-    // Preload PromoStrip data for all header categories in the background
-    // This ensures instant loading when users switch tabs
-    const preloadHeaderCategories = async () => {
-      try {
-        // Wait a bit after initial load to not interfere with main content
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const headerCategories = await getHeaderCategoriesPublic(true);
-        // Preload data for each header category (including 'all')
-        const slugsToPreload = ['all', ...headerCategories.map(cat => cat.slug)];
-
-        // Preload in batches to avoid overwhelming the network
-        const batchSize = 2;
-        for (let i = 0; i < slugsToPreload.length; i += batchSize) {
-          const batch = slugsToPreload.slice(i, i + batchSize);
-          await Promise.all(
-            batch.map(slug =>
-              getHomeContent(
-                slug,
-                location?.latitude,
-                location?.longitude,
-                true,
-                5 * 60 * 1000,
-                true
-              ).catch(err => {
-                // Silently fail - this is just preloading
-                console.debug(`Failed to preload data for ${slug}:`, err);
-              })
-            )
-          );
-          // Small delay between batches
-          if (i + batchSize < slugsToPreload.length) {
-            await new Promise(resolve => setTimeout(resolve, 200));
-          }
-        }
-      } catch (error) {
-        // Silently fail - preloading is optional
-        console.debug("Failed to preload header categories:", error);
-      }
-    };
-
-    preloadHeaderCategories();
   }, [location?.latitude, location?.longitude, activeTab]);
+
+  const handleLoadMoreProducts = async () => {
+    if (loadingMoreProducts || !hasMoreProducts) return;
+    try {
+      setLoadingMoreProducts(true);
+      const nextPage = productsPage + 1;
+      const res = await getHomeProducts(
+        activeTab,
+        nextPage,
+        20,
+        location?.latitude,
+        location?.longitude
+      );
+      if (res.success && res.data) {
+        setProducts(prev => {
+          const existingIds = new Set(prev.map(p => p.id || p._id));
+          const newItems = res.data.filter((p: any) => !existingIds.has(p.id || p._id));
+          return [...prev, ...newItems];
+        });
+        setProductsPage(nextPage);
+        setHasMoreProducts(res.pagination?.hasMore ?? false);
+      }
+    } catch (err) {
+      console.error("Failed to load more products:", err);
+    } finally {
+      setLoadingMoreProducts(false);
+    }
+  };
 
   // Restore scroll position when returning to this page
   useEffect(() => {
-    // Only restore scroll after data has loaded
     if (!loading && homeData.shops) {
-      // Use a ref to ensure we only handle initial scroll once per mount
       if (scrollHandledRef.current) return;
       scrollHandledRef.current = true;
 
@@ -168,7 +150,6 @@ export default function Home() {
           }
           window.scrollTo(0, 0);
         };
-
         requestAnimationFrame(resetToTop);
         setTimeout(resetToTop, 80);
         return;
@@ -177,7 +158,6 @@ export default function Home() {
       const savedScrollPosition = sessionStorage.getItem(SCROLL_POSITION_KEY);
       if (savedScrollPosition) {
         const scrollY = parseInt(savedScrollPosition, 10);
-
         const performScroll = () => {
           const mainElement = document.querySelector('main');
           if (mainElement) {
@@ -186,24 +166,19 @@ export default function Home() {
           window.scrollTo(0, scrollY);
         };
 
-        // Try multiple times to ensure scroll is applied even if content is still rendering
         requestAnimationFrame(() => {
           performScroll();
           requestAnimationFrame(() => {
             performScroll();
-            // Final fallback after a small delay for any late-rendering content
             setTimeout(performScroll, 100);
             setTimeout(performScroll, 300);
           });
         });
 
-        // Clear the saved position after some time to ensure AppLayout can also see it if needed
-        // but Home.tsx is the primary restorer now.
         setTimeout(() => {
           sessionStorage.removeItem(SCROLL_POSITION_KEY);
         }, 1000);
       } else {
-        // No saved position, ensure we start at the top
         const performReset = () => {
           const mainElement = document.querySelector('main');
           if (mainElement) {
@@ -221,7 +196,6 @@ export default function Home() {
   useEffect(() => {
     const handleNavigationEvent = (e: MouseEvent | TouchEvent) => {
       const target = e.target as HTMLElement;
-      // If clicking a link, button, or any element with cursor-pointer (like product cards/store tiles)
       if (target.closest('a') || target.closest('button') || target.closest('[role="button"]') || target.closest('.cursor-pointer')) {
         saveScrollPosition();
       }
@@ -235,7 +209,6 @@ export default function Home() {
     };
   }, []);
 
-  // Removed duplicate saveScrollPosition
   const getFilteredProducts = (tabId: string) => {
     const availableProducts = products.filter(p => p.isAvailable !== false);
     if (tabId === "all") {
@@ -254,7 +227,7 @@ export default function Home() {
   );
 
   if (loading && !products.length && !homeData.homeSections?.length) {
-    return <PageLoader />; // Let the global IconLoader handle the initial loading state
+    return <PageLoader />;
   }
 
   if (error && !loading) {
@@ -299,18 +272,14 @@ export default function Home() {
       <LowestPricesEver activeTab={activeTab} products={homeData.lowestPrices?.filter((p: any) => p.isAvailable !== false)} />
 
       {/* BESTSELLER CARDS (2x2 Grid) */}
-      <BestsellerCards cards={homeData.bestsellerCards} />
+      <BestsellerCards cards={homeData.bestsellerCards || []} />
 
       {/* Main content */}
       <div
         className="-mt-2 pt-1 space-y-5 md:space-y-8 md:pt-4"
-        style={{ backgroundColor: `${theme.secondary[0]}44` }} // 0x44 is ~27% opacity
+        style={{ backgroundColor: `${theme.secondary[0]}44` }}
       >
-
-        {/* Featured This Week Section */}
-        {/* <FeaturedThisWeek /> */}
-
-        {/* Dynamic Home Sections - Render sections created by admin (For ALL tabs) */}
+        {/* Dynamic Home Sections */}
         {homeData.homeSections && homeData.homeSections.length > 0 && (
           <>
             {homeData.homeSections.map((section: any) => {
@@ -406,7 +375,7 @@ export default function Home() {
         {filteredProducts && filteredProducts.length > 0 && (
           <div className="mt-6 mb-6 md:mt-8 md:mb-8">
             <h2 className="text-lg md:text-2xl font-semibold text-neutral-900 mb-3 md:mb-6 px-4 md:px-6 lg:px-8 tracking-tight capitalize">
-              All
+              All Products
             </h2>
             <div className="px-4 md:px-6 lg:px-8">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
@@ -423,6 +392,31 @@ export default function Home() {
                     />
                   ))}
               </div>
+
+              {/* Load More Button */}
+              {hasMoreProducts && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={handleLoadMoreProducts}
+                    disabled={loadingMoreProducts}
+                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-full shadow-sm hover:shadow transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {loadingMoreProducts ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span>Loading more products...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Load More Products</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -439,7 +433,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Subcategory Tiles - Showing sub-collections for specific header tabs (Simple Mode) */}
+        {/* Subcategory Tiles - Showing sub-collections for specific header tabs */}
         {activeTab !== "all" && homeData.subcategories && homeData.subcategories.length > 0 && (
           <div className="mt-2 md:mt-4">
             <CategoryTileSection

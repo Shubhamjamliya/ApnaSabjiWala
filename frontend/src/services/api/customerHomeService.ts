@@ -6,6 +6,12 @@ export interface HomeContentResponse {
   data: {
     bestsellers: any[];
     allProducts?: any[];
+    allProductsPagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      hasMore: boolean;
+    };
     lowestPrices?: any[];
     categories: any[];
     subcategories?: any[];
@@ -65,6 +71,35 @@ export const getHomeContent = async (
   }
 
   return fetchFn();
+};
+
+/**
+ * Get paginated home products for "All Products" section
+ */
+export const getHomeProducts = async (
+  headerCategorySlug?: string,
+  page: number = 1,
+  limit: number = 20,
+  latitude?: number,
+  longitude?: number
+): Promise<{
+  success: boolean;
+  data: any[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+  };
+}> => {
+  const params: any = { page, limit };
+  if (headerCategorySlug) params.headerCategorySlug = headerCategorySlug;
+  if (latitude !== undefined && longitude !== undefined) {
+    params.latitude = latitude;
+    params.longitude = longitude;
+  }
+  const response = await api.get("/customer/home/products", { params, skipLoader: true } as any);
+  return response.data;
 };
 
 /**

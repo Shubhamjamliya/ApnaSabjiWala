@@ -363,9 +363,11 @@ export const getHomeContent = async (req: Request, res: Response) => {
       variations: p.variations
     }));
 
-    // -> All Products (in range)
+    // -> All Products (initial 20 products for pagination)
+    const initialPageLimit = 20;
+    const totalAllProducts = await Product.countDocuments(baseProductQuery);
     const allProductsQuery = await Product.find(baseProductQuery)
-      .limit(60) // Limit to 60 to keep response size reasonable
+      .limit(initialPageLimit)
       .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category variations")
       .populate("seller", "storeName")
       .lean();
@@ -382,7 +384,6 @@ export const getHomeContent = async (req: Request, res: Response) => {
 
     // -> Lowest Prices Ever (Manual admin selection filtered by header)
     const lpQuery: any = { isActive: true };
-
     if (headerCatId) {
       if (isMainHome) {
         // For main Home, show both items explicitly assigned to 'HOME' header 
@@ -632,9 +633,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
             variations: p.variations,
           })),
       };
-    }
-
-    // 3. Fetch Simplified Home Sections (Title + Manual Products)
+    }    // 3. Fetch Simplified Home Sections (Title + Manual Products)
     const homeSectionQuery: any = { isActive: true };
 
     if (headerCategorySlug && headerCategorySlug !== "all") {
@@ -678,8 +677,6 @@ export const getHomeContent = async (req: Request, res: Response) => {
     const bestsellerQuery: any = { isActive: true };
     if (headerCatId) {
       if (isMainHome) {
-        // For main Home, show both items explicitly assigned to 'HOME' header 
-        // AND items with no header assigned (for backward compatibility)
         bestsellerQuery.$or = [
           { headerCategoryId: headerCatId },
           { headerCategoryId: { $exists: false } },
@@ -701,15 +698,12 @@ export const getHomeContent = async (req: Request, res: Response) => {
       .populate("category", "name slug")
       .lean();
 
-    // If no explicit bestseller cards were assigned for this specific header, bestsellerCardsRaw remains as fetched above.
-
     const bestsellerCards = await Promise.all(
       bestsellerCardsRaw.map(async (card: any) => {
-        let products = [];
+        let products: any[] = [];
 
-        // 1. Check for manual products first
         if (card.products && card.products.length > 0) {
-          products = await Product.find({
+          const found = await Product.find({
             _id: { $in: card.products },
             status: "Active",
             publish: true,
@@ -718,18 +712,16 @@ export const getHomeContent = async (req: Request, res: Response) => {
             .select("mainImage productName seller")
             .lean();
 
-          if (hasLocation) {
-            products = products.filter((p: any) => p.seller && nearbySellerIds.some(id => id.toString() === p.seller.toString()));
-          }
+          products = hasLocation
+            ? found.filter((p: any) => p.seller && nearbySellerIds.some(id => id.toString() === p.seller.toString()))
+            : found;
 
-          // Sort products according to the order in the card.products array
           const productMap = new Map(products.map((p: any) => [p._id.toString(), p]));
           products = card.products
             .map((productId: any) => productMap.get(productId.toString()))
             .filter(Boolean);
         }
 
-        // 2. Fallback: Fetch top 4 products for this category if no manual products or less than 4
         if (products.length < 4) {
           const remainingLimit = 4 - products.length;
           const existingIds = products.map((p: any) => p._id);
@@ -763,11 +755,17 @@ export const getHomeContent = async (req: Request, res: Response) => {
     res.status(200).json({
       success: true,
       data: {
-        categories: allCategories, // Category tiles (dynamic based on tab)
-        subcategories: subcategories, // Subcategory tiles for the tab
-        homeSections: dynamicSections.filter(s => s.data.length > 0), // Products grouped by sections
+        categories: allCategories,
+        subcategories: subcategories,
+        homeSections: dynamicSections.filter(s => s.data.length > 0),
         bestsellers: formattedBestsellers,
         allProducts: formattedAllProducts,
+        allProductsPagination: {
+          page: 1,
+          limit: initialPageLimit,
+          total: totalAllProducts,
+          hasMore: totalAllProducts > initialPageLimit
+        },
         lowestPrices: formattedLowestPrices,
         shops: formattedShops,
         trending: formattedTrending,
@@ -783,6 +781,105 @@ export const getHomeContent = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Error fetching home content",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Paginated products for the Home screen "All Products" section/**
+ * Paginated products for the Home screen "All Products" section
+ * GET /api/v1/customer/home/products?headerCategorySlug=all&page=2&limit=20&latitude=...&longitude=...
+ */
+export const getHomeProducts = async (req: Request, res: Response) => {
+  try {
+    const { headerCategorySlug, latitude, longitude } = req.query;
+    const pageNum = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    // 1. Location & Seller Filter
+    const userLat = latitude ? parseFloat(latitude as string) : null;
+    const userLng = longitude ? parseFloat(longitude as string) : null;
+    const hasLocation = userLat !== null && userLng !== null && !isNaN(userLat) && !isNaN(userLng);
+    let nearbySellerIds: mongoose.Types.ObjectId[] = [];
+    if (hasLocation) {
+      nearbySellerIds = await findSellersWithinRange(userLat, userLng);
+    }
+    const sellerFilter = hasLocation ? { seller: { $in: nearbySellerIds } } : {};
+
+    // 2. Header Category Filter
+    let headerCatId: any = null;
+    let effectiveHeaderSlug: string = (headerCategorySlug as string)?.toLowerCase() || "all";
+    const headerSearchSlug = (headerCategorySlug as string)?.toLowerCase();
+
+    if (headerSearchSlug && headerSearchSlug !== "all") {
+      const headerCat = await HeaderCategory.findOne({
+        slug: { $regex: new RegExp(`^${headerSearchSlug}$`, "i") }
+      }).select("_id slug");
+      if (headerCat) {
+        headerCatId = headerCat._id;
+        effectiveHeaderSlug = headerCat.slug.toLowerCase();
+      }
+    } else if (!headerSearchSlug || headerSearchSlug === "all") {
+      let homeHeader = await HeaderCategory.findOne({ slug: "all" }).select("_id slug");
+      if (!homeHeader) {
+        homeHeader = await HeaderCategory.findOne({
+          name: { $regex: new RegExp("^home$", "i") }
+        }).select("_id slug");
+      }
+      if (homeHeader) {
+        headerCatId = homeHeader._id;
+        effectiveHeaderSlug = homeHeader.slug.toLowerCase();
+      }
+    }
+
+    const isMainHome = !headerSearchSlug ||
+      headerSearchSlug === "all" ||
+      (effectiveHeaderSlug && (
+        effectiveHeaderSlug.toLowerCase().includes("home") ||
+        effectiveHeaderSlug.toLowerCase().includes("all")
+      ));
+
+    const baseProductQuery: any = {
+      status: "Active",
+      publish: true,
+      ...sellerFilter,
+      ...(!isMainHome && headerCatId ? { headerCategoryId: headerCatId } : {})
+    };
+
+    const total = await Product.countDocuments(baseProductQuery);
+    const products = await Product.find(baseProductQuery)
+      .skip(skip)
+      .limit(limitNum)
+      .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category variations")
+      .populate("seller", "storeName")
+      .lean();
+
+    const formattedProducts = products.map((p: any) => ({
+      ...p,
+      id: p._id.toString(),
+      name: p.productName,
+      imageUrl: p.mainImage,
+      mrp: p.compareAtPrice || p.price,
+      categoryId: p.category?.toString(),
+      variations: p.variations
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: formattedProducts,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        hasMore: skip + products.length < total,
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching paginated products",
       error: error.message,
     });
   }

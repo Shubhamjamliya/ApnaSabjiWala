@@ -78,12 +78,51 @@ export const createOrder = async (data: CreateOrderData): Promise<OrderResponse>
     return response.data;
 };
 
+let inFlightOrdersPromise: Promise<any> | null = null;
+let cachedOrdersData: any = null;
+let lastOrdersFetchTime = 0;
+const ORDERS_CACHE_TTL = 10000; // 10 seconds
+
+/**
+ * Invalidate orders cache (call on new order, cancellation, etc.)
+ */
+export const invalidateOrdersCache = () => {
+    cachedOrdersData = null;
+    lastOrdersFetchTime = 0;
+};
+
 /**
  * Get my orders
  */
 export const getMyOrders = async (params?: MyOrdersParams): Promise<any> => {
-    const response = await api.get('/customer/orders', { params });
-    return response.data;
+    const isDefaultFetch = !params || (Object.keys(params).length === 0);
+    const now = Date.now();
+
+    if (isDefaultFetch && cachedOrdersData && now - lastOrdersFetchTime < ORDERS_CACHE_TTL) {
+        return cachedOrdersData;
+    }
+
+    if (isDefaultFetch && inFlightOrdersPromise) {
+        return inFlightOrdersPromise;
+    }
+
+    const promise = api.get('/customer/orders', { params }).then(res => {
+        if (isDefaultFetch) {
+            cachedOrdersData = res.data;
+            lastOrdersFetchTime = Date.now();
+        }
+        return res.data;
+    }).finally(() => {
+        if (isDefaultFetch) {
+            inFlightOrdersPromise = null;
+        }
+    });
+
+    if (isDefaultFetch) {
+        inFlightOrdersPromise = promise;
+    }
+
+    return promise;
 };
 
 /**

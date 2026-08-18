@@ -5,6 +5,8 @@ import FloatingCartPill from './FloatingCartPill';
 import { useLocation as useLocationContext } from '../hooks/useLocation';
 import LocationPermissionRequest from './LocationPermissionRequest';
 import { useThemeContext } from '../context/ThemeContext';
+import api from '../services/api/config';
+import { apiCache } from '../utils/apiCache';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -41,10 +43,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-        const response = await fetch(`${API_URL}/api/v1/app-settings`);
-        const result = await response.json();
-        if (result.success && result.data?.modules) {
+        const result = await apiCache.getOrFetch('app-settings-modules', async () => {
+          const res = await api.get('/app-settings', { skipLoader: true } as any);
+          return res.data;
+        }, 5 * 60 * 1000);
+
+        if (result?.success && result.data?.modules) {
           setIsLocationPopupEnabled(result.data.modules.locationPopup !== false);
         }
       } catch (err) {
