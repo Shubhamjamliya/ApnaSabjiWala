@@ -9,6 +9,7 @@ import HomeSection from "../../../models/HomeSection";
 import PromoStrip from "../../../models/PromoStrip";
 import BestsellerCard from "../../../models/BestsellerCard";
 import LowestPricesProduct from "../../../models/LowestPricesProduct";
+import AppSettings from "../../../models/AppSettings";
 import mongoose from "mongoose";
 import { findSellersWithinRange } from "../../../utils/locationHelper";
 
@@ -169,6 +170,23 @@ export const getHomeContent = async (req: Request, res: Response) => {
   const { headerCategorySlug, latitude, longitude } = req.query;
 
   try {
+    const appSettings = await AppSettings.findOne()
+      .select("homeBanner")
+      .populate("homeBanner.product", "productName status publish")
+      .lean();
+    const configuredBanner = appSettings?.homeBanner as any;
+    const bannerProduct = configuredBanner?.product;
+    const homeBanner = configuredBanner?.isActive &&
+      configuredBanner?.imageUrl &&
+      bannerProduct?.status === "Active" &&
+      bannerProduct?.publish !== false
+      ? {
+          imageUrl: configuredBanner.imageUrl,
+          productId: bannerProduct._id.toString(),
+          productName: bannerProduct.productName,
+        }
+      : null;
+
     // 1. Find sellers within range for availability check
     const userLat = latitude ? parseFloat(latitude as string) : null;
     const userLng = longitude ? parseFloat(longitude as string) : null;
@@ -738,6 +756,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
         promoCards: [],
         promoStrip: promoStrip,
         bestsellerCards: bestsellerCards,
+        homeBanner,
         promoBanners: []
       },
     });

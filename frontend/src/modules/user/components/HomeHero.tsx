@@ -17,6 +17,11 @@ import { getAuthToken } from '../../../services/api/config';
 interface HomeHeroProps {
   activeTab?: string;
   onTabChange?: (tabId: string) => void;
+  homeBanner?: {
+    imageUrl: string;
+    productId: string;
+    productName: string;
+  } | null;
 }
 
 interface Tab {
@@ -32,7 +37,7 @@ const HOME_TAB: Tab = {
 };
 
 
-export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroProps) {
+export default function HomeHero({ activeTab = 'all', onTabChange, homeBanner }: HomeHeroProps) {
   const [tabs, setTabs] = useState<Tab[]>([HOME_TAB]);
 
   useEffect(() => {
@@ -452,6 +457,24 @@ export default function HomeHero({ activeTab = 'all', onTabChange }: HomeHeroPro
           </div>
         </div>
         </div>
+
+        {/* Admin-configured clickable banner */}
+        {activeTab === 'all' && homeBanner?.imageUrl && homeBanner.productId && (
+          <div className="px-4 pt-3 md:px-6 md:pt-4 lg:px-8">
+            <button
+              type="button"
+              onClick={() => navigate(`/product/${homeBanner.productId}`)}
+              className="mx-auto block aspect-[2/1] w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-md transition-transform duration-200 active:scale-[0.99]"
+              aria-label={`View ${homeBanner.productName}`}
+            >
+              <img
+                src={homeBanner.imageUrl}
+                alt={`${homeBanner.productName} promotional banner`}
+                className="h-full w-full object-cover"
+              />
+            </button>
+          </div>
+        )}
 
         {/* Category Tabs Section */}
         <div className="w-full relative" style={{ paddingTop: '12px', paddingBottom: '24px' }}>

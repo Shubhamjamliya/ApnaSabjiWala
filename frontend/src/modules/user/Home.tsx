@@ -54,6 +54,7 @@ export default function Home() {
     trending: [],
     cookingIdeas: [],
     bestsellerCards: [],
+    homeBanner: null,
   });
 
   const [products, setProducts] = useState<any[]>([]);
@@ -278,7 +279,11 @@ export default function Home() {
   return (
     <div className="bg-white min-h-screen pb-20 md:pb-0" ref={contentRef}>
       {/* Hero Header with Gradient and Tabs */}
-      <HomeHero activeTab={activeTab} onTabChange={setActiveTab} />
+      <HomeHero
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        homeBanner={homeData.homeBanner}
+      />
 
       {/* Promo Strip */}
       <PromoStrip activeTab={activeTab} data={homeData} />

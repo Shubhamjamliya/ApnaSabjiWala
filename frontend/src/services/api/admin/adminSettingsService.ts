@@ -106,6 +106,7 @@ export interface AppSettings {
     delivery?: string;
   };
   needHelpSettings?: NeedHelpSettings;
+  homeBanner?: HomeBannerSettings;
   faq?: Array<{
     question: string;
     answer: string;
@@ -132,6 +133,26 @@ export interface NeedHelpSettings {
   mobileNumber: string;
   email: string;
   whatsappNumber: string;
+}
+
+export interface HomeBannerProduct {
+  _id: string;
+  productName: string;
+  mainImage?: string;
+  status?: string;
+  publish?: boolean;
+}
+
+export interface HomeBannerSettings {
+  imageUrl: string;
+  product: string | HomeBannerProduct;
+  isActive: boolean;
+}
+
+export interface UpdateHomeBannerData {
+  imageUrl: string;
+  productId: string;
+  isActive: boolean;
 }
 
 export interface UpdateAppSettingsData extends Partial<AppSettings> { }
@@ -171,6 +192,23 @@ export const updateNeedHelpSettings = async (
   const response = await api.put<ApiResponse<NeedHelpSettings>>(
     "/admin/settings/need-help",
     { needHelpSettings }
+  );
+  return response.data;
+};
+
+export const getHomeBannerSettings = async (): Promise<ApiResponse<HomeBannerSettings | null>> => {
+  const response = await api.get<ApiResponse<HomeBannerSettings | null>>(
+    "/admin/settings/home-banner"
+  );
+  return response.data;
+};
+
+export const updateHomeBannerSettings = async (
+  homeBanner: UpdateHomeBannerData
+): Promise<ApiResponse<HomeBannerSettings>> => {
+  const response = await api.put<ApiResponse<HomeBannerSettings>>(
+    "/admin/settings/home-banner",
+    { homeBanner }
   );
   return response.data;
 };

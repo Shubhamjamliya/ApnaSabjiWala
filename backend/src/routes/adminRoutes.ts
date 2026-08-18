@@ -205,6 +205,14 @@ router.put(
   "/settings/need-help",
   settingsController.updateNeedHelpSettings
 );
+router.get(
+  "/settings/home-banner",
+  settingsController.getHomeBannerSettings
+);
+router.put(
+  "/settings/home-banner",
+  settingsController.updateHomeBannerSettings
+);
 router.get("/settings/payment-methods", settingsController.getPaymentMethods);
 router.put(
   "/settings/payment-methods",

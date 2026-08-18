@@ -101,6 +101,13 @@ export interface IAppSettings extends Document {
     whatsappNumber: string;
   };
 
+  // Clickable banner shown above Popular Categories on the customer home page
+  homeBanner?: {
+    imageUrl: string;
+    product: mongoose.Types.ObjectId;
+    isActive: boolean;
+  };
+
   // FAQ
   faq?: Array<{
     question: string;
@@ -372,6 +379,23 @@ const AppSettingsSchema = new Schema<IAppSettings>(
         trim: true,
         maxlength: [16, "WhatsApp number is too long"],
         match: [/^\+[1-9]\d{7,14}$/, "Enter a valid WhatsApp number including + and country code"],
+      },
+    },
+
+    // Clickable customer home banner
+    homeBanner: {
+      imageUrl: {
+        type: String,
+        trim: true,
+        maxlength: [2048, "Banner image URL is too long"],
+      },
+      product: {
+        type: Schema.Types.ObjectId,
+        ref: "Product",
+      },
+      isActive: {
+        type: Boolean,
+        default: true,
       },
     },
 

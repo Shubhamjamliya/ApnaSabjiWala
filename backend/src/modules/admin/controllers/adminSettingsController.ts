@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import AppSettings from "../../../models/AppSettings";
 import PaymentMethod from "../../../models/PaymentMethod";
+import Product from "../../../models/Product";
 
 /**
  * Get app settings
@@ -124,6 +126,115 @@ export const updateNeedHelpSettings = asyncHandler(
       success: true,
       message: "Need help settings updated successfully",
       data: settings.needHelpSettings,
+    });
+  }
+);
+
+/**
+ * Get the configurable customer home banner.
+ */
+export const getHomeBannerSettings = asyncHandler(
+  async (_req: Request, res: Response) => {
+    const settings = await AppSettings.getSettings();
+    await settings.populate("homeBanner.product", "productName mainImage status publish");
+
+    return res.status(200).json({
+      success: true,
+      message: "Home banner fetched successfully",
+      data: settings.homeBanner || null,
+    });
+  }
+);
+
+/**
+ * Create or update the clickable customer home banner.
+ */
+export const updateHomeBannerSettings = asyncHandler(
+  async (req: Request, res: Response) => {
+    const input = req.body?.homeBanner;
+
+    if (!input || typeof input !== "object" || Array.isArray(input)) {
+      return res.status(400).json({
+        success: false,
+        message: "Banner settings are required",
+      });
+    }
+
+    const imageUrl = typeof input.imageUrl === "string" ? input.imageUrl.trim() : "";
+    const productId = typeof input.productId === "string" ? input.productId.trim() : "";
+
+    if (typeof input.isActive !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "Banner active status must be true or false",
+      });
+    }
+    const isActive = input.isActive;
+
+    if (!imageUrl || imageUrl.length > 2048) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid banner image is required",
+      });
+    }
+
+    try {
+      const parsedUrl = new URL(imageUrl);
+      if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
+        throw new Error("Unsupported URL protocol");
+      }
+    } catch {
+      return res.status(400).json({
+        success: false,
+        message: "Banner image must have a valid HTTP or HTTPS URL",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Select a valid product for the banner",
+      });
+    }
+
+    const product = await Product.findOne({
+      _id: productId,
+      status: "Active",
+      publish: true,
+    }).select("productName");
+    if (!product) {
+      return res.status(400).json({
+        success: false,
+        message: "Selected product must be active and published",
+      });
+    }
+
+    const settings = await AppSettings.findOneAndUpdate(
+      {},
+      {
+        $set: {
+          homeBanner: {
+            imageUrl,
+            product: product._id,
+            isActive,
+          },
+          updatedBy: req.user?.userId,
+        },
+        $setOnInsert: {
+          appName: "BarodaMart",
+          contactEmail: "contact@barodamart.com",
+          contactPhone: "1234567890",
+        },
+      },
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    await settings.populate("homeBanner.product", "productName mainImage status publish");
+
+    return res.status(200).json({
+      success: true,
+      message: "Home banner updated successfully",
+      data: settings.homeBanner,
     });
   }
 );

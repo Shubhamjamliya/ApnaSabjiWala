@@ -17,6 +17,11 @@ export interface HomeContentResponse {
     promoCards?: any[];
     promoStrip?: any; // PromoStrip data from backend
     bestsellerCards?: any[];
+    homeBanner?: {
+      imageUrl: string;
+      productId: string;
+      productName: string;
+    } | null;
   };
 }
 

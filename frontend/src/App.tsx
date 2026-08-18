@@ -125,6 +125,7 @@ const AdminSmsGateway = lazy(() => import("./modules/admin/pages/AdminSmsGateway
 const AdminSystemUser = lazy(() => import("./modules/admin/pages/AdminSystemUser"));
 const AdminUsers = lazy(() => import("./modules/admin/pages/AdminUsers"));
 const AdminHomeSection = lazy(() => import("./modules/admin/pages/AdminHomeSection"));
+const AdminBanner = lazy(() => import("./modules/admin/pages/AdminBanner"));
 const AdminNextDaySections = lazy(() => import("./modules/admin/pages/AdminNextDaySections"));
 const AdminBestsellerCards = lazy(() => import("./modules/admin/pages/AdminBestsellerCards"));
 const AdminPromoStrip = lazy(() => import("./modules/admin/pages/AdminPromoStrip"));
@@ -374,6 +375,7 @@ function App() {
                                         <Route path="need-help-setting" element={<AdminNeedHelpSettings />} />
                                         <Route path="users" element={<AdminUsers />} />
                                         <Route path="home-section" element={<AdminHomeSection />} />
+                                        <Route path="banner" element={<AdminBanner />} />
                                         <Route path="bestseller-cards" element={<AdminBestsellerCards />} />
                                         <Route path="promo-strip" element={<AdminPromoStrip />} />
                                         <Route path="lowest-prices" element={<AdminLowestPrices />} />
