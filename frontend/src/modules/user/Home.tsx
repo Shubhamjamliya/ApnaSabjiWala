@@ -4,6 +4,7 @@ import HomeHero from "./components/HomeHero";
 
 import PromoStrip from "./components/PromoStrip";
 import NextDayBookingCard from "./components/NextDayBookingCard";
+import AdsBannerCarousel from "./components/AdsBannerCarousel";
 import LowestPricesEver from "./components/LowestPricesEver";
 import CategoryTileSection from "./components/CategoryTileSection";
 import FeaturedThisWeek from "./components/FeaturedThisWeek";
@@ -290,6 +291,9 @@ export default function Home() {
 
       {/* Next Day Vegetable Booking Card */}
       <NextDayBookingCard />
+
+      {/* External ads uploaded by admin */}
+      <AdsBannerCarousel banners={homeData.promoBanners} />
 
       {/* LOWEST PRICES EVER Section */}
       <LowestPricesEver activeTab={activeTab} products={homeData.lowestPrices?.filter((p: any) => p.isAvailable !== false)} />

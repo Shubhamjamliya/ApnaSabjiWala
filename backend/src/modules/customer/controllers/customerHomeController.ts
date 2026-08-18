@@ -7,6 +7,7 @@ import Seller from "../../../models/Seller";
 import HeaderCategory from "../../../models/HeaderCategory";
 import HomeSection from "../../../models/HomeSection";
 import PromoStrip from "../../../models/PromoStrip";
+import AdBanner from "../../../models/AdBanner";
 import BestsellerCard from "../../../models/BestsellerCard";
 import LowestPricesProduct from "../../../models/LowestPricesProduct";
 import AppSettings from "../../../models/AppSettings";
@@ -170,10 +171,16 @@ export const getHomeContent = async (req: Request, res: Response) => {
   const { headerCategorySlug, latitude, longitude } = req.query;
 
   try {
-    const appSettings = await AppSettings.findOne()
-      .select("homeBanner")
-      .populate("homeBanner.product", "productName status publish")
-      .lean();
+    const [appSettings, adsBanners] = await Promise.all([
+      AppSettings.findOne()
+        .select("homeBanner")
+        .populate("homeBanner.product", "productName status publish")
+        .lean(),
+      AdBanner.find({ isActive: true })
+        .select("imageUrl linkUrl title order")
+        .sort({ order: 1, createdAt: 1 })
+        .lean(),
+    ]);
     const configuredBanner = appSettings?.homeBanner as any;
     const bannerProduct = configuredBanner?.product;
     const homeBanner = configuredBanner?.isActive &&
@@ -757,7 +764,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
         promoStrip: promoStrip,
         bestsellerCards: bestsellerCards,
         homeBanner,
-        promoBanners: []
+        promoBanners: adsBanners
       },
     });
   } catch (error: any) {

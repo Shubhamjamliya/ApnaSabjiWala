@@ -73,6 +73,7 @@ import * as lowestPricesController from "../modules/admin/controllers/adminLowes
 
 // PromoStrip Controllers
 import * as promoStripController from "../modules/admin/controllers/adminPromoStripController";
+import * as adBannerController from "../modules/admin/controllers/adminAdBannerController";
 
 const router = Router();
 
@@ -213,6 +214,10 @@ router.put(
   "/settings/home-banner",
   settingsController.updateHomeBannerSettings
 );
+router.get("/ads-banners", adBannerController.getAdBanners);
+router.post("/ads-banners", adBannerController.createAdBanner);
+router.put("/ads-banners/:id", adBannerController.updateAdBanner);
+router.delete("/ads-banners/:id", adBannerController.deleteAdBanner);
 router.get("/settings/payment-methods", settingsController.getPaymentMethods);
 router.put(
   "/settings/payment-methods",

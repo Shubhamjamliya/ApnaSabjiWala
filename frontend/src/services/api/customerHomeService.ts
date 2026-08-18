@@ -11,7 +11,13 @@ export interface HomeContentResponse {
     subcategories?: any[];
     homeSections?: any[];
     shops: any[];
-    promoBanners: any[];
+    promoBanners: Array<{
+      _id: string;
+      imageUrl: string;
+      linkUrl: string;
+      title?: string;
+      order: number;
+    }>;
     trending: any[];
     cookingIdeas: any[];
     promoCards?: any[];
