@@ -84,7 +84,6 @@ export default function AdminAllOrders() {
         }
 
         if (dateTo) {
-          // Include full selected day in filter
           params.dateTo = `${dateTo}T23:59:59.999`;
         }
 
@@ -398,97 +397,86 @@ export default function AdminAllOrders() {
                   }}
                   className="w-full sm:w-auto px-3 py-2 border border-neutral-300 rounded text-xs sm:text-sm text-neutral-900 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500">
                   <option>All Status</option>
-                  <option>Pending</option>
                   <option>Received</option>
+                  <option>Pending</option>
                   <option>Processed</option>
                   <option>Shipped</option>
-                  <option>Out for Delivery</option>
+                  <option>Out For Delivery</option>
                   <option>Delivered</option>
                   <option>Cancelled</option>
                   <option>Rejected</option>
-                  <option>Returned</option>
                 </select>
               </div>
+            </div>
+          </div>
 
-              {/* Entries Per Page */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full lg:w-auto">
-                <select
-                  value={entriesPerPage}
-                  onChange={(e) => {
-                    setEntriesPerPage(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full sm:w-auto px-3 py-2 border border-neutral-300 rounded text-xs sm:text-sm text-neutral-900 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500">
-                  <option>10</option>
-                  <option>25</option>
-                  <option>50</option>
-                  <option>100</option>
-                </select>
+          {/* Table Controls */}
+          <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm text-neutral-700">Show</span>
+              <select
+                value={entriesPerPage}
+                onChange={(e) => {
+                  setEntriesPerPage(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-2 py-1 border border-neutral-300 rounded text-xs sm:text-sm text-neutral-900 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                aria-label="Entries per page">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+              <span className="text-xs sm:text-sm text-neutral-700">
+                entries
+              </span>
+            </div>
+
+            {/* Search and Action Buttons */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExport}
+                  className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded text-xs sm:text-sm font-medium transition-colors flex items-center gap-1">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Export
+                </button>
               </div>
-
-              {/* Export Button */}
-              <div className="flex items-center gap-2 w-full lg:w-auto lg:ml-auto">
-                <div className="relative">
-                  <button
-                    onClick={handleExport}
-                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded text-xs sm:text-sm font-medium transition-colors w-full sm:w-auto">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="flex-shrink-0">
-                      <path
-                        d="M21 15V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V15M7 10L12 15M12 15L17 10M12 15V3"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    Export
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        d="M6 9L12 15L18 9"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              {/* Search Bar */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full lg:w-auto lg:flex-1">
-                <label className="text-xs sm:text-sm font-medium text-neutral-700 whitespace-nowrap">
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm text-neutral-700">
                   Search:
-                </label>
+                </span>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => {
-                    setSearchQuery(e.target.value.trim());
+                    setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="flex-1 w-full sm:w-auto px-3 py-2 border border-neutral-300 rounded text-xs sm:text-sm text-neutral-900 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                  placeholder="Search by Order ID, Customer, or Amount"
+                  className="px-2 py-1 border border-neutral-300 rounded text-xs sm:text-sm text-neutral-900 bg-white focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                  aria-label="Search orders"
                 />
               </div>
             </div>
           </div>
 
-          {/* Table Section */}
+          {/* Table */}
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-neutral-200">
-              <thead className="bg-neutral-50">
+            <table className="w-full">
+              <thead className="bg-neutral-50 border-y border-neutral-200">
                 <tr>
                   <th
                     onClick={() => handleSort("orderId")}
@@ -730,7 +718,7 @@ export default function AdminAllOrders() {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={8}
                       className="px-4 sm:px-6 py-8 text-center text-sm text-neutral-500">
                       Loading orders...
                     </td>
@@ -738,7 +726,7 @@ export default function AdminAllOrders() {
                 ) : error ? (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={8}
                       className="px-4 sm:px-6 py-8 text-center text-sm text-red-600">
                       {error}
                     </td>
@@ -746,7 +734,7 @@ export default function AdminAllOrders() {
                 ) : paginatedOrders.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={8}
                       className="px-4 sm:px-6 py-8 text-center text-sm text-neutral-500">
                       No data available in table
                     </td>
@@ -766,7 +754,6 @@ export default function AdminAllOrders() {
                       <td className="px-4 sm:px-6 py-3 text-sm text-neutral-600">
                         {order.deliveryAddress?.address || "-"}
                       </td>
-
                       <td className="px-4 sm:px-6 py-3 text-sm text-neutral-600">
                         {order.orderDate
                           ? new Date(order.orderDate).toLocaleDateString()
@@ -793,46 +780,64 @@ export default function AdminAllOrders() {
                       </td>
                       <td className="px-4 sm:px-6 py-3">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedOrder(order);
-                              setAssignModalOpen(true);
-                            }}
-                            className={`px-2 py-1.5 text-xs font-medium rounded transition-colors ${order.deliveryBoy
-                              ? "bg-green-100 text-green-700 hover:bg-green-200"
-                              : "bg-blue-600 text-white hover:bg-blue-700"
-                              }`}
-                            title={order.deliveryBoy ? "Re-assign delivery boy" : "Assign delivery boy"}>
-                            {order.deliveryBoy ? "Re-assign" : "Assign"}
-                          </button>
+                          {/* Assign button only appears when seller has accepted the order and order is not terminal/delivered */}
+                          {order.status &&
+                            !["Received", "Pending", "Cancelled", "Cancelled by Seller", "Rejected", "Returned", "Delivered"].includes(order.status) && (
+                              <button
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setAssignModalOpen(true);
+                                }}
+                                className={`px-2 py-1.5 text-xs font-medium rounded transition-colors ${
+                                  order.deliveryBoy &&
+                                  order.deliveryBoyStatus &&
+                                  order.deliveryBoyStatus !== "Failed"
+                                    ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                    : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                                }`}
+                                title={
+                                  order.deliveryBoy &&
+                                  order.deliveryBoyStatus &&
+                                  order.deliveryBoyStatus !== "Failed"
+                                    ? "Re-assign delivery boy"
+                                    : "Assign delivery boy"
+                                }
+                              >
+                                {order.deliveryBoy &&
+                                order.deliveryBoyStatus &&
+                                order.deliveryBoyStatus !== "Failed"
+                                  ? "Re-assign"
+                                  : "Assign"}
+                              </button>
+                            )}
                           <Link to={`/admin/orders/${order._id}`}>
-                          <button
-                            className="bg-teal-600 hover:bg-teal-700 text-white p-2 rounded transition-colors"
-                            aria-label="View order">
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg">
-                              <path
-                                d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <circle
-                                cx="12"
-                                cy="12"
-                                r="3"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
+                            <button
+                              className="bg-teal-600 hover:bg-teal-700 text-white p-2 rounded transition-colors"
+                              aria-label="View order">
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                  d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                                <circle
+                                  cx="12"
+                                  cy="12"
+                                  r="3"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </button>
                           </Link>
                         </div>
                       </td>
@@ -906,7 +911,14 @@ export default function AdminAllOrders() {
           }}
           orderId={selectedOrder._id}
           orderNumber={selectedOrder.orderNumber}
-          currentDeliveryBoy={selectedOrder.deliveryBoy}
+          currentDeliveryBoy={
+            typeof selectedOrder.deliveryBoy === "string"
+              ? selectedOrder.deliveryBoy
+              : selectedOrder.deliveryBoy &&
+                typeof selectedOrder.deliveryBoy === "object"
+                ? (selectedOrder.deliveryBoy as any)._id || undefined
+                : undefined
+          }
           onAssignSuccess={(assignedOrder) => {
             setOrders((currentOrders) =>
               currentOrders.map((order) =>
@@ -929,4 +941,3 @@ export default function AdminAllOrders() {
     </div>
   );
 }
-

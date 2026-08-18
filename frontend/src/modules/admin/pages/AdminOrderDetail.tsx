@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getOrderById, updateOrderStatus, Order } from '../../../services/api/admin/adminOrderService';
+import AssignDeliveryBoyModal from '../components/AssignDeliveryBoyModal';
 
 export default function AdminOrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -9,6 +10,7 @@ export default function AdminOrderDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [updating, setUpdating] = useState(false);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
 
   // Fetch order detail from API
   useEffect(() => {
@@ -286,9 +288,31 @@ export default function AdminOrderDetail() {
           </div>
 
           {/* Delivery Information */}
-          {deliveryBoy && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Delivery Information</h2>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Delivery Information</h2>
+              {/* Assign button only appears when seller has accepted the order and order is not terminal/delivered */}
+              {order.status &&
+                !["Received", "Pending", "Cancelled", "Cancelled by Seller", "Rejected", "Returned", "Delivered"].includes(order.status) && (
+                  <button
+                    onClick={() => setAssignModalOpen(true)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                      order.deliveryBoy &&
+                      order.deliveryBoyStatus &&
+                      order.deliveryBoyStatus !== "Failed"
+                        ? "bg-green-100 text-green-700 hover:bg-green-200"
+                        : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                    }`}
+                  >
+                    {order.deliveryBoy &&
+                    order.deliveryBoyStatus &&
+                    order.deliveryBoyStatus !== "Failed"
+                      ? "Re-assign Delivery Boy"
+                      : "Assign Delivery Boy"}
+                  </button>
+                )}
+            </div>
+            {deliveryBoy ? (
               <div className="space-y-2 text-sm">
                 <div>
                   <span className="text-neutral-600">Delivery Boy:</span>
@@ -307,8 +331,14 @@ export default function AdminOrderDetail() {
                   </div>
                 )}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="text-sm text-neutral-500 italic">
+                {order.status === "Pending" || order.status === "Received"
+                  ? "Waiting for seller to accept the order before delivery assignment."
+                  : "No delivery boy assigned yet."}
+              </div>
+            )}
+          </div>
 
           {/* Payment Information */}
           <div className="bg-white rounded-lg shadow p-6">
@@ -332,6 +362,20 @@ export default function AdminOrderDetail() {
           </div>
         </div>
       </div>
+
+      {assignModalOpen && order && (
+        <AssignDeliveryBoyModal
+          isOpen={assignModalOpen}
+          onClose={() => setAssignModalOpen(false)}
+          orderId={order._id}
+          orderNumber={order.orderNumber}
+          currentDeliveryBoy={order.deliveryBoy}
+          onAssignSuccess={(assignedOrder) => {
+            setOrder(assignedOrder);
+            setAssignModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

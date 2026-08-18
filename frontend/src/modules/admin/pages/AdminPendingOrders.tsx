@@ -762,24 +762,36 @@ export default function AdminPendingOrders() {
                       </td>
                       <td className="px-4 sm:px-6 py-3">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedOrder(order);
-                              setAssignModalOpen(true);
-                            }}
-                            className={`px-2 py-1.5 text-xs font-medium rounded transition-colors ${order.deliveryBoyStatus === "Assigned"
-                              ? "bg-green-100 text-green-700 hover:bg-green-200"
-                              : "bg-blue-600 text-white hover:bg-blue-700"
-                              }`}
-                            title={
-                              order.deliveryBoyStatus === "Assigned"
-                                ? "Re-assign delivery boy"
-                                : "Assign delivery boy"
-                            }>
-                            {order.deliveryBoyStatus === "Assigned"
-                              ? "Re-assign"
-                              : "Assign"}
-                          </button>
+                          {/* Assign button only appears when seller has accepted the order and order is not terminal/delivered */}
+                          {order.status &&
+                            !["Received", "Pending", "Cancelled", "Cancelled by Seller", "Rejected", "Returned", "Delivered"].includes(order.status) && (
+                              <button
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setAssignModalOpen(true);
+                                }}
+                                className={`px-2 py-1.5 text-xs font-medium rounded transition-colors ${
+                                  order.deliveryBoy &&
+                                  order.deliveryBoyStatus &&
+                                  order.deliveryBoyStatus !== "Failed"
+                                    ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                    : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                                }`}
+                                title={
+                                  order.deliveryBoy &&
+                                  order.deliveryBoyStatus &&
+                                  order.deliveryBoyStatus !== "Failed"
+                                    ? "Re-assign delivery boy"
+                                    : "Assign delivery boy"
+                                }
+                              >
+                                {order.deliveryBoy &&
+                                order.deliveryBoyStatus &&
+                                order.deliveryBoyStatus !== "Failed"
+                                  ? "Re-assign"
+                                  : "Assign"}
+                              </button>
+                            )}
                           <Link to={`/admin/orders/${order._id}`}>
                             <button
                               className="bg-teal-600 hover:bg-teal-700 text-white p-2 rounded transition-colors"
