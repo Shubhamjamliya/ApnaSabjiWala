@@ -161,7 +161,7 @@ export async function sendPushNotification(
                     body: payload.body,
                     icon: 'default',
                     sound: 'default',
-                    clickAction: linkUrl,
+                    channelId: 'default',
                 }
             }
         };

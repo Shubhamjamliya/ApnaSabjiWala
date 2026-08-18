@@ -26,7 +26,7 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = payload.notification?.title || payload.data?.title || 'New Notification';
     const notificationOptions = {
         body: payload.notification?.body || payload.data?.body || '',
-        icon: payload.notification?.icon || '/favicon.png',
+        icon: payload.notification?.icon || payload.data?.icon || '/favicon.png',
         badge: '/favicon.png',
         data: payload.data || {},
         tag: payload.data?.type || 'default',
@@ -42,20 +42,25 @@ self.addEventListener('notificationclick', (event) => {
 
     event.notification.close();
 
-    const data = event.notification.data;
-    const urlToOpen = data?.link || '/';
+    const data = event.notification.data || {};
+    const path = data.link || '/';
+    const targetUrl = new URL(path, self.location.origin).href;
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-            // Check if app is already open
+            // If any window for this origin is already open, focus it and navigate
             for (const client of clientList) {
-                if (client.url.includes(urlToOpen) && 'focus' in client) {
-                    return client.focus();
+                if ('focus' in client) {
+                    client.focus();
+                    if ('navigate' in client) {
+                        return client.navigate(targetUrl);
+                    }
+                    return client;
                 }
             }
-            // Open new window if app is not already open
+            // If no window is open, open a new one
             if (clients.openWindow) {
-                return clients.openWindow(urlToOpen);
+                return clients.openWindow(targetUrl);
             }
         })
     );
