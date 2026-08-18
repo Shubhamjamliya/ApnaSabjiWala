@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
 import path from 'path';
+import fs from 'fs';
 
 // Initialize Firebase Admin SDK
 let firebaseInitialized = false;
@@ -11,32 +12,59 @@ export interface PushDeliveryResult {
     error?: string;
 }
 
-export function initializeFirebaseAdmin() {
-    if (firebaseInitialized) {
-        return;
+export function initializeFirebaseAdmin(): boolean {
+    if (firebaseInitialized || (admin.apps && admin.apps.length > 0)) {
+        firebaseInitialized = true;
+        return true;
     }
 
     try {
         let credential;
 
-        // Check if Firebase credentials are provided via environment variables (production)
-        const envCredentials = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_CREDENTIALS;
+        // 1. Check if Firebase credentials are provided via environment variables (production)
+        let envCredentials = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_CREDENTIALS;
         if (envCredentials) {
-            console.log('🔧 Using Firebase credentials from environment variable (production mode)');
-            // Handle potential double quoting or escaping issues if they arise, but standard JSON.parse should work for valid JSON string
-            const serviceAccount = JSON.parse(envCredentials);
+            console.log('🔧 Using Firebase credentials from environment variable');
+            let cleanJsonStr = envCredentials.trim();
+            if ((cleanJsonStr.startsWith("'") && cleanJsonStr.endsWith("'")) ||
+                (cleanJsonStr.startsWith('"') && cleanJsonStr.endsWith('"'))) {
+                cleanJsonStr = cleanJsonStr.slice(1, -1);
+            }
+            const serviceAccount = JSON.parse(cleanJsonStr);
+            if (serviceAccount.private_key) {
+                serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+            }
             credential = admin.credential.cert(serviceAccount);
         }
-        // Fall back to service account file (development)
+        // 2. Fall back to service account file (development / file path)
         else {
-            console.log('🔧 Using Firebase credentials from file (development mode)');
-            // Use path.resolve to get absolute path from project root
-            const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
-                path.resolve(process.cwd(), 'config', 'firebase-service-account.json');
+            const possiblePaths = [
+                process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
+                path.resolve(process.cwd(), 'config', 'firebase-service-account.json'),
+                path.resolve(process.cwd(), 'src', 'config', 'apnasabjiwala-4ceaa-firebase-adminsdk-fbsvc-71e6495fe8.json'),
+                path.resolve(__dirname, '../config/apnasabjiwala-4ceaa-firebase-adminsdk-fbsvc-71e6495fe8.json'),
+                path.resolve(__dirname, '../../config/firebase-service-account.json'),
+                path.resolve(process.cwd(), 'firebase-service-account.json')
+            ].filter(Boolean) as string[];
 
-            console.log(`📂 Looking for service account at: ${serviceAccountPath}`);
-            const serviceAccount = require(serviceAccountPath);
-            credential = admin.credential.cert(serviceAccount);
+            let foundPath: string | null = null;
+            for (const p of possiblePaths) {
+                if (fs.existsSync(p)) {
+                    foundPath = p;
+                    break;
+                }
+            }
+
+            if (foundPath) {
+                console.log(`📂 Loading Firebase service account file from: ${foundPath}`);
+                const serviceAccount = JSON.parse(fs.readFileSync(foundPath, 'utf8'));
+                if (serviceAccount.private_key) {
+                    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+                }
+                credential = admin.credential.cert(serviceAccount);
+            } else {
+                throw new Error(`Firebase service account file not found in any standard path: ${possiblePaths.join(', ')}`);
+            }
         }
 
         admin.initializeApp({
@@ -45,9 +73,11 @@ export function initializeFirebaseAdmin() {
 
         firebaseInitialized = true;
         console.log('✅ Firebase Admin SDK initialized successfully');
+        return true;
     } catch (error: any) {
         console.error('❌ Failed to initialize Firebase Admin SDK:', error.message);
         console.log('⚠️  Push notifications will not work until Firebase is properly configured');
+        return false;
     }
 }
 
@@ -65,6 +95,10 @@ export async function sendPushNotification(
         icon?: string;
     }
 ): Promise<PushDeliveryResult> {
+    if (!firebaseInitialized) {
+        initializeFirebaseAdmin();
+    }
+
     if (!firebaseInitialized) {
         console.warn('Firebase Admin not initialized. Skipping notification send.');
         return {
