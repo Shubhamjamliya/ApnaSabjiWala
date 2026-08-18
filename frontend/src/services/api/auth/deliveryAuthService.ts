@@ -1,4 +1,5 @@
-import api, { setAuthToken, removeAuthToken, setUserData } from '../config';
+import api, { setAuthToken, setUserData } from '../config';
+import { clearAuthSessionWithFCM } from '../../pushNotificationService';
 const handleApiError = (error: any) => {
   if (error.response && error.response.data && error.response.data.message) {
     throw new Error(error.response.data.message);
@@ -115,7 +116,5 @@ export const register = async (data: RegisterData): Promise<RegisterResponse> =>
 /**
  * Logout delivery partner
  */
-export const logout = (): void => {
-  removeAuthToken('delivery');
-};
+export const logout = (): Promise<void> => clearAuthSessionWithFCM('delivery');
 

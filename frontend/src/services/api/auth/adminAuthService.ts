@@ -1,4 +1,5 @@
-import api, { setAuthToken, removeAuthToken, setUserData } from '../config';
+import api, { setAuthToken, setUserData } from '../config';
+import { clearAuthSessionWithFCM } from '../../pushNotificationService';
 
 const handleApiError = (error: any) => {
   if (error.response && error.response.data && error.response.data.message) {
@@ -104,9 +105,7 @@ export const register = async (data: RegisterData): Promise<RegisterResponse> =>
 /**
  * Logout admin
  */
-export const logout = (): void => {
-  removeAuthToken('admin');
-};
+export const logout = (): Promise<void> => clearAuthSessionWithFCM('admin');
 
 export interface AdminProfileResponse {
   success: boolean;

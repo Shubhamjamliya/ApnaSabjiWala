@@ -1,4 +1,5 @@
-import api, { setAuthToken, removeAuthToken, setUserData } from '../config';
+import api, { setAuthToken, setUserData } from '../config';
+import { clearAuthSessionWithFCM } from '../../pushNotificationService';
 
 const handleApiError = (error: any) => {
   if (error.response && error.response.data && error.response.data.message) {
@@ -70,7 +71,5 @@ export const verifyOTP = async (mobile: string, otp: string, sessionId?: string)
 /**
  * Logout customer
  */
-export const logout = (): void => {
-  removeAuthToken('customer');
-};
+export const logout = (): Promise<void> => clearAuthSessionWithFCM('customer');
 

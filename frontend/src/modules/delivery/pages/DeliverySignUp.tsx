@@ -5,7 +5,7 @@ import {
   sendOTP,
   verifyOTP,
 } from "../../../services/api/auth/deliveryAuthService";
-import { removeAuthToken } from "../../../services/api/config";
+import { clearAuthSessionWithFCM } from "../../../services/pushNotificationService";
 import { uploadDocument } from "../../../services/api/uploadService";
 import { validateDocumentFile } from "../../../utils/imageUpload";
 import OTPInput from "../../../components/OTPInput";
@@ -377,7 +377,7 @@ export default function DeliverySignUp() {
 
       if (response.success) {
         // Clear token from registration (we'll get it after OTP verification)
-        removeAuthToken();
+        await clearAuthSessionWithFCM('delivery');
         // Registration successful, now send SMS OTP for verification
         try {
           const otpRes = await sendOTP(formData.mobile);

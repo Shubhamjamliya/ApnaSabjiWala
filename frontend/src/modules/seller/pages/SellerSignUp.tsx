@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register, sendOTP, verifyOTP } from '../../../services/api/auth/sellerAuthService';
-import { removeAuthToken } from '../../../services/api/config';
+import { clearAuthSessionWithFCM } from '../../../services/pushNotificationService';
 import OTPInput from '../../../components/OTPInput';
 import GoogleMapsAutocomplete from '../../../components/GoogleMapsAutocomplete';
 import { useAuth } from '../../../context/AuthContext';
@@ -231,7 +231,7 @@ export default function SellerSignUp() {
 
       if (response.success) {
         // Clear token from registration (we'll get it after OTP verification)
-        removeAuthToken();
+        await clearAuthSessionWithFCM('seller');
         // Registration successful, now send OTP for verification
         try {
           await sendOTP(formData.mobile);

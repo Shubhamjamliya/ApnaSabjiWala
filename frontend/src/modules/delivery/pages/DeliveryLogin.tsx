@@ -4,7 +4,7 @@ import { sendOTP, verifyOTP } from '../../../services/api/auth/deliveryAuthServi
 import OTPInput from '../../../components/OTPInput';
 import { useAuth } from '../../../context/AuthContext';
 import { useAppSettings } from '../../../context/AppSettingsContext';
-import { removeAuthToken } from '../../../services/api/config';
+import { clearAuthSessionWithFCM } from '../../../services/pushNotificationService';
 
 export default function DeliveryLogin() {
   const RESEND_OTP_COOLDOWN = 30;
@@ -22,7 +22,7 @@ export default function DeliveryLogin() {
 
   // Clear any existing token on mount to prevent role conflicts
   useEffect(() => {
-    removeAuthToken();
+    void clearAuthSessionWithFCM('delivery');
   }, []);
 
   useEffect(() => {

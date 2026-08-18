@@ -1,4 +1,5 @@
-import api, { setAuthToken, removeAuthToken } from '../config';
+import api, { setAuthToken } from '../config';
+import { clearAuthSessionWithFCM } from '../../pushNotificationService';
 
 const handleApiError = (error: any) => {
   if (error.response && error.response.data && error.response.data.message) {
@@ -127,9 +128,7 @@ export const updateSellerProfile = async (data: any): Promise<any> => {
 /**
  * Logout seller
  */
-export const logout = (): void => {
-  removeAuthToken();
-};
+export const logout = (): Promise<void> => clearAuthSessionWithFCM('seller');
 
 /**
  * Toggle shop status (Open/Close)

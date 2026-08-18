@@ -7,6 +7,23 @@ import Delivery from "../models/Delivery";
 
 const router = Router();
 
+const userModels = [Customer, Admin, Seller, Delivery];
+
+const getUserModel = (userType: string) => {
+  switch (userType) {
+    case "Customer":
+      return Customer;
+    case "Admin":
+      return Admin;
+    case "Seller":
+      return Seller;
+    case "Delivery":
+      return Delivery;
+    default:
+      return null;
+  }
+};
+
 /**
  * Save FCM token for authenticated user
  * POST /api/v1/fcm-tokens/save
@@ -19,7 +36,7 @@ router.post("/save", async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.userId;
     const userType = req.user?.userType;
 
-    if (!token) {
+    if (typeof token !== "string" || !token.trim()) {
       res.status(400).json({
         success: false,
         message: "FCM token is required",
@@ -35,28 +52,24 @@ router.post("/save", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Determine the correct model based on user type
-    let UserModel: any;
-    switch (userType) {
-      case "Customer":
-        UserModel = Customer;
-        break;
-      case "Admin":
-        UserModel = Admin;
-        break;
-      case "Seller":
-        UserModel = Seller;
-        break;
-      case "Delivery":
-        UserModel = Delivery;
-        break;
-      default:
-        res.status(400).json({
-          success: false,
-          message: "Invalid user type",
-        });
-        return;
+    if (platform !== "web" && platform !== "app") {
+      res.status(400).json({
+        success: false,
+        message: 'Platform must be either "web" or "app"',
+      });
+      return;
     }
+
+    const UserModel = getUserModel(userType);
+    if (!UserModel) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid user type",
+      });
+      return;
+    }
+
+    const normalizedToken = token.trim();
 
     const user = await UserModel.findById(userId);
 
@@ -68,14 +81,44 @@ router.post("/save", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // One Firebase device token must belong to only one authenticated account.
+    // Remove stale ownership across every role before assigning it below.
+    await Promise.all(
+      userModels.map((model) =>
+        model.updateMany(
+          {
+            $or: [
+              { fcmTokens: normalizedToken },
+              { fcmTokenMobile: normalizedToken },
+            ],
+          },
+          {
+            $pull: {
+              fcmTokens: normalizedToken,
+              fcmTokenMobile: normalizedToken,
+            },
+          },
+        )
+      )
+    );
+
+    // Keep this loaded document in sync with the cleanup before assigning it
+    // to the requested platform and saving.
+    user.fcmTokens = (user.fcmTokens || []).filter(
+      (savedToken: string) => savedToken !== normalizedToken,
+    );
+    user.fcmTokenMobile = (user.fcmTokenMobile || []).filter(
+      (savedToken: string) => savedToken !== normalizedToken,
+    );
+
     // Add token to appropriate array based on platform
     if (platform === "web") {
       if (!user.fcmTokens) {
         user.fcmTokens = [];
       }
       // Only add if not already present
-      if (!user.fcmTokens.includes(token)) {
-        user.fcmTokens.push(token);
+      if (!user.fcmTokens.includes(normalizedToken)) {
+        user.fcmTokens.push(normalizedToken);
         // Limit to 10 tokens per platform
         if (user.fcmTokens.length > 10) {
           user.fcmTokens = user.fcmTokens.slice(-10);
@@ -85,18 +128,12 @@ router.post("/save", async (req: Request, res: Response): Promise<void> => {
       if (!user.fcmTokenMobile) {
         user.fcmTokenMobile = [];
       }
-      if (!user.fcmTokenMobile.includes(token)) {
-        user.fcmTokenMobile.push(token);
+      if (!user.fcmTokenMobile.includes(normalizedToken)) {
+        user.fcmTokenMobile.push(normalizedToken);
         if (user.fcmTokenMobile.length > 10) {
           user.fcmTokenMobile = user.fcmTokenMobile.slice(-10);
         }
       }
-    } else {
-      res.status(400).json({
-        success: false,
-        message: 'Platform must be either "web" or "app"',
-      });
-      return;
     }
 
     await user.save();
@@ -132,7 +169,7 @@ router.delete("/remove", async (req: Request, res: Response): Promise<void> => {
     const userId = req.user?.userId;
     const userType = req.user?.userType;
 
-    if (!token) {
+    if (typeof token !== "string" || !token.trim()) {
       res.status(400).json({
         success: false,
         message: "FCM token is required",
@@ -148,30 +185,36 @@ router.delete("/remove", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Dynamically import the appropriate model
-    let UserModel: any;
-    switch (userType) {
-      case "Customer":
-        UserModel = (await import("../models/Customer")).default;
-        break;
-      case "Admin":
-        UserModel = (await import("../models/Admin")).default;
-        break;
-      case "Seller":
-        UserModel = (await import("../models/Seller")).default;
-        break;
-      case "Delivery":
-        UserModel = (await import("../models/Delivery")).default;
-        break;
-      default:
-        res.status(400).json({
-          success: false,
-          message: "Invalid user type",
-        });
-        return;
+    if (platform !== "web" && platform !== "app") {
+      res.status(400).json({
+        success: false,
+        message: 'Platform must be either "web" or "app"',
+      });
+      return;
     }
 
-    const user = await UserModel.findById(userId);
+    const UserModel = getUserModel(userType);
+    if (!UserModel) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid user type",
+      });
+      return;
+    }
+
+    const normalizedToken = token.trim();
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        $pull: {
+          // Remove from both arrays so logout also cleans up tokens that were
+          // previously registered with the wrong platform value.
+          fcmTokens: normalizedToken,
+          fcmTokenMobile: normalizedToken,
+        },
+      },
+      { new: true },
+    );
 
     if (!user) {
       res.status(404).json({
@@ -180,17 +223,6 @@ router.delete("/remove", async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
-
-    // Remove token from appropriate array
-    if (platform === "web" && user.fcmTokens) {
-      user.fcmTokens = user.fcmTokens.filter((t: string) => t !== token);
-    } else if (platform === "app" && user.fcmTokenMobile) {
-      user.fcmTokenMobile = user.fcmTokenMobile.filter(
-        (t: string) => t !== token,
-      );
-    }
-
-    await user.save();
 
     console.log(
       `✅ FCM token removed for ${userType} user ${userId} (${platform})`,

@@ -1,5 +1,5 @@
 import { messaging, getToken, onMessage } from './firebase';
-import { getAuthToken } from './api/config';
+import { getAuthToken, removeAuthToken } from './api/config';
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BL6zx7ldM8gHbypngBAly0E2GiZp6AIaa3cFn37QThi6e5ObtcriTSCEFIYNPl2-PtvJbR49hezN98iqVIY1XZk';
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1').trim();
@@ -235,7 +235,7 @@ export async function removeFCMToken(providedAuthToken?: string): Promise<void> 
             return;
         }
 
-        await fetch(`${API_BASE_URL}/fcm-tokens/remove`, {
+        const response = await fetch(`${API_BASE_URL}/fcm-tokens/remove`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -247,10 +247,36 @@ export async function removeFCMToken(providedAuthToken?: string): Promise<void> 
             })
         });
 
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to remove FCM token from backend');
+        }
+
+        // Keep the local token when the backend request fails so cleanup can
+        // be retried instead of silently leaving a stale database entry.
         localStorage.removeItem('fcm_token_web');
         console.log('✅ FCM token removed');
     } catch (error) {
         console.error('❌ Error removing FCM token:', error);
+        throw error;
+    }
+}
+
+/**
+ * Remove this browser's FCM token before clearing a role-specific session.
+ * Use this anywhere that clears authentication outside AuthContext.logout().
+ */
+export async function clearAuthSessionWithFCM(
+    role: 'admin' | 'seller' | 'delivery' | 'customer'
+): Promise<void> {
+    const authToken = getAuthToken(role);
+
+    try {
+        if (authToken) {
+            await removeFCMToken(authToken);
+        }
+    } finally {
+        removeAuthToken(role);
     }
 }
 

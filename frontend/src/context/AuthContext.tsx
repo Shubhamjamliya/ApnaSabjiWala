@@ -111,6 +111,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const role = user?.userType?.toLowerCase() || "customer";
     const currentToken = token; // Capture token before clearing
 
+    // Start authenticated FCM cleanup before clearing the session. The
+    // captured JWT allows the request to finish even after local logout.
+    if (currentToken) {
+      removeFCMToken(currentToken).catch((error) => {
+        console.error("Failed to remove FCM token:", error);
+      });
+    }
+
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
@@ -124,12 +132,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("delivery_user_name");
     }
 
-    // Remove FCM token on logout
-    if (currentToken) {
-      removeFCMToken(currentToken).catch((error) => {
-        console.error("Failed to remove FCM token:", error);
-      });
-    }
   };
 
   const updateUser = (userData: User) => {
