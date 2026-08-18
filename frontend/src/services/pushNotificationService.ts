@@ -317,11 +317,22 @@ export async function sendTestNotification(): Promise<{ success: boolean; messag
             return { success: false, message: 'User not authenticated' };
         }
 
-        // Always force register during the test to ensure the token is fresh and in sync with backend
-        console.log('ℹ️ Forcing fresh FCM token registration for test...');
-        const tokenResult = await registerFCMToken(true);
-        if (!tokenResult) {
-            return { success: false, message: 'Could not register for notifications. Please check browser permissions.' };
+        // Native mobile apps register their token separately as `app`. Do not
+        // block their test because the WebView does not expose browser push
+        // APIs. Browsers can still refresh their web token before testing.
+        const supportsBrowserPush =
+            'Notification' in window &&
+            'serviceWorker' in navigator &&
+            Boolean(messaging);
+
+        if (supportsBrowserPush) {
+            console.log('ℹ️ Refreshing browser FCM token before test...');
+            const tokenResult = await registerFCMToken(true);
+            if (!tokenResult) {
+                console.warn('Browser token refresh failed; testing tokens already saved on the server.');
+            }
+        } else {
+            console.log('ℹ️ Browser push is unavailable; testing the saved native mobile token.');
         }
 
         console.log('🧪 Sending test notification request to backend...');
