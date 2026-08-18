@@ -344,8 +344,9 @@ export const getProductById = async (req: Request, res: Response) => {
     const similarProducts = await Product.find(similarProductsQuery)
       .limit(6)
       .select(
-        "productName price mrp variations mainImage pack discount _id rating reviewsCount"
-      );
+        "productName price mrp variations mainImage pack discount _id rating reviewsCount seller"
+      )
+      .populate("seller", "storeName");
 
     return res.status(200).json({
       success: true,

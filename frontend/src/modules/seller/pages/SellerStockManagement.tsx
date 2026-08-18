@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { getProducts, updateStock, Product } from '../../../services/api/productService';
 import { getCategories } from '../../../services/api/categoryService';
 import { useAuth } from '../../../context/AuthContext';
+import { useToast } from '../../../context/ToastContext';
+
+const LOW_STOCK_THRESHOLD = 5;
 
 interface StockItem {
     variationId: string;
@@ -33,6 +36,7 @@ export default function SellerStockManagement() {
     const [categories, setCategories] = useState<string[]>([]);
     const [totalPages, setTotalPages] = useState(1);
     const { user } = useAuth();
+    const { showToast } = useToast();
 
     // Fetch categories for filter
     useEffect(() => {
@@ -157,6 +161,16 @@ export default function SellerStockManagement() {
                 window.setTimeout(() => {
                     setSavedStock(current => current === item.variationId ? null : current);
                 }, 2000);
+
+                const previousStock = Number(item.stock);
+                if (previousStock > LOW_STOCK_THRESHOLD && newStock <= LOW_STOCK_THRESHOLD) {
+                    showToast(
+                        newStock === 0
+                            ? `${item.name} (${item.variation}) is out of stock.`
+                            : `Low stock: ${item.name} (${item.variation}) has ${newStock} units left.`,
+                        'info',
+                    );
+                }
             } else {
                 alert(response.message || 'Failed to update stock');
             }

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getProducts } from '../../../services/api/customerProductService';
 
 import { calculateProductPrice } from '../../../utils/priceUtils';
+import { getProductStoreName } from '../../../utils/productSeller';
 import { useThemeContext } from '../../../context/ThemeContext';
 import { useCart } from '../../../context/CartContext';
 import { Product } from '../../../types/domain';
@@ -50,6 +51,7 @@ const ProductCard = memo(({
   // Remove common description patterns like " - Fresh & Quality Assured", " - Premium Quality", etc.
   productName = productName.replace(/\s*-\s*(Fresh|Quality|Assured|Premium|Best|Top|Hygienic|Carefully|Selected).*$/i, '').trim();
   const displayName = truncateText(productName, 60);
+  const storeName = getProductStoreName(product);
 
   return (
     <div
@@ -215,6 +217,12 @@ const ProductCard = memo(({
               {displayName}
             </h3>
           </div>
+
+          {storeName && (
+            <p className="text-[8px] text-neutral-500 truncate mb-0.5" title={storeName}>
+              Sold by {storeName}
+            </p>
+          )}
 
           {/* Rating and Reviews */}
           <div className="flex items-center gap-0.5 mb-0.5">

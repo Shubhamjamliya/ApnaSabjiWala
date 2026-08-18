@@ -4,6 +4,13 @@ import path from 'path';
 // Initialize Firebase Admin SDK
 let firebaseInitialized = false;
 
+export interface PushDeliveryResult {
+    successCount: number;
+    failureCount: number;
+    responses: any[];
+    error?: string;
+}
+
 export function initializeFirebaseAdmin() {
     if (firebaseInitialized) {
         return;
@@ -57,13 +64,14 @@ export async function sendPushNotification(
         data?: { [key: string]: string };
         icon?: string;
     }
-) {
+): Promise<PushDeliveryResult> {
     if (!firebaseInitialized) {
         console.warn('Firebase Admin not initialized. Skipping notification send.');
         return {
             successCount: 0,
             failureCount: tokens.length,
-            responses: []
+            responses: [],
+            error: 'Firebase Admin is not initialized'
         };
     }
 
@@ -114,7 +122,12 @@ export async function sendPushNotification(
         return response;
     } catch (error: any) {
         console.error('❌ Error sending push notification:', error.message);
-        throw error;
+        return {
+            successCount: 0,
+            failureCount: tokens?.length || 0,
+            responses: [],
+            error: error.message || 'Firebase push delivery failed'
+        };
     }
 }
 
@@ -135,7 +148,7 @@ export async function sendNotificationToUser(
         icon?: string;
     },
     includeMobile: boolean = true
-): Promise<any> {
+): Promise<PushDeliveryResult> {
     try {
         // Dynamically import the appropriate model
         let UserModel: any;
@@ -178,7 +191,12 @@ export async function sendNotificationToUser(
 
         if (uniqueTokens.length === 0) {
             console.log(`No FCM tokens found for user ${userId}`);
-            return;
+            return {
+                successCount: 0,
+                failureCount: 0,
+                responses: [],
+                error: 'No FCM tokens are registered for this user'
+            };
         }
 
         console.log(`Sending notification to ${uniqueTokens.length} device(s) for user ${userId}`);
@@ -213,7 +231,12 @@ export async function sendNotificationToUser(
     } catch (error: any) {
         console.error('❌ Error sending notification to user:', error.message);
         // Don't throw - notifications are non-critical
-        return undefined;
+        return {
+            successCount: 0,
+            failureCount: 0,
+            responses: [],
+            error: error.message || 'Push delivery failed'
+        };
     }
 }
 

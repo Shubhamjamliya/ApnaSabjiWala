@@ -12,6 +12,7 @@ import {
   clearCart as apiClearCart
 } from '../services/api/customerCartService';
 import { calculateProductPrice } from '../utils/priceUtils';
+import { getProductSellerId, getProductStoreName } from '../utils/productSeller';
 
 const CART_STORAGE_KEY = 'saved_cart';
 
@@ -78,6 +79,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
           pack: item.product.pack || '1 unit',
           categoryId: item.product.category || '',
           description: item.product.description,
+          seller: item.product.seller,
+          sellerId: typeof item.product.seller === 'object'
+            ? item.product.seller?._id
+            : item.product.seller,
+          storeName: typeof item.product.seller === 'object'
+            ? item.product.seller?.storeName
+            : item.product.storeName,
           variantId: item.variation // Preserving variation ID/value
         },
         quantity: item.quantity,
@@ -179,6 +187,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
       showToast('Please login to add items to cart', 'info');
       const currentPath = `${window.location.pathname}${window.location.search}`;
       window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+      return;
+    }
+
+    const incomingSellerId = getProductSellerId(product);
+    const existingProduct = items.find(item => item?.product)?.product;
+    const existingSellerId = getProductSellerId(existingProduct);
+
+    if (
+      existingProduct &&
+      incomingSellerId &&
+      existingSellerId &&
+      incomingSellerId !== existingSellerId
+    ) {
+      const existingStoreName = getProductStoreName(existingProduct);
+      showToast(
+        existingStoreName
+          ? `Your cart has items from ${existingStoreName}. Clear the cart before adding from another seller.`
+          : 'Your cart has items from another seller. Clear the cart before adding this item.',
+        'info',
+      );
       return;
     }
 

@@ -43,7 +43,7 @@ export const createOrder = async (req: Request, res: Response) => {
             paymentMethod,
         });
 
-        if (!items || items.length === 0) {
+        if (!Array.isArray(items) || items.length === 0) {
             if (session) await session.abortTransaction();
             return res.status(400).json({
                 success: false,
@@ -56,6 +56,47 @@ export const createOrder = async (req: Request, res: Response) => {
             return res.status(400).json({
                 success: false,
                 message: "Delivery address is required",
+            });
+        }
+
+        // Defense in depth: checkout must also enforce the single-seller cart
+        // rule because API clients can bypass the add-to-cart endpoint.
+        const requestedProductIds = items.map((item: any) =>
+            item?.product?.id || item?.product?._id
+        );
+        if (requestedProductIds.some((productId: any) =>
+            !productId || !mongoose.Types.ObjectId.isValid(String(productId))
+        )) {
+            if (session) await session.abortTransaction();
+            return res.status(400).json({
+                success: false,
+                message: "One or more cart items are invalid.",
+            });
+        }
+
+        const uniqueProductIds = [...new Set(requestedProductIds.map(String))];
+        const checkoutProductsQuery = Product.find({
+            _id: { $in: uniqueProductIds },
+        }).select("seller");
+        if (session) checkoutProductsQuery.session(session);
+        const checkoutProducts = await checkoutProductsQuery;
+
+        if (checkoutProducts.length !== uniqueProductIds.length) {
+            if (session) await session.abortTransaction();
+            return res.status(400).json({
+                success: false,
+                message: "One or more products are no longer available.",
+            });
+        }
+
+        const checkoutSellerIds = new Set(
+            checkoutProducts.map(product => product.seller.toString())
+        );
+        if (checkoutSellerIds.size > 1) {
+            if (session) await session.abortTransaction();
+            return res.status(400).json({
+                success: false,
+                message: "Your cart can contain products from only one seller. Please add the products again.",
             });
         }
 

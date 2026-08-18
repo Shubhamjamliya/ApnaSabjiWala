@@ -13,6 +13,7 @@ import StarRating from '../../../components/ui/StarRating';
 import { calculateProductPrice } from '../../../utils/priceUtils';
 import { getVariationColor } from '../../../utils/variationUtils';
 import VariationSelectionModal from './VariationSelectionModal';
+import { getProductStoreName } from '../../../utils/productSeller';
 
 interface ProductCardProps {
   product: Product;
@@ -65,6 +66,7 @@ export default function ProductCard({
   const [isWishlisted, setIsWishlisted] = useState(false);
   // Single ref to track any cart operation in progress for this product
   const isOperationPendingRef = useRef(false);
+  const storeName = getProductStoreName(product);
 
   useEffect(() => {
     // Only check wishlist if user is authenticated
@@ -489,6 +491,12 @@ export default function ProductCard({
                 {product.name || product.productName || ''}
               </h3>
 
+              {storeName && (
+                <p className="text-[8px] text-neutral-500 mb-0.5 truncate" title={storeName}>
+                  Sold by {storeName}
+                </p>
+              )}
+
               {/* 2.5. Rating */}
               <div className="mb-0.5">
                 <StarRating
@@ -576,6 +584,12 @@ export default function ProductCard({
               <h3 className={`${compact ? 'text-xs md:text-sm' : 'text-sm md:text-base'} font-semibold text-neutral-900 ${compact ? 'mb-1' : 'mb-2'} line-clamp-2 ${compact ? 'min-h-[2rem]' : 'min-h-[2.5rem]'}`}>
                 {product.name || product.productName || ''}
               </h3>
+
+              {storeName && (
+                <p className={`${compact ? 'text-[10px]' : 'text-xs'} text-neutral-500 mb-1 truncate`} title={storeName}>
+                  Sold by {storeName}
+                </p>
+              )}
 
               {/* Always show rating */}
               <div className={`${compact ? 'mb-1' : 'mb-2'}`}>

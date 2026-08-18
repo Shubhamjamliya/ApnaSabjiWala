@@ -309,7 +309,7 @@ router.post("/test", async (req: Request, res: Response): Promise<void> => {
     // Send test notification
     const response = await sendPushNotification(uniqueTokens, {
       title: "🔔 Test Notification",
-      body: "This is a test push notification from BarodaMart!",
+      body: "This is a test push notification from Apna Sabji Wala!",
       data: {
         type: "test",
         timestamp: new Date().toISOString(),
@@ -318,11 +318,19 @@ router.post("/test", async (req: Request, res: Response): Promise<void> => {
       icon: "/favicon.png",
     });
 
-    console.log(`✅ Test notification sent to ${userType} user ${userId}`);
+    const delivered = response.successCount > 0;
 
-    res.json({
-      success: true,
-      message: "Test notification sent successfully",
+    if (!delivered) {
+      console.warn(
+        `Test notification was not delivered to ${userType} user ${userId}: ${response.error || "all registered tokens failed"}`,
+      );
+    }
+
+    res.status(delivered ? 200 : 503).json({
+      success: delivered,
+      message: delivered
+        ? "Test notification delivered successfully"
+        : response.error || "Notification could not be delivered to any registered device",
       details: {
         totalTokens: uniqueTokens.length,
         successCount: response.successCount,

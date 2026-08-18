@@ -9,6 +9,18 @@ import AppSettings from '../../../models/AppSettings';
 import { getRoadDistances } from '../../../services/mapService';
 import Seller from '../../../models/Seller';
 
+const cartProductPopulate = {
+    path: 'product',
+    select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations',
+    populate: {
+        path: 'seller',
+        select: 'storeName'
+    }
+};
+
+const getSellerId = (seller: any): string =>
+    seller?._id?.toString() || seller?.toString() || '';
+
 // Helper to calculate item price matching frontend logic
 const calculateItemPrice = (product: any, variationSelector: any) => {
     let variation = null;
@@ -61,7 +73,7 @@ const calculateCartTotal = async (cartId: any, nearbySellerIds: mongoose.Types.O
         if (product && product.status === 'Active' && product.publish) {
             // Check if seller is in range (if nearbySellerIds provided)
             const isAvailable = nearbySellerIds.length > 0
-                ? nearbySellerIds.some(id => id.toString() === product.seller?.toString())
+                ? nearbySellerIds.some(id => id.toString() === getSellerId(product.seller))
                 : true;
             if (isAvailable) {
                 const price = calculateItemPrice(product, item.variation);
@@ -98,7 +110,7 @@ const calculateDeliveryStuff = async (total: number, items: any[], userLat: numb
                     const sellerIds = new Set<string>();
                     items.forEach((item: any) => {
                         if (item.product?.seller) {
-                            sellerIds.add(item.product.seller.toString());
+                            sellerIds.add(getSellerId(item.product.seller));
                         }
                     });
 
@@ -164,10 +176,7 @@ export const getCart = async (req: Request, res: Response) => {
 
         let cart = await Cart.findOne({ customer: userId }).populate({
             path: 'items',
-            populate: {
-                path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations'
-            }
+            populate: cartProductPopulate
         });
 
         if (!cart) {
@@ -182,7 +191,7 @@ export const getCart = async (req: Request, res: Response) => {
             const product = item.product;
             if (product && product.status === 'Active' && product.publish) {
                 const isAvailable = hasLocation && nearbySellerIds.length > 0
-                    ? nearbySellerIds.some(id => id.toString() === product.seller?.toString())
+                    ? nearbySellerIds.some(id => id.toString() === getSellerId(product.seller))
                     : true;
 
                 const itemObj = typeof item.toObject === 'function' ? item.toObject() : { ...item };
@@ -250,7 +259,8 @@ export const addToCart = async (req: Request, res: Response) => {
         }
 
         // Verify product exists and is available at location
-        const product = await Product.findOne({ _id: productId, status: 'Active', publish: true }).populate('seller');
+        const product = await Product.findOne({ _id: productId, status: 'Active', publish: true })
+            .populate('seller', 'storeName isShopOpen');
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found or unavailable' });
         }
@@ -278,6 +288,26 @@ export const addToCart = async (req: Request, res: Response) => {
         let cart = await Cart.findOne({ customer: userId });
         if (!cart) {
             cart = await Cart.create({ customer: userId, items: [], total: 0 });
+        }
+
+        // A cart can contain products from only one seller. Keep the existing
+        // cart unchanged until the customer explicitly clears it.
+        const incomingSellerId = getSellerId(product.seller);
+        const existingCartItems = await CartItem.find({ cart: cart._id })
+            .populate('product', 'seller');
+        const hasDifferentSeller = existingCartItems.some((item: any) => {
+            const existingSeller = item.product?.seller;
+            const existingSellerId = existingSeller?._id?.toString()
+                || existingSeller?.toString();
+            return existingSellerId && existingSellerId !== incomingSellerId;
+        });
+
+        if (hasDifferentSeller) {
+            return res.status(409).json({
+                success: false,
+                code: 'CART_SELLER_CONFLICT',
+                message: 'Your cart contains items from another seller. Clear the cart before adding this item.'
+            });
         }
 
         // Check if item already exists in cart
@@ -309,15 +339,12 @@ export const addToCart = async (req: Request, res: Response) => {
         // Return updated cart with filtering
         const updatedCart = await Cart.findById(cart._id).populate({
             path: 'items',
-            populate: {
-                path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations'
-            }
+            populate: cartProductPopulate
         });
 
         const filteredItems = (updatedCart?.items as any[] || []).filter(item => {
             const prod = item.product;
-            return prod && nearbySellerIds.some(id => id.toString() === prod.seller.toString());
+            return prod && nearbySellerIds.some(id => id.toString() === getSellerId(prod.seller));
         });
 
         // Calculate fees
@@ -379,7 +406,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
 
         // Verify item is still available at location
         const product = cartItem.product as any;
-        const isAvailable = product && nearbySellerIds.some(id => id.toString() === product.seller.toString());
+        const isAvailable = product && nearbySellerIds.some(id => id.toString() === getSellerId(product.seller));
 
         if (!isAvailable) {
             return res.status(403).json({
@@ -396,15 +423,12 @@ export const updateCartItem = async (req: Request, res: Response) => {
 
         const updatedCart = await Cart.findById(cart._id).populate({
             path: 'items',
-            populate: {
-                path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations'
-            }
+            populate: cartProductPopulate
         });
 
         const filteredItems = (updatedCart?.items as any[] || []).filter(item => {
             const prod = item.product;
-            return prod && nearbySellerIds.some(id => id.toString() === prod.seller.toString());
+            return prod && nearbySellerIds.some(id => id.toString() === getSellerId(prod.seller));
         });
 
         // Calculate fees
@@ -461,16 +485,13 @@ export const removeFromCart = async (req: Request, res: Response) => {
 
         const updatedCart = await Cart.findById(cart._id).populate({
             path: 'items',
-            populate: {
-                path: 'product',
-                select: 'productName price mainImage stock pack mrp category seller status publish discPrice variations'
-            }
+            populate: cartProductPopulate
         });
 
         const filteredItems = (updatedCart?.items as any[] || []).filter(item => {
             const prod = item.product;
             if (nearbySellerIds.length > 0) {
-                return prod && nearbySellerIds.some(id => id.toString() === prod.seller.toString());
+                return prod && nearbySellerIds.some(id => id.toString() === getSellerId(prod.seller));
             }
             return true; // If no location provided for removal, just return all (though getCart will filter)
         });

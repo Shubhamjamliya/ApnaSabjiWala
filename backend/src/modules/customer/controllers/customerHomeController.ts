@@ -14,6 +14,9 @@ import AppSettings from "../../../models/AppSettings";
 import mongoose from "mongoose";
 import { findSellersWithinRange } from "../../../utils/locationHelper";
 
+const getSellerId = (seller: any): string =>
+  seller?._id?.toString() || seller?.toString() || "";
+
 // Helper function to fetch data for a home section based on its configuration
 async function fetchSectionData(
   section: any,
@@ -34,11 +37,12 @@ async function fetchSectionData(
         ...sellerFilter,
       })
         .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller variations")
+        .populate("seller", "storeName")
         .lean();
 
       // Filter out products not in seller range
       const validManualProducts = hasLocation
-        ? manualProducts.filter((p: any) => p.seller && nearbySellerIds?.some(id => id.toString() === p.seller.toString()))
+        ? manualProducts.filter((p: any) => p.seller && nearbySellerIds?.some(id => id.toString() === getSellerId(p.seller)))
         : manualProducts;
 
       // Sort according to the order in the products array
@@ -115,6 +119,7 @@ async function fetchSectionData(
         .sort({ createdAt: -1 })
         .limit(limit || 8)
         .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller variations")
+        .populate("seller", "storeName")
         .lean();
 
       return products.map((p: any) => ({
@@ -345,6 +350,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
     })
       .limit(12)
       .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category variations")
+      .populate("seller", "storeName")
       .lean();
 
     const formattedBestsellers = bestsellers.map((p: any) => ({
@@ -361,6 +367,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
     const allProductsQuery = await Product.find(baseProductQuery)
       .limit(60) // Limit to 60 to keep response size reasonable
       .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category variations")
+      .populate("seller", "storeName")
       .lean();
 
     const formattedAllProducts = allProductsQuery.map((p: any) => ({
@@ -400,6 +407,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
       .populate({
         path: "product",
         select: "productName mainImage price compareAtPrice discount rating reviewsCount pack seller category variations",
+        populate: { path: "seller", select: "storeName" },
       })
       .limit(12)
       .lean();
@@ -408,7 +416,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
 
     let formattedLowestPrices = lpDocs.map((item: any) => {
       const p = item.product;
-      if (!p || (hasLocation && (!p.seller || !nearbySellerIds.some(id => id.toString() === p.seller.toString())))) return null;
+      if (!p || (hasLocation && (!p.seller || !nearbySellerIds.some(id => id.toString() === getSellerId(p.seller))))) return null;
       return {
         ...p,
         id: p._id.toString(),
@@ -437,6 +445,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
         .sort({ discount: -1 })
         .limit(12)
         .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category variations")
+        .populate("seller", "storeName")
         .lean();
 
       formattedLowestPrices = lowestPrices.map((p: any) => ({
@@ -457,6 +466,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
     })
       .limit(12)
       .select("productName mainImage price compareAtPrice discount rating reviewsCount pack seller category variations")
+      .populate("seller", "storeName")
       .lean();
 
     const formattedTrending = trending.map((p: any) => ({
@@ -572,7 +582,8 @@ export const getHomeContent = async (req: Request, res: Response) => {
         .populate("productCategoryId", "name icon image color slug")
         .populate({
           path: "featuredProducts",
-          select: "productName mainImage price mrp discount rating reviewsCount pack seller category variations",
+          select: "productName mainImage price mrp discount rating reviewsCount pack seller category variations status publish",
+          populate: { path: "seller", select: "storeName" },
         })
         .sort({ order: 1 })
         .lean();
@@ -591,7 +602,8 @@ export const getHomeContent = async (req: Request, res: Response) => {
         .populate("productCategoryId", "name icon image color slug")
         .populate({
           path: "featuredProducts",
-          select: "productName mainImage price mrp discount rating reviewsCount pack seller category variations",
+          select: "productName mainImage price mrp discount rating reviewsCount pack seller category variations status publish",
+          populate: { path: "seller", select: "storeName" },
         })
         .sort({ order: 1 })
         .lean();
@@ -609,7 +621,7 @@ export const getHomeContent = async (req: Request, res: Response) => {
         })),
         featuredProducts: (dbPromoStrip.featuredProducts || [])
           .filter((p: any) => p && p.status === "Active" && p.publish)
-          .filter((p: any) => !hasLocation || (p.seller && nearbySellerIds.some(id => id.toString() === p.seller.toString())))
+          .filter((p: any) => !hasLocation || (p.seller && nearbySellerIds.some(id => id.toString() === getSellerId(p.seller))))
           .map((p: any) => ({
             ...p,
             id: p._id.toString(),

@@ -8,6 +8,7 @@ import { apiCache } from "../../../utils/apiCache";
 import { useLocation } from "../../../hooks/useLocation";
 import { calculateProductPrice } from "../../../utils/priceUtils";
 import { useThemeContext } from "../../../context/ThemeContext";
+import { getProductStoreName } from "../../../utils/productSeller";
 
 interface PromoCard {
   id: string;
@@ -199,6 +200,8 @@ export default function PromoStrip({ activeTab = "all", data: initialData }: Pro
             originalPrice: isNaN(originalPrice) ? 999 : originalPrice,
             discountedPrice: isNaN(discountedPrice) ? 499 : discountedPrice,
             imageUrl: imageUrl,
+            seller: product?.seller,
+            storeName: getProductStoreName(product),
           };
         });
       }
@@ -251,6 +254,8 @@ export default function PromoStrip({ activeTab = "all", data: initialData }: Pro
           originalPrice: isNaN(originalPrice) ? 999 : originalPrice,
           discountedPrice: isNaN(discountedPrice) ? 499 : discountedPrice,
           imageUrl: imageUrl,
+          seller: p.seller,
+          storeName: getProductStoreName(p),
         };
       });
     }
@@ -840,6 +845,14 @@ export default function PromoStrip({ activeTab = "all", data: initialData }: Pro
                 title={displayProduct.productName || displayProduct.name}>
                 {displayProduct.productName || displayProduct.name}
               </div>
+
+              {getProductStoreName(displayProduct) && (
+                <div
+                  className="text-neutral-600 text-[7px] text-center mb-0.5 truncate w-full"
+                  title={getProductStoreName(displayProduct)}>
+                  Sold by {getProductStoreName(displayProduct)}
+                </div>
+              )}
 
               {/* Product Thumbnail - Bottom Center, sized to container */}
               <div

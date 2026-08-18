@@ -99,11 +99,38 @@ async function getFCMToken(): Promise<string | null> {
  */
 export async function registerFCMToken(forceUpdate: boolean = false): Promise<string | null> {
     try {
-        // Check if already registered
+        const authToken = getAuthToken();
+        if (!authToken) {
+            console.warn('⚠️ User not authenticated, skipping token registration');
+            return null;
+        }
+
+        const saveTokenToBackend = async (token: string): Promise<boolean> => {
+            const response = await fetch(`${API_BASE_URL}/fcm-tokens/save`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ token, platform: 'web' })
+            });
+
+            if (response.ok) return true;
+
+            const error = await response.json().catch(() => ({}));
+            console.error('❌ Failed to register token with backend:', error);
+            return false;
+        };
+
+        // localStorage is shared by every role in this browser. Re-save an
+        // existing token so it belongs to the account that is logged in now.
         const savedToken = localStorage.getItem('fcm_token_web');
         if (savedToken && !forceUpdate) {
-            console.log('ℹ️ FCM token already registered');
-            return savedToken;
+            const synced = await saveTokenToBackend(savedToken);
+            if (synced) {
+                console.log('ℹ️ Existing FCM token synced with current account');
+                return savedToken;
+            }
         }
 
         // Request permission
@@ -120,32 +147,11 @@ export async function registerFCMToken(forceUpdate: boolean = false): Promise<st
             return null;
         }
 
-        // Save to backend
-        const authToken = getAuthToken();
-        if (!authToken) {
-            console.warn('⚠️ User not authenticated, skipping token registration');
-            return null;
-        }
-
-        const response = await fetch(`${API_BASE_URL}/fcm-tokens/save`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify({
-                token: token,
-                platform: 'web'
-            })
-        });
-
-        if (response.ok) {
+        if (await saveTokenToBackend(token)) {
             localStorage.setItem('fcm_token_web', token);
             console.log('✅ FCM token registered with backend');
             return token;
         } else {
-            const error = await response.json();
-            console.error('❌ Failed to register token with backend:', error);
             return null;
         }
     } catch (error: any) {

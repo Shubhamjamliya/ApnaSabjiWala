@@ -92,9 +92,14 @@ export const sendNotification = async (
       payload
     );
 
-    if (pushResponse) {
+    // Failure results are still objects, so only record a real delivery.
+    if (pushResponse.successCount > 0) {
       notification.sentAt = new Date();
       await notification.save();
+    } else {
+      console.warn(
+        `Push notification ${notification._id} was saved but not delivered: ${pushResponse.error || "all device deliveries failed"}`,
+      );
     }
 
     return notification;

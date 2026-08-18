@@ -9,6 +9,10 @@ export interface CartItem {
         mainImage: string;
         stock: number;
         pack?: string;
+        seller?: string | {
+            _id?: string;
+            storeName?: string;
+        };
     };
     quantity: number;
     variation?: string;
