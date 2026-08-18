@@ -141,6 +141,7 @@ const AdminCancelledOrders = lazy(() => import("./modules/admin/pages/AdminCance
 const AdminPolicy = lazy(() => import("./modules/admin/pages/AdminPolicy"));
 const AdminTerms = lazy(() => import("./modules/admin/pages/AdminTerms"));
 const AdminSupport = lazy(() => import("./modules/admin/pages/AdminSupport"));
+const AdminNeedHelpSettings = lazy(() => import("./modules/admin/pages/AdminNeedHelpSettings"));
 const AdminOrders = lazy(() => import("./modules/admin/pages/AdminOrders"));
 const AdminOrderDetail = lazy(() => import("./modules/admin/pages/AdminOrderDetail"));
 const AdminManageCustomer = lazy(() => import("./modules/admin/pages/AdminManageCustomer"));
@@ -370,6 +371,7 @@ function App() {
                                         <Route path="policy" element={<AdminPolicy />} />
                                         <Route path="terms" element={<AdminTerms />} />
                                         <Route path="support" element={<AdminSupport />} />
+                                        <Route path="need-help-setting" element={<AdminNeedHelpSettings />} />
                                         <Route path="users" element={<AdminUsers />} />
                                         <Route path="home-section" element={<AdminHomeSection />} />
                                         <Route path="bestseller-cards" element={<AdminBestsellerCards />} />

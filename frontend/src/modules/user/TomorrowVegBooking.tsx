@@ -356,7 +356,7 @@ export default function TomorrowVegBooking() {
 
       {/* Floating Checkout Bar */}
       {cart.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
+        <div className="app-safe-bottom-padded fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
           <div className="flex items-center justify-between mb-3">
             <div>
               <span className="text-xs text-gray-500 uppercase font-bold tracking-wider">Total</span>

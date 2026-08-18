@@ -376,6 +376,14 @@ export const updateProduct = asyncHandler(
       });
     }
 
+    // Keep the persisted stock values before replacing variations so product-edit
+    // updates can trigger the same low-stock alerts as Stock Management updates.
+    const previousVariations = (product.variations || []).map((variation: any) => ({
+      id: variation._id?.toString(),
+      stock: Number(variation.stock) || 0,
+      name: variation.name || variation.value || variation.title,
+    }));
+
     // Apply updates
     Object.assign(product, updateData);
 
@@ -385,6 +393,32 @@ export const updateProduct = asyncHandler(
     }
 
     await product.save();
+
+    if (updateData.variations) {
+      await Promise.allSettled(
+        (product.variations || []).map((variation: any, index: number) => {
+          const previousVariation = variation._id
+            ? previousVariations.find(
+              (item: { id?: string; stock: number; name?: string }) =>
+                item.id === variation._id.toString(),
+            )
+            : previousVariations[index];
+
+          if (!previousVariation) return Promise.resolve(null);
+
+          return sendLowStockNotification({
+            sellerId: product.seller.toString(),
+            productId: product._id.toString(),
+            productName: product.productName,
+            variationId: variation._id?.toString(),
+            variationName:
+              variation.name || variation.value || variation.title || previousVariation.name,
+            previousStock: previousVariation.stock,
+            currentStock: Number(variation.stock) || 0,
+          });
+        }),
+      );
+    }
 
     // Re-populate for response
     const populatedProduct = await Product.findById(product._id)

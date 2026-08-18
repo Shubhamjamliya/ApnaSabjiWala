@@ -78,6 +78,7 @@ router.get("/app-settings", async (_req, res) => {
         appPolicies: settings.appPolicies,
         appTerms: settings.appTerms,
         appSupport: settings.appSupport,
+        needHelpSettings: settings.needHelpSettings,
       }
     });
   } catch (error) {

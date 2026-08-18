@@ -94,6 +94,13 @@ export interface IAppSettings extends Document {
     delivery?: string;
   };
 
+  // Customer FAQ contact actions
+  needHelpSettings?: {
+    mobileNumber: string;
+    email: string;
+    whatsappNumber: string;
+  };
+
   // FAQ
   faq?: Array<{
     question: string;
@@ -343,6 +350,29 @@ const AppSettingsSchema = new Schema<IAppSettings>(
       customer: { type: String, trim: true },
       seller: { type: String, trim: true },
       delivery: { type: String, trim: true }
+    },
+
+    // Customer FAQ contact actions
+    needHelpSettings: {
+      mobileNumber: {
+        type: String,
+        trim: true,
+        maxlength: [16, "Mobile number is too long"],
+        match: [/^\+?[1-9]\d{6,14}$/, "Enter a valid mobile number with 7 to 15 digits"],
+      },
+      email: {
+        type: String,
+        trim: true,
+        lowercase: true,
+        maxlength: [254, "Email address is too long"],
+        match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Enter a valid email address"],
+      },
+      whatsappNumber: {
+        type: String,
+        trim: true,
+        maxlength: [16, "WhatsApp number is too long"],
+        match: [/^\+[1-9]\d{7,14}$/, "Enter a valid WhatsApp number including + and country code"],
+      },
     },
 
     // FAQ

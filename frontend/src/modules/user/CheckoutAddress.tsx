@@ -554,7 +554,7 @@ export default function CheckoutAddress() {
       </div>
 
       {/* Save Address Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 z-[60] shadow-lg">
+      <div className="app-safe-bottom fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 z-[60] shadow-lg">
         <button
           onClick={handleSaveAddress}
           disabled={!isFormValid || isSaving}

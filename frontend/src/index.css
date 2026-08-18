@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Native wrappers can override this when their WebView does not expose env(). */
+  --native-safe-area-bottom: 0px;
+}
+
 /* Prevent font flash for Rubik Doodle Shadow */
 @font-face {
   font-family: 'Rubik Doodle Shadow';
@@ -14,7 +19,7 @@
     margin: 0;
     padding: 0;
     padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--native-safe-area-bottom));
     width: 100%;
     overflow-x: hidden;
   }
@@ -38,6 +43,14 @@
 }
 
 @layer utilities {
+  .app-safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--native-safe-area-bottom));
+  }
+
+  .app-safe-bottom-padded {
+    padding-bottom: calc(1rem + max(env(safe-area-inset-bottom, 0px), var(--native-safe-area-bottom)));
+  }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;

@@ -58,6 +58,76 @@ export const updateAppSettings = asyncHandler(
   }
 );
 
+const normalizePhoneNumber = (value: unknown): string =>
+  typeof value === "string" ? value.trim().replace(/[\s().-]/g, "") : "";
+
+/**
+ * Update the contact actions shown in the customer FAQ "Need help" section.
+ */
+export const updateNeedHelpSettings = asyncHandler(
+  async (req: Request, res: Response) => {
+    const input = req.body?.needHelpSettings;
+
+    if (!input || typeof input !== "object" || Array.isArray(input)) {
+      return res.status(400).json({
+        success: false,
+        message: "Need help settings are required",
+      });
+    }
+
+    const mobileNumber = normalizePhoneNumber(input.mobileNumber);
+    const whatsappNumber = normalizePhoneNumber(input.whatsappNumber);
+    const email = typeof input.email === "string" ? input.email.trim().toLowerCase() : "";
+    const phonePattern = /^\+?[1-9]\d{6,14}$/;
+    const whatsappPattern = /^\+[1-9]\d{7,14}$/;
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!phonePattern.test(mobileNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid mobile number with 7 to 15 digits, optionally starting with +",
+      });
+    }
+
+    if (!emailPattern.test(email) || email.length > 254) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid email address",
+      });
+    }
+
+    if (!whatsappPattern.test(whatsappNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid WhatsApp number including + and the country code",
+      });
+    }
+
+    const needHelpSettings = { mobileNumber, email, whatsappNumber };
+    const settings = await AppSettings.findOneAndUpdate(
+      {},
+      {
+        $set: {
+          needHelpSettings,
+          updatedBy: req.user?.userId,
+        },
+        $setOnInsert: {
+          appName: "BarodaMart",
+          contactEmail: "contact@barodamart.com",
+          contactPhone: "1234567890",
+        },
+      },
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Need help settings updated successfully",
+      data: settings.needHelpSettings,
+    });
+  }
+);
+
 /**
  * Get payment methods
  */

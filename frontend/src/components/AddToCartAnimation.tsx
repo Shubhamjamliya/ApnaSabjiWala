@@ -325,7 +325,9 @@ export default function AddToCartAnimation({
               mass: 0.8,
             }}
             className="fixed left-0 right-0 z-40 flex justify-center px-4"
-            style={{ bottom: `${bottomOffset}px` }}
+            style={{
+              bottom: `calc(${bottomOffset}px + max(env(safe-area-inset-bottom, 0px), var(--native-safe-area-bottom)))`,
+            }}
           >
             <Link
               ref={linkRef}

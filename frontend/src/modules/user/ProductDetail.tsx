@@ -1226,7 +1226,7 @@ export default function ProductDetail() {
       </div>
 
       {/* Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 shadow-lg">
+      <div className="app-safe-bottom fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 shadow-lg">
         <div className="px-4 py-2.5 flex items-center justify-between">
           {/* Left side - Product details */}
           <div className="flex-1">

@@ -1,5 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import api from '../../services/api/config';
+
+interface NeedHelpSettings {
+  mobileNumber: string;
+  email: string;
+  whatsappNumber: string;
+}
 
 interface FAQItem {
   id: string;
@@ -73,6 +80,26 @@ const faqData: FAQItem[] = [
 export default function FAQ() {
   const navigate = useNavigate();
   const [openItems, setOpenItems] = useState<Set<string>>(new Set());
+  const [needHelpSettings, setNeedHelpSettings] = useState<NeedHelpSettings>({
+    mobileNumber: '',
+    email: 'help@barodamart.com',
+    whatsappNumber: '',
+  });
+
+  useEffect(() => {
+    const loadNeedHelpSettings = async () => {
+      try {
+        const response = await api.get<{ success: boolean; data: { needHelpSettings?: NeedHelpSettings } }>('/app-settings');
+        if (response.data.success && response.data.data.needHelpSettings) {
+          setNeedHelpSettings(response.data.data.needHelpSettings);
+        }
+      } catch (error) {
+        console.error('Failed to load need help settings:', error);
+      }
+    };
+
+    void loadNeedHelpSettings();
+  }, []);
 
   const toggleItem = (id: string) => {
     const newOpenItems = new Set(openItems);
@@ -210,8 +237,8 @@ export default function FAQ() {
                 Our customer support team is here to help you 24/7
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <a
-                  href="mailto:help@barodamart.com"
+                {needHelpSettings.email && <a
+                  href={`mailto:${needHelpSettings.email}`}
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm"
                 >
                   <svg
@@ -236,9 +263,9 @@ export default function FAQ() {
                     />
                   </svg>
                   Email Us
-                </a>
-                <a
-                  href="tel:+91-XXXXX-XXXXX"
+                </a>}
+                {needHelpSettings.mobileNumber && <a
+                  href={`tel:${needHelpSettings.mobileNumber}`}
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-green-600 border-2 border-green-600 rounded-lg font-semibold hover:bg-green-50 transition-colors text-sm"
                 >
                   <svg
@@ -256,7 +283,20 @@ export default function FAQ() {
                     />
                   </svg>
                   Call Us
-                </a>
+                </a>}
+                {needHelpSettings.whatsappNumber && <a
+                  href={`https://wa.me/${needHelpSettings.whatsappNumber.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm"
+                  aria-label="Chat with support on WhatsApp"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M9 8.5c.5 2.5 2 4 4.5 5l1-1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  WhatsApp Us
+                </a>}
               </div>
             </div>
           </div>

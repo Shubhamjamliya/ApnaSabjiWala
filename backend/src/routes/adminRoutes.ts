@@ -201,6 +201,10 @@ router.patch(
 // ==================== Settings Routes ====================
 router.get("/settings", settingsController.getAppSettings);
 router.put("/settings", settingsController.updateAppSettings);
+router.put(
+  "/settings/need-help",
+  settingsController.updateNeedHelpSettings
+);
 router.get("/settings/payment-methods", settingsController.getPaymentMethods);
 router.put(
   "/settings/payment-methods",

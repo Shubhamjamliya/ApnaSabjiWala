@@ -105,6 +105,7 @@ export interface AppSettings {
     seller?: string;
     delivery?: string;
   };
+  needHelpSettings?: NeedHelpSettings;
   faq?: Array<{
     question: string;
     answer: string;
@@ -125,6 +126,12 @@ export interface AppSettings {
   updatedBy?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface NeedHelpSettings {
+  mobileNumber: string;
+  email: string;
+  whatsappNumber: string;
 }
 
 export interface UpdateAppSettingsData extends Partial<AppSettings> { }
@@ -154,6 +161,16 @@ export const updateAppSettings = async (
   const response = await api.put<ApiResponse<AppSettings>>(
     "/admin/settings",
     data
+  );
+  return response.data;
+};
+
+export const updateNeedHelpSettings = async (
+  needHelpSettings: NeedHelpSettings
+): Promise<ApiResponse<NeedHelpSettings>> => {
+  const response = await api.put<ApiResponse<NeedHelpSettings>>(
+    "/admin/settings/need-help",
+    { needHelpSettings }
   );
   return response.data;
 };
