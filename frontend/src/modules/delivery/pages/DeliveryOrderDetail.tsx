@@ -246,11 +246,18 @@ export default function DeliveryOrderDetail() {
             setOtpVerifying(true);
             const result = await verifyDeliveryOtp(id, otpValue);
             
-            // Check if order is already paid online or confirmed
-            const isAlreadyPaid = result?.data?.isPaid || order?.paymentStatus === 'Paid' || (order?.paymentMethod !== 'COD' && order?.paymentStatus === 'Paid');
+            // Mark deliveryOtpVerified on local order state immediately
+            setOrder((prev: any) => prev ? {
+                ...prev,
+                deliveryOtpVerified: true,
+                paymentStatus: result?.data?.paymentStatus || prev.paymentStatus
+            } : prev);
+
+            const isAlreadyPaid = result?.data?.isPaid || result?.data?.paymentStatus === 'Paid' || order?.paymentStatus === 'Paid' || (order?.paymentMethod !== 'COD');
             
             if (isAlreadyPaid) {
                 setPaymentStatusConfirmed(true);
+                setPaymentOption(null);
             } else {
                 setPaymentStatusConfirmed(false);
                 setPaymentOption(null);
@@ -1132,47 +1139,74 @@ export default function DeliveryOrderDetail() {
             {order.status === 'Out for Delivery' && (
                 <div className="fixed bottom-24 left-6 right-6 z-30">
                     <div className="bg-white rounded-2xl p-4 shadow-2xl border border-neutral-200">
-                        <p className="text-sm font-semibold text-neutral-900 mb-3">Customer Delivery OTP</p>
+                        {order.deliveryOtpVerified ? (
+                            <div>
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                                            <Icons.CheckCircle size={16} />
+                                        </div>
+                                        <span className="text-sm font-bold text-green-700">Customer OTP Verified</span>
+                                    </div>
+                                    <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                                        order.paymentStatus === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                                    }`}>
+                                        {order.paymentStatus === 'Paid' ? 'Paid' : 'Payment Pending'}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setPaymentModalOpen(true)}
+                                    className="w-full py-3.5 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Icons.CheckCircle size={18} />
+                                    {order.paymentStatus === 'Paid' ? 'Complete Delivery' : 'Collect Payment / Complete Order'}
+                                </button>
+                            </div>
+                        ) : (
+                            <div>
+                                <p className="text-sm font-semibold text-neutral-900 mb-3">Customer Delivery OTP</p>
 
-                        {/* Distance indicator */}
-                        {customerProximity && (
-                            <p className={`text-xs mb-2 font-medium ${customerProximity.withinRange ? 'text-green-600' :
-                                    customerProximity.distance < 1000 ? 'text-yellow-600' : 'text-red-600'
-                                }`}>
-                                {customerProximity.distance < 1000
-                                    ? `${customerProximity.distance}m from customer`
-                                    : `${(customerProximity.distance / 1000).toFixed(1)}km from customer`}
-                            </p>
+                                {/* Distance indicator */}
+                                {customerProximity && (
+                                    <p className={`text-xs mb-2 font-medium ${customerProximity.withinRange ? 'text-green-600' :
+                                            customerProximity.distance < 1000 ? 'text-yellow-600' : 'text-red-600'
+                                        }`}>
+                                        {customerProximity.distance < 1000
+                                            ? `${customerProximity.distance}m from customer`
+                                            : `${(customerProximity.distance / 1000).toFixed(1)}km from customer`}
+                                    </p>
+                                )}
+
+                                {/* 4-digit OTP Input */}
+                                <input
+                                    ref={otpInputRef}
+                                    type="text"
+                                    value={otpValue}
+                                    onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                                    placeholder="Enter 4-digit OTP"
+                                    disabled={otpVerifying || (!SHOW_DEV_MODE && !getOtpEnabled)}
+                                    inputMode="numeric"
+                                    autoComplete="one-time-code"
+                                    aria-label="Enter customer delivery OTP"
+                                    className={`w-full px-4 py-3 border rounded-xl text-lg font-semibold text-center mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 ${(SHOW_DEV_MODE || getOtpEnabled) ? 'border-neutral-300 bg-white' : 'border-neutral-200 bg-neutral-100 text-neutral-400'
+                                        }`}
+                                    maxLength={4}
+                                />
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={handleVerifyOtp}
+                                        className={`flex-1 py-3 rounded-xl font-semibold transition-all ${!otpVerifying && otpValue.length === 4 && (SHOW_DEV_MODE || getOtpEnabled)
+                                                ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]'
+                                                : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                                            }`}
+                                        disabled={otpVerifying || otpValue.length !== 4 || (!SHOW_DEV_MODE && !getOtpEnabled)}
+                                    >
+                                        {otpVerifying ? 'Verifying...' : 'Verify OTP'}
+                                    </button>
+                                </div>
+                            </div>
                         )}
-
-                        {/* 4-digit OTP Input - Always visible but disabled until OTP is sent */}
-                        <input
-                            ref={otpInputRef}
-                            type="text"
-                            value={otpValue}
-                            onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                            placeholder="Enter 4-digit OTP"
-                            disabled={otpVerifying || (!SHOW_DEV_MODE && !getOtpEnabled)}
-                            inputMode="numeric"
-                            autoComplete="one-time-code"
-                            aria-label="Enter customer delivery OTP"
-                            className={`w-full px-4 py-3 border rounded-xl text-lg font-semibold text-center mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 ${(SHOW_DEV_MODE || getOtpEnabled) ? 'border-neutral-300 bg-white' : 'border-neutral-200 bg-neutral-100 text-neutral-400'
-                                }`}
-                            maxLength={4}
-                        />
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={handleVerifyOtp}
-                                className={`flex-1 py-3 rounded-xl font-semibold transition-all ${!otpVerifying && otpValue.length === 4 && (SHOW_DEV_MODE || getOtpEnabled)
-                                        ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]'
-                                        : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
-                                    }`}
-                                disabled={otpVerifying || otpValue.length !== 4 || (!SHOW_DEV_MODE && !getOtpEnabled)}
-                            >
-                                {otpVerifying ? 'Verifying...' : 'Verify OTP'}
-                            </button>
-                        </div>
                     </div>
                 </div>
             )}
@@ -1225,7 +1259,7 @@ export default function DeliveryOrderDetail() {
                         </div>
 
                         {/* CASE 1: Order is Already Paid Online */}
-                        {(order?.paymentMethod !== 'COD' || order?.paymentStatus === 'Paid' || paymentStatusConfirmed && !paymentOption) && (
+                        {(order?.paymentMethod !== 'COD' || order?.paymentStatus === 'Paid' || (paymentStatusConfirmed && !paymentOption)) && (
                             <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-5 mb-6 text-center">
                                 <div className="w-14 h-14 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-md shadow-emerald-200">
                                     <Icons.CheckCircle size={28} />

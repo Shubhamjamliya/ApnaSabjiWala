@@ -221,6 +221,8 @@ export const getOrderDetails = asyncHandler(async (req: Request, res: Response) 
         address: `${order.deliveryAddress?.address || ''}, ${order.deliveryAddress?.city || ''}`,
         deliveryAddress: order.deliveryAddress,
         status: order.status,
+        paymentStatus: order.paymentStatus,
+        deliveryOtpVerified: order.deliveryOtpVerified,
         items: mapOrderItems(order.items), // Real populated items
         sellerNames: [...new Set(order.items.map((item: any) => item.seller?.storeName || "Unknown Seller"))].join(", "),
         totalAmount: order.total,
