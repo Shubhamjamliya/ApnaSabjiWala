@@ -461,10 +461,14 @@ export default function GoogleMapsTracking({
     const [initialCenter] = useState(center);
 
     // Animation Logic
-    const activeLocation = isSimulating ? simulatedLocation : deliveryLocation;
+    const activeLocation = normalizeLocation(isSimulating ? simulatedLocation : deliveryLocation);
     
     useEffect(() => {
-        if (!activeLocation) return;
+        if (!activeLocation) {
+            setAnimatedDeliveryLocation(undefined);
+            lastDeliveryLocationRef.current = undefined;
+            return;
+        }
 
         // If no previous location, snap to current (initial load)
         if (!lastDeliveryLocationRef.current) {
@@ -479,7 +483,7 @@ export default function GoogleMapsTracking({
             return;
         }
 
-        const startLocation = animatedDeliveryLocation || lastDeliveryLocationRef.current;
+        const startLocation = normalizeLocation(animatedDeliveryLocation) || lastDeliveryLocationRef.current;
         const targetLocation = activeLocation;
 
         // Calculate heading for rotation
@@ -780,21 +784,27 @@ export default function GoogleMapsTracking({
                 ))}
 
                 {/* Delivery Marker */}
-                {animatedDeliveryLocation && (
+                {(normalizeLocation(animatedDeliveryLocation) || activeLocation) && (
                     <OverlayView
-                        position={animatedDeliveryLocation}
+                        position={normalizeLocation(animatedDeliveryLocation) || activeLocation!}
                         mapPaneName="overlayMouseTarget"
                     >
-                        <img
-                            src="/assets/delivery.png"
-                            alt="Delivery Partner"
-                            style={{
-                                width: '46px',
-                                height: '46px',
-                                transform: `translate(-50%, -100%) rotate(${heading}deg)`,
-                                transformOrigin: '50% 78%'
-                            }}
-                        />
+                        <div style={{ position: 'relative', zIndex: 100, transform: 'translate(-50%, -100%)' }}>
+                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow whitespace-nowrap pointer-events-none">
+                                Delivery Partner
+                            </div>
+                            <img
+                                src="/assets/delivery.png"
+                                alt="Delivery Partner"
+                                style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    transform: `rotate(${heading}deg)`,
+                                    transformOrigin: '50% 78%',
+                                    filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.35))'
+                                }}
+                            />
+                        </div>
                     </OverlayView>
                 )}
 

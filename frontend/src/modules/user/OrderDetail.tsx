@@ -1005,29 +1005,40 @@ export default function OrderDetail() {
       {!showConfirmation && !['Delivered', 'Cancelled', 'Returned'].includes(order?.status) && (
         <GoogleMapsTracking
           sellerLocations={sellerLocations.map(s => ({
-            lat: s.latitude,
-            lng: s.longitude,
+            lat: Number(s.latitude),
+            lng: Number(s.longitude),
             name: s.storeName
           }))}
           customerLocation={customerLocation}
           deliveryLocation={deliveryLocation || undefined}
           isTracking={isConnected && !!deliveryLocation}
           showRoute={
-            !!deliveryLocation &&
             hasValidCustomerLocation &&
-            order?.status !== 'Delivered' &&
-            order?.status !== 'Cancelled' &&
-            order?.status !== 'Returned'
+            (!!deliveryLocation || sellerLocations.length > 0) &&
+            !['Delivered', 'Cancelled', 'Returned'].includes(order?.status)
           }
-          routeOrigin={deliveryLocation || undefined}
+          routeOrigin={
+            deliveryLocation
+              ? deliveryLocation
+              : sellerLocations.length > 0
+                ? { lat: Number(sellerLocations[0].latitude), lng: Number(sellerLocations[0].longitude) }
+                : undefined
+          }
           routeDestination={hasValidCustomerLocation ? customerLocation : undefined}
           routeWaypoints={
             order?.status === 'Picked up' || order?.status === 'Out for Delivery'
               ? []
-              : sellerLocations.map(s => ({
-                lat: s.latitude,
-                lng: s.longitude,
-              }))
+              : deliveryLocation && sellerLocations.length > 0
+                ? sellerLocations.map(s => ({
+                    lat: Number(s.latitude),
+                    lng: Number(s.longitude),
+                  }))
+                : sellerLocations.length > 1
+                  ? sellerLocations.slice(1).map(s => ({
+                      lat: Number(s.latitude),
+                      lng: Number(s.longitude),
+                    }))
+                  : []
           }
           destinationName={
             order?.status === 'Picked up' || order?.status === 'Out for Delivery'
