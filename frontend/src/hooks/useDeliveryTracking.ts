@@ -126,15 +126,18 @@ export const useDeliveryTracking = (orderId: string | undefined) => {
                 timestamp = new Date();
             }
 
+            const rawLat = update.location?.latitude;
+            const rawLng = update.location?.longitude;
+            const lat = Number(rawLat);
+            const lng = Number(rawLng);
+            const hasValidCoords = Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
+
             setTrackingData(prev => ({
                 ...prev,
-                deliveryLocation: {
-                    lat: update.location.latitude,
-                    lng: update.location.longitude,
-                },
-                eta: update.eta,
-                distance: update.distance,
-                status: update.status,
+                deliveryLocation: hasValidCoords ? { lat, lng } : prev.deliveryLocation,
+                eta: typeof update.eta === 'number' ? update.eta : prev.eta,
+                distance: typeof update.distance === 'number' ? update.distance : prev.distance,
+                status: update.status || prev.status,
                 lastUpdate: timestamp,
                 error: null,
             }))
