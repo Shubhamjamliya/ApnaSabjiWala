@@ -56,7 +56,6 @@ const CodPaymentSchema = new Schema<ICodPayment>(
     razorpayQrCodeId: {
       type: String,
       trim: true,
-      sparse: true,
     },
     razorpayQrImageUrl: {
       type: String,
@@ -65,7 +64,6 @@ const CodPaymentSchema = new Schema<ICodPayment>(
     razorpayPaymentId: {
       type: String,
       trim: true,
-      sparse: true,
     },
     status: {
       type: String,

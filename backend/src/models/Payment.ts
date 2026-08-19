@@ -104,12 +104,10 @@ const PaymentSchema = new Schema<IPayment>(
     razorpayOrderId: {
       type: String,
       trim: true,
-      sparse: true,
     },
     razorpayPaymentId: {
       type: String,
       trim: true,
-      sparse: true,
     },
     razorpaySignature: {
       type: String,
@@ -118,7 +116,6 @@ const PaymentSchema = new Schema<IPayment>(
     razorpayQrCodeId: {
       type: String,
       trim: true,
-      sparse: true,
     },
 
     // Amount

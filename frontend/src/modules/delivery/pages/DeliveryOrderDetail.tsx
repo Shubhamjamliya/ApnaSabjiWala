@@ -221,6 +221,7 @@ export default function DeliveryOrderDetail() {
     const [qrPaymentVerified, setQrPaymentVerified] = useState(false);
     const [paymentStatusConfirmed, setPaymentStatusConfirmed] = useState(false);
     const [completingDelivery, setCompletingDelivery] = useState(false);
+    const [otpErrorToast, setOtpErrorToast] = useState<string | null>(null);
     const qrPollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const stopQrPolling = useCallback(() => {
@@ -239,22 +240,23 @@ export default function DeliveryOrderDetail() {
 
     const handleVerifyOtp = async () => {
         if (!id || !otpValue) {
-            alert('Please enter 4-digit OTP');
+            setOtpErrorToast('Please enter 4-digit OTP');
             return;
         }
         try {
             setOtpVerifying(true);
+            setOtpErrorToast(null);
             const result = await verifyDeliveryOtp(id, otpValue);
             
-            // Mark deliveryOtpVerified on local order state immediately
-            setOrder((prev: any) => prev ? {
-                ...prev,
-                deliveryOtpVerified: true,
-                paymentStatus: result?.data?.paymentStatus || prev.paymentStatus
-            } : prev);
-
+            // Mark deliveryOtpVerified and update paymentStatus
             const isAlreadyPaid = result?.data?.isPaid || result?.data?.paymentStatus === 'Paid' || order?.paymentStatus === 'Paid' || (order?.paymentMethod !== 'COD');
             
+            setOrder((prev: any) => ({
+                ...prev,
+                deliveryOtpVerified: true,
+                paymentStatus: result?.data?.paymentStatus || prev?.paymentStatus || (isAlreadyPaid ? 'Paid' : 'Pending')
+            }));
+
             if (isAlreadyPaid) {
                 setPaymentStatusConfirmed(true);
                 setPaymentOption(null);
@@ -265,10 +267,15 @@ export default function DeliveryOrderDetail() {
                 setQrPaymentVerified(false);
                 setQrCodeData(null);
             }
-            
+
+            // Instantly open the next step modal without browser alert
             setPaymentModalOpen(true);
+            setOtpValue('');
         } catch (err: any) {
-            alert(err.message || 'Failed to verify OTP');
+            // Show toast message to refill OTP
+            setOtpValue('');
+            setOtpErrorToast(err.message || 'Invalid OTP. Please check and try again.');
+            otpInputRef.current?.focus();
         } finally {
             setOtpVerifying(false);
         }
@@ -1177,12 +1184,23 @@ export default function DeliveryOrderDetail() {
                                     </p>
                                 )}
 
+                                {/* Error Toast Banner */}
+                                {otpErrorToast && (
+                                    <div className="p-3 mb-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-in fade-in duration-200">
+                                        <Icons.AlertTriangle size={16} className="text-red-600 flex-shrink-0" />
+                                        <span>{otpErrorToast}</span>
+                                    </div>
+                                )}
+
                                 {/* 4-digit OTP Input */}
                                 <input
                                     ref={otpInputRef}
                                     type="text"
                                     value={otpValue}
-                                    onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                                    onChange={(e) => {
+                                        setOtpErrorToast(null);
+                                        setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 4));
+                                    }}
                                     placeholder="Enter 4-digit OTP"
                                     disabled={otpVerifying || (!SHOW_DEV_MODE && !getOtpEnabled)}
                                     inputMode="numeric"
@@ -1213,8 +1231,8 @@ export default function DeliveryOrderDetail() {
 
             {/* Payment Collection & Delivery Completion Modal */}
             {paymentModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border border-neutral-100 flex flex-col max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-x-0 top-0 bottom-16 sm:bottom-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-md sm:max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl border border-neutral-100 flex flex-col max-h-[calc(100vh-6rem)] overflow-y-auto">
                         
                         {/* Modal Header */}
                         <div className="flex justify-between items-center pb-4 border-b border-neutral-100 mb-4">
@@ -1348,16 +1366,20 @@ export default function DeliveryOrderDetail() {
                                 ) : qrCodeData ? (
                                     <div className="w-full flex flex-col items-center">
                                         {/* QR Display Card */}
-                                        <div className="bg-white p-4 rounded-3xl border-2 border-blue-500 shadow-lg text-center flex flex-col items-center mb-3">
-                                            <img
-                                                src={qrCodeData.qrImageUrl}
-                                                alt="Razorpay Dynamic UPI QR"
-                                                className="w-56 h-56 rounded-xl object-contain bg-white mb-2"
-                                            />
+                                        <div className="bg-white p-3 sm:p-4 rounded-3xl border-2 border-blue-500 shadow-lg text-center flex flex-col items-center mb-3">
+                                            {/* Cropped & Zoomed QR Frame */}
+                                            <div className="w-60 h-60 sm:w-64 sm:h-64 rounded-2xl overflow-hidden relative flex items-center justify-center bg-white border border-neutral-200 mb-2.5">
+                                                <img
+                                                    src={qrCodeData.qrImageUrl}
+                                                    alt="Razorpay Dynamic UPI QR"
+                                                    className="w-full h-full object-contain scale-[2.4] -translate-y-[3%] pointer-events-none select-none"
+                                                />
+                                            </div>
                                             <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800">
+                                                <Icons.QrCode size={14} className="text-blue-600" />
                                                 <span>Scan with any UPI App</span>
                                             </div>
-                                            <p className="text-[11px] text-neutral-500 mt-0.5">Google Pay • PhonePe • Paytm • BHIM</p>
+                                            <p className="text-[11px] text-neutral-500 mt-0.5">Google Pay • PhonePe • Paytm • BHIM • CRED</p>
                                         </div>
 
                                         {/* Polling status banner */}

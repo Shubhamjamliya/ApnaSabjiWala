@@ -3,6 +3,7 @@ import Payment from '../models/Payment';
 import CodPayment from '../models/CodPayment';
 import { getRazorpayInstance } from './paymentService';
 import mongoose from 'mongoose';
+import axios from 'axios';
 
 /**
  * Generate a dynamic Razorpay UPI QR Code for COD payment collection
@@ -43,24 +44,79 @@ export const generateCodQrCode = async (orderId: string, deliveryBoyId: string) 
     }
 
     // 3. Create dynamic single-use UPI QR code via Razorpay
-    const razorpay = getRazorpayInstance();
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!keyId || !keySecret) {
+        throw new Error('Razorpay API keys (RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET) are not configured');
+    }
+
     const expiryTimestamp = Math.floor(Date.now() / 1000) + 15 * 60; // 15 minutes validity
     const amountInPaise = Math.round(order.total * 100);
+    const authHeader = `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString('base64')}`;
 
-    const qrCode = await razorpay.qrCode.create({
-        type: 'upi_qr',
-        name: `Order #${order.orderNumber}`,
-        usage: 'single_use',
-        fixed_amount: true,
-        payment_amount: amountInPaise,
-        description: `COD Payment for Order #${order.orderNumber}`,
-        close_by: expiryTimestamp,
-        notes: {
-            orderId: order._id.toString(),
-            orderNumber: order.orderNumber,
-            deliveryBoyId,
-        },
-    });
+    let qrCode: any = null;
+
+    try {
+        const response = await axios.post(
+            'https://api.razorpay.com/v1/payments/qr_codes',
+            {
+                type: 'upi_qr',
+                name: `Order #${order.orderNumber}`,
+                usage: 'single_use',
+                fixed_amount: true,
+                payment_amount: amountInPaise,
+                description: `COD Payment for Order #${order.orderNumber}`,
+                close_by: expiryTimestamp,
+                notes: {
+                    orderId: order._id.toString(),
+                    orderNumber: order.orderNumber,
+                    deliveryBoyId,
+                },
+            },
+            {
+                headers: {
+                    Authorization: authHeader,
+                    'Content-Type': 'application/json',
+                },
+                timeout: 10000,
+            }
+        );
+        qrCode = response.data;
+    } catch (httpErr: any) {
+        const errDetails = httpErr.response?.data || httpErr.message;
+        console.warn('Axios direct call to payments/qr_codes failed, trying SDK fallback:', errDetails);
+
+        try {
+            const razorpay = getRazorpayInstance();
+            qrCode = await razorpay.qrCode.create({
+                type: 'upi_qr',
+                name: `Order #${order.orderNumber}`,
+                usage: 'single_use',
+                fixed_amount: true,
+                payment_amount: amountInPaise,
+                description: `COD Payment for Order #${order.orderNumber}`,
+                close_by: expiryTimestamp,
+                notes: {
+                    orderId: order._id.toString(),
+                    orderNumber: order.orderNumber,
+                    deliveryBoyId,
+                },
+            });
+        } catch (sdkErr: any) {
+            console.error('Both REST API and SDK failed to generate Razorpay QR:', sdkErr.message || sdkErr);
+            throw new Error(
+                (httpErr.response?.data?.error?.description) ||
+                (sdkErr.error?.description) ||
+                sdkErr.message ||
+                'Failed to generate dynamic Razorpay UPI QR code'
+            );
+        }
+    }
+
+    if (!qrCode || !qrCode.id || !qrCode.image_url) {
+        throw new Error('Failed to obtain valid QR code image from Razorpay');
+    }
 
     // 4. Save COD payment record in DB
     const codPayment = await CodPayment.findOneAndUpdate(
