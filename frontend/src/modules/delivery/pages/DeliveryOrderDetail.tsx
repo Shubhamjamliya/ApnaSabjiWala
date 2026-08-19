@@ -1,6 +1,21 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getOrderDetails, updateOrderStatus, getSellerLocationsForOrder, sendDeliveryOtp, verifyDeliveryOtp, updateDeliveryLocation, checkSellerProximity, confirmSellerPickup, checkCustomerProximity, rejectOrder } from '../../../services/api/delivery/deliveryService';
+import { 
+    getOrderDetails, 
+    updateOrderStatus, 
+    getSellerLocationsForOrder, 
+    sendDeliveryOtp, 
+    verifyDeliveryOtp, 
+    updateDeliveryLocation, 
+    checkSellerProximity, 
+    confirmSellerPickup, 
+    checkCustomerProximity, 
+    rejectOrder,
+    generateCodQr,
+    collectCashPayment,
+    verifyCodQrPayment,
+    completeDeliveryOrder,
+} from '../../../services/api/delivery/deliveryService';
 import deliveryIcon from '@assets/deliveryboy/deliveryIcon.png';
 import GoogleMapsTracking from '../../../components/GoogleMapsTracking';
 import { SHOW_DEV_MODE } from '@/config/appMode';
@@ -83,6 +98,37 @@ const Icons = {
             <line x1="12" y1="9" x2="12" y2="13" />
             <line x1="12" y1="17" x2="12.01" y2="17" />
         </svg>
+    ),
+    QrCode: ({ size = 24, className = "" }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <line x1="7" y1="7" x2="7.01" y2="7" />
+            <line x1="17" y1="7" x2="17.01" y2="7" />
+            <line x1="7" y1="17" x2="7.01" y2="17" />
+            <line x1="17" y1="17" x2="17.01" y2="17" />
+        </svg>
+    ),
+    Cash: ({ size = 24, className = "" }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <rect x="2" y="6" width="20" height="12" rx="2" />
+            <circle cx="12" cy="12" r="2" />
+            <path d="M6 12h.01M18 12h.01" />
+        </svg>
+    ),
+    RotateCw: ({ size = 24, className = "" }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <path d="M23 4v6h-6" />
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+        </svg>
+    ),
+    X: ({ size = 24, className = "" }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
     )
 };
 
@@ -164,21 +210,149 @@ export default function DeliveryOrderDetail() {
         }
     }, [order?.status]);
 
+    // Payment Collection Modal States
+    const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+    const [paymentOption, setPaymentOption] = useState<'CASH' | 'QR' | null>(null);
+    const [cashLoading, setCashLoading] = useState(false);
+    const [cashCollectedSuccess, setCashCollectedSuccess] = useState(false);
+    const [qrCodeLoading, setQrCodeLoading] = useState(false);
+    const [qrCodeData, setQrCodeData] = useState<{ qrCodeId: string; qrImageUrl: string; amount: number; expiresAt: string } | null>(null);
+    const [qrPolling, setQrPolling] = useState(false);
+    const [qrPaymentVerified, setQrPaymentVerified] = useState(false);
+    const [paymentStatusConfirmed, setPaymentStatusConfirmed] = useState(false);
+    const [completingDelivery, setCompletingDelivery] = useState(false);
+    const qrPollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const stopQrPolling = useCallback(() => {
+        if (qrPollingIntervalRef.current) {
+            clearInterval(qrPollingIntervalRef.current);
+            qrPollingIntervalRef.current = null;
+        }
+        setQrPolling(false);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            stopQrPolling();
+        };
+    }, [stopQrPolling]);
+
     const handleVerifyOtp = async () => {
         if (!id || !otpValue) {
-            alert('Please enter OTP');
+            alert('Please enter 4-digit OTP');
             return;
         }
         try {
             setOtpVerifying(true);
             const result = await verifyDeliveryOtp(id, otpValue);
-            alert(result.message || 'OTP verified successfully. Order marked as delivered.');
-            await fetchOrder(); // Refresh order data
-            setOtpValue('');
+            
+            // Check if order is already paid online or confirmed
+            const isAlreadyPaid = result?.data?.isPaid || order?.paymentStatus === 'Paid' || (order?.paymentMethod !== 'COD' && order?.paymentStatus === 'Paid');
+            
+            if (isAlreadyPaid) {
+                setPaymentStatusConfirmed(true);
+            } else {
+                setPaymentStatusConfirmed(false);
+                setPaymentOption(null);
+                setCashCollectedSuccess(false);
+                setQrPaymentVerified(false);
+                setQrCodeData(null);
+            }
+            
+            setPaymentModalOpen(true);
         } catch (err: any) {
             alert(err.message || 'Failed to verify OTP');
         } finally {
             setOtpVerifying(false);
+        }
+    };
+
+    const handleSelectCashCollected = async () => {
+        if (!id) return;
+        try {
+            setCashLoading(true);
+            stopQrPolling();
+            const res = await collectCashPayment(id);
+            if (res.success) {
+                setCashCollectedSuccess(true);
+                setPaymentStatusConfirmed(true);
+                setPaymentOption('CASH');
+            }
+        } catch (err: any) {
+            alert(err.message || 'Failed to record cash payment');
+        } finally {
+            setCashLoading(false);
+        }
+    };
+
+    const handleSelectShowQr = async () => {
+        if (!id) return;
+        try {
+            setPaymentOption('QR');
+            setQrCodeLoading(true);
+            setCashCollectedSuccess(false);
+            stopQrPolling();
+            
+            const res = await generateCodQr(id);
+            if (res.success && res.data) {
+                setQrCodeData(res.data);
+                setQrPolling(true);
+                
+                qrPollingIntervalRef.current = setInterval(async () => {
+                    try {
+                        const checkRes = await verifyCodQrPayment(id);
+                        if (checkRes.verified) {
+                            setQrPaymentVerified(true);
+                            setPaymentStatusConfirmed(true);
+                            stopQrPolling();
+                        }
+                    } catch (pollErr) {
+                        console.error('Polling error:', pollErr);
+                    }
+                }, 3000);
+            }
+        } catch (err: any) {
+            alert(err.message || 'Failed to generate dynamic Razorpay QR');
+        } finally {
+            setQrCodeLoading(false);
+        }
+    };
+
+    const handleManualCheckQrStatus = async () => {
+        if (!id) return;
+        try {
+            const checkRes = await verifyCodQrPayment(id);
+            if (checkRes.verified) {
+                setQrPaymentVerified(true);
+                setPaymentStatusConfirmed(true);
+                stopQrPolling();
+                alert('Payment verified successfully!');
+            } else {
+                alert(checkRes.message || 'Payment not yet received. Please wait a moment and try again.');
+            }
+        } catch (err: any) {
+            alert(err.message || 'Failed to verify QR payment');
+        }
+    };
+
+    const handleCompleteDelivery = async () => {
+        if (!id) return;
+        if (!paymentStatusConfirmed && order?.paymentStatus !== 'Paid') {
+            alert('Please collect/verify payment before completing delivery.');
+            return;
+        }
+        try {
+            setCompletingDelivery(true);
+            const res = await completeDeliveryOrder(id);
+            alert(res.message || 'Order delivered successfully!');
+            setPaymentModalOpen(false);
+            stopQrPolling();
+            setOtpValue('');
+            await fetchOrder();
+        } catch (err: any) {
+            alert(err.message || 'Failed to complete order delivery');
+        } finally {
+            setCompletingDelivery(false);
         }
     };
 
@@ -403,6 +577,16 @@ export default function DeliveryOrderDetail() {
                             setOrder((prev: any) => prev ? { ...prev, status: data.status } : prev);
                         }
                         fetchOrder();
+                    }
+                });
+
+                // Listen for real-time COD QR UPI payment confirmation
+                socket.on('cod-qr-payment-received', (data: any) => {
+                    if (isMounted && data.orderId === id) {
+                        console.log('✅ COD QR payment received event:', data);
+                        setQrPaymentVerified(true);
+                        setPaymentStatusConfirmed(true);
+                        stopQrPolling();
                     }
                 });
 
@@ -989,6 +1173,218 @@ export default function DeliveryOrderDetail() {
                                 {otpVerifying ? 'Verifying...' : 'Verify OTP'}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Payment Collection & Delivery Completion Modal */}
+            {paymentModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border border-neutral-100 flex flex-col max-h-[90vh] overflow-y-auto">
+                        
+                        {/* Modal Header */}
+                        <div className="flex justify-between items-center pb-4 border-b border-neutral-100 mb-4">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                                    <Icons.CheckCircle size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-neutral-900 text-lg">Delivery & Payment</h3>
+                                    <p className="text-xs text-neutral-500">Order #{order?.orderId || order?.orderNumber}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    if (!completingDelivery) {
+                                        setPaymentModalOpen(false);
+                                        stopQrPolling();
+                                    }
+                                }}
+                                disabled={completingDelivery}
+                                className="p-2 text-neutral-400 hover:text-neutral-600 rounded-full hover:bg-neutral-100 transition-colors"
+                            >
+                                <Icons.X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Order Summary Pill */}
+                        <div className="bg-neutral-50 rounded-2xl p-4 mb-5 flex justify-between items-center border border-neutral-100">
+                            <div>
+                                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">Total Order Amount</p>
+                                <p className="text-2xl font-black text-neutral-900 mt-0.5">₹{order?.totalAmount}</p>
+                            </div>
+                            <div className="text-right">
+                                <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full uppercase ${
+                                    order?.paymentMethod === 'COD' 
+                                        ? 'bg-amber-100 text-amber-800 border border-amber-200' 
+                                        : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                }`}>
+                                    {order?.paymentMethod === 'COD' ? 'Cash on Delivery' : 'Paid Online'}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* CASE 1: Order is Already Paid Online */}
+                        {(order?.paymentMethod !== 'COD' || order?.paymentStatus === 'Paid' || paymentStatusConfirmed && !paymentOption) && (
+                            <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-5 mb-6 text-center">
+                                <div className="w-14 h-14 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-md shadow-emerald-200">
+                                    <Icons.CheckCircle size={28} />
+                                </div>
+                                <h4 className="text-base font-bold text-emerald-900 mb-1">Payment Already Completed</h4>
+                                <p className="text-xs text-emerald-700 font-medium leading-relaxed">
+                                    Customer has already paid <strong className="text-emerald-900 font-bold">₹{order?.totalAmount}</strong> online. No cash collection required!
+                                </p>
+                            </div>
+                        )}
+
+                        {/* CASE 2: COD Order - Payment Options */}
+                        {order?.paymentMethod === 'COD' && order?.paymentStatus !== 'Paid' && !paymentStatusConfirmed && !paymentOption && (
+                            <div className="space-y-4 mb-6">
+                                <p className="text-sm font-semibold text-neutral-700 text-center">
+                                    Select how customer is paying ₹{order?.totalAmount}:
+                                </p>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                    {/* Option 1: Cash Collected */}
+                                    <button
+                                        onClick={handleSelectCashCollected}
+                                        disabled={cashLoading}
+                                        className="flex flex-col items-center text-center p-5 rounded-2xl border-2 border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 hover:border-emerald-500 active:scale-[0.98] transition-all shadow-sm group"
+                                    >
+                                        <div className="w-13 h-13 rounded-2xl bg-emerald-500 text-white flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform">
+                                            <Icons.Cash size={26} />
+                                        </div>
+                                        <span className="font-bold text-neutral-900 text-base mb-1">Cash Collected</span>
+                                        <span className="text-xs text-neutral-500 leading-snug">Customer paid cash in hand</span>
+                                        {cashLoading && (
+                                            <span className="mt-2 text-xs font-semibold text-emerald-600">Recording...</span>
+                                        )}
+                                    </button>
+
+                                    {/* Option 2: Show Dynamic QR */}
+                                    <button
+                                        onClick={handleSelectShowQr}
+                                        disabled={qrCodeLoading}
+                                        className="flex flex-col items-center text-center p-5 rounded-2xl border-2 border-blue-200 bg-blue-50/50 hover:bg-blue-50 hover:border-blue-500 active:scale-[0.98] transition-all shadow-sm group"
+                                    >
+                                        <div className="w-13 h-13 rounded-2xl bg-blue-600 text-white flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform">
+                                            <Icons.QrCode size={26} />
+                                        </div>
+                                        <span className="font-bold text-neutral-900 text-base mb-1">Show QR Code</span>
+                                        <span className="text-xs text-neutral-500 leading-snug">Dynamic Razorpay UPI QR (GPay, PhonePe)</span>
+                                        {qrCodeLoading && (
+                                            <span className="mt-2 text-xs font-semibold text-blue-600">Generating...</span>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* CASE 3: Cash Collected Confirmed */}
+                        {paymentOption === 'CASH' && cashCollectedSuccess && (
+                            <div className="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-5 mb-6 text-center animate-in zoom-in-95 duration-200">
+                                <div className="w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-md">
+                                    <Icons.CheckCircle size={24} />
+                                </div>
+                                <h4 className="text-base font-bold text-emerald-900">Cash Payment Recorded</h4>
+                                <p className="text-xs text-emerald-700 mt-1 font-medium">
+                                    ₹{order?.totalAmount} collected in cash. Click <strong>Done</strong> below to complete delivery.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* CASE 4: QR Code Flow */}
+                        {paymentOption === 'QR' && (
+                            <div className="mb-6 flex flex-col items-center">
+                                {qrCodeLoading ? (
+                                    <div className="py-12 flex flex-col items-center justify-center text-center">
+                                        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+                                        <p className="text-sm font-semibold text-neutral-700">Generating Dynamic Razorpay UPI QR...</p>
+                                    </div>
+                                ) : qrPaymentVerified ? (
+                                    <div className="w-full bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-5 text-center animate-in zoom-in-95 duration-200">
+                                        <div className="w-14 h-14 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-md shadow-emerald-200">
+                                            <Icons.CheckCircle size={28} />
+                                        </div>
+                                        <h4 className="text-base font-bold text-emerald-900">UPI Payment Received & Verified!</h4>
+                                        <p className="text-xs text-emerald-700 mt-1 font-medium">
+                                            Received ₹{order?.totalAmount} via Razorpay QR. Click <strong>Done</strong> to complete delivery.
+                                        </p>
+                                    </div>
+                                ) : qrCodeData ? (
+                                    <div className="w-full flex flex-col items-center">
+                                        {/* QR Display Card */}
+                                        <div className="bg-white p-4 rounded-3xl border-2 border-blue-500 shadow-lg text-center flex flex-col items-center mb-3">
+                                            <img
+                                                src={qrCodeData.qrImageUrl}
+                                                alt="Razorpay Dynamic UPI QR"
+                                                className="w-56 h-56 rounded-xl object-contain bg-white mb-2"
+                                            />
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800">
+                                                <span>Scan with any UPI App</span>
+                                            </div>
+                                            <p className="text-[11px] text-neutral-500 mt-0.5">Google Pay • PhonePe • Paytm • BHIM</p>
+                                        </div>
+
+                                        {/* Polling status banner */}
+                                        <div className="flex items-center gap-2 text-xs font-semibold text-blue-600 bg-blue-50 px-4 py-2 rounded-full mb-3 animate-pulse">
+                                            <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping"></span>
+                                            Waiting for customer payment...
+                                        </div>
+
+                                        {/* Action buttons while in QR mode */}
+                                        <div className="flex gap-2 w-full">
+                                            <button
+                                                onClick={handleManualCheckQrStatus}
+                                                className="flex-1 py-2.5 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                                            >
+                                                <Icons.RotateCw size={14} />
+                                                Check Status
+                                            </button>
+                                            <button
+                                                onClick={handleSelectCashCollected}
+                                                className="flex-1 py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                                            >
+                                                <Icons.Cash size={14} />
+                                                Switch to Cash
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : null}
+                            </div>
+                        )}
+
+                        {/* Bottom Done Button */}
+                        <div className="mt-auto pt-4 border-t border-neutral-100 flex flex-col gap-2">
+                            <button
+                                onClick={handleCompleteDelivery}
+                                disabled={!paymentStatusConfirmed || completingDelivery}
+                                className={`w-full py-4 rounded-2xl font-bold text-base shadow-lg transition-all flex items-center justify-center gap-2 ${
+                                    paymentStatusConfirmed && !completingDelivery
+                                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 active:scale-[0.98] shadow-blue-200'
+                                        : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                                }`}
+                            >
+                                {completingDelivery ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        <span>Completing Delivery...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Icons.CheckCircle size={20} />
+                                        <span>Done / Complete Order</span>
+                                    </>
+                                )}
+                            </button>
+
+                            {!paymentStatusConfirmed && (
+                                <p className="text-[11px] text-center text-neutral-400 font-medium">
+                                    Collect cash or scan UPI QR code above to enable the Done button.
+                                </p>
+                            )}
+                        </div>
+
                     </div>
                 </div>
             )}

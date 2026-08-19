@@ -128,6 +128,42 @@ export const verifyDeliveryOtp = async (id: string, otp: string) => {
   }
 };
 
+export const generateCodQr = async (id: string) => {
+  try {
+    const response = await api.post(`${BASE_URL}/orders/${id}/generate-qr`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+export const collectCashPayment = async (id: string) => {
+  try {
+    const response = await api.post(`${BASE_URL}/orders/${id}/collect-cash`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+export const verifyCodQrPayment = async (id: string) => {
+  try {
+    const response = await api.get(`${BASE_URL}/orders/${id}/verify-qr-payment`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+export const completeDeliveryOrder = async (id: string) => {
+  try {
+    const response = await api.post(`${BASE_URL}/orders/${id}/complete-delivery`);
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
 export const checkSellerProximity = async (
   orderId: string,
   sellerId: string,

@@ -1,6 +1,5 @@
 import Order from '../models/Order';
 import Customer from '../models/Customer';
-import { addRewardCoin } from './rewardService';
 
 /**
  * Generate delivery OTP is no longer needed for regular orders.
@@ -66,17 +65,11 @@ export async function verifyDeliveryOtp(orderId: string, otp: string): Promise<{
     // Developer bypass for testing (only when USE_MOCK_OTP=true)
     if (process.env.USE_MOCK_OTP === 'true' && otp === '9999') {
       order.deliveryOtpVerified = true;
-      order.status = 'Delivered';
-      order.deliveredAt = new Date();
-      order.invoiceEnabled = true;
       await order.save();
-
-      // Give reward coin
-      await addRewardCoin(order.customer._id ? order.customer._id.toString() : order.customer.toString());
 
       return {
         success: true,
-        message: 'OTP verified successfully. Order marked as delivered.',
+        message: 'OTP verified successfully.',
       };
     }
 
@@ -85,19 +78,13 @@ export async function verifyDeliveryOtp(orderId: string, otp: string): Promise<{
       throw new Error('Invalid OTP. Please check and try again.');
     }
 
-    // Mark order as delivered
+    // Set OTP verified flag
     order.deliveryOtpVerified = true;
-    order.status = 'Delivered';
-    order.deliveredAt = new Date();
-    order.invoiceEnabled = true;
     await order.save();
-
-    // Give reward coin
-    await addRewardCoin(order.customer._id ? order.customer._id.toString() : order.customer.toString());
 
     return {
       success: true,
-      message: 'OTP verified successfully. Order marked as delivered.',
+      message: 'OTP verified successfully.',
     };
   } catch (error: any) {
     console.error('Error verifying delivery OTP:', error);

@@ -574,7 +574,8 @@ export const sendDeliveryOtp = asyncHandler(async (req: Request, res: Response) 
 });
 
 /**
- * Verify Delivery OTP and mark order as delivered
+ * Verify Delivery OTP
+ * Validates customer OTP and marks deliveryOtpVerified = true
  */
 export const verifyDeliveryOtpController = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -594,7 +595,67 @@ export const verifyDeliveryOtpController = asyncHandler(async (req: Request, res
         return res.status(403).json({ success: false, message: "This order is not assigned to you" });
     }
 
-    // Payment Verification Gate: order MUST be marked Paid before delivery completion
+    if (order.status === 'Delivered') {
+        return res.status(400).json({ success: false, message: "Order is already marked as delivered" });
+    }
+
+    try {
+        const result = await verifyDeliveryOtp(id, otp);
+        const updatedOrder = await Order.findById(id);
+
+        return res.status(200).json({
+            success: true,
+            message: result.message || "OTP verified successfully.",
+            data: {
+                otpVerified: true,
+                isPaid: updatedOrder?.paymentStatus === 'Paid',
+                paymentStatus: updatedOrder?.paymentStatus,
+                paymentMethod: updatedOrder?.paymentMethod,
+                totalAmount: updatedOrder?.total
+            }
+        });
+    } catch (otpErr: any) {
+        return res.status(400).json({
+            success: false,
+            message: otpErr.message || "Failed to verify OTP"
+        });
+    }
+});
+
+/**
+ * Complete Delivery Order
+ * Enforces both OTP verification and Payment confirmation before marking as Delivered
+ */
+export const completeDeliveryOrder = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const deliveryId = req.user?.userId;
+
+    const order = await Order.findById(id);
+    if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    if (order.deliveryBoy?.toString() !== deliveryId) {
+        return res.status(403).json({ success: false, message: "This order is not assigned to you" });
+    }
+
+    if (order.status === 'Delivered') {
+        return res.status(200).json({
+            success: true,
+            message: "Order is already delivered",
+            data: { orderId: order._id, status: 'Delivered' }
+        });
+    }
+
+    // Gate 1: OTP must be verified
+    if (!order.deliveryOtpVerified) {
+        return res.status(400).json({
+            success: false,
+            message: "Customer delivery OTP must be verified before completing the order."
+        });
+    }
+
+    // Gate 2: Payment must be confirmed
     if (order.paymentStatus !== 'Paid') {
         return res.status(400).json({
             success: false,
@@ -602,111 +663,117 @@ export const verifyDeliveryOtpController = asyncHandler(async (req: Request, res
         });
     }
 
+    const previousStatus = order.status;
+
+    // Transition to Delivered
+    order.status = 'Delivered';
+    order.deliveredAt = new Date();
+    order.invoiceEnabled = true;
+    await order.save();
+
+    // Process order status transition for financial transactions
     try {
-        const previousStatus = order.status;
-        const result = await verifyDeliveryOtp(id, otp);
-        // Note: verifyDeliveryOtp is from service, not this controller
-
-        // Reload order to get updated status
-        const updatedOrder = await Order.findById(id);
-
-        // Process order status transition for financial transactions
-        if (updatedOrder && updatedOrder.status === 'Delivered' && previousStatus !== 'Delivered') {
-            try {
-                await processOrderStatusTransition(id, 'Delivered', previousStatus);
-            } catch (transitionError: any) {
-                console.error('Error processing order status transition:', transitionError);
-                // Continue even if transition fails - order is already marked as delivered
-            }
-        }
-
-        // Update delivery boy balance and cash collected (if COD)
-        if (updatedOrder && updatedOrder.status === 'Delivered') {
-            if (updatedOrder.paymentMethod === 'COD') {
-                await Delivery.findByIdAndUpdate(deliveryId, {
-                    $inc: { cashCollected: updatedOrder.total }
-                });
-            }
-
-            // COMMISSION DISTRIBUTION
-            const { distributeCommissions } = await import('../../../services/commissionService');
-            try {
-                await distributeCommissions(id);
-            } catch (commError: any) {
-                console.error('Error distributing commissions:', commError);
-                // Continue even if commission distribution fails
-            }
-
-            // Emit socket events for real-time status update
-            const io = (req.app as any).get("io");
-            if (io && previousStatus !== 'Delivered') {
-                // Emit order-delivered event to customer
-                io.to(`order-${id}`).emit('order-delivered', {
-                    orderId: id,
-                    orderNumber: updatedOrder.orderNumber,
-                    message: 'Order has been delivered successfully',
-                });
-
-                // Also emit to delivery boy room
-                io.to(`delivery-${deliveryId}`).emit('order-delivered', {
-                    orderId: id,
-                    orderNumber: updatedOrder.orderNumber,
-                    message: 'Order delivered successfully',
-                });
-
-                // Notify sellers of status update
-                notifySellersOfOrderUpdate(io, updatedOrder, 'STATUS_UPDATE');
-            }
-
-            // Push notification to customer that order is delivered
-            try {
-                const { sendOrderStatusNotification } = await import("../../../services/notificationService");
-                await sendOrderStatusNotification(
-                    updatedOrder.orderNumber,
-                    updatedOrder._id.toString(),
-                    updatedOrder.customer.toString(),
-                    'Delivered',
-                    updatedOrder.total
-                );
-            } catch (custPushErr) {
-                console.error("Error sending delivered push notification to customer:", custPushErr);
-            }
-
-            // Push notification to sellers that order is delivered
-            try {
-                const { sendNotification } = await import("../../../services/notificationService");
-                const orderItems = await OrderItem.find({ order: updatedOrder._id });
-                const sellerIds = [...new Set(orderItems.map((i: any) => i.seller?.toString()).filter(Boolean))];
-                for (const sellerId of sellerIds) {
-                    await sendNotification(
-                        "Seller",
-                        sellerId as string,
-                        "Order Delivered ✅",
-                        `Order #${updatedOrder.orderNumber} has been delivered successfully.`,
-                        {
-                            type: "Order",
-                            link: `/seller/orders/${updatedOrder._id}`,
-                            priority: "Medium",
-                            idempotencyKey: `otp_delivered_seller_${updatedOrder._id}_${sellerId}`
-                        }
-                    );
-                }
-            } catch (sellerPushErr) {
-                console.error("Error sending delivered push notification to seller:", sellerPushErr);
-            }
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: result.message,
-            data: updatedOrder
-        });
-    } catch (error: any) {
-        return res.status(400).json({
-            success: false,
-            message: error.message || "Failed to verify delivery OTP"
-        });
+        await processOrderStatusTransition(id, 'Delivered', previousStatus);
+    } catch (transitionError: any) {
+        console.error('Error processing order status transition:', transitionError);
     }
+
+    // Update delivery boy balance and cash collected (if COD Cash)
+    if (order.paymentMethod === 'COD') {
+        const { default: CodPayment } = await import('../../../models/CodPayment');
+        const codRec = await CodPayment.findOne({ order: order._id, collectionMethod: 'CASH', status: 'Collected' });
+        if (codRec) {
+            await Delivery.findByIdAndUpdate(deliveryId, {
+                $inc: { cashCollected: order.total }
+            });
+        }
+    }
+
+    // COMMISSION DISTRIBUTION
+    try {
+        const { distributeCommissions } = await import('../../../services/commissionService');
+        await distributeCommissions(id);
+    } catch (commError: any) {
+        console.error('Error distributing commissions:', commError);
+    }
+
+    // Award customer reward coin
+    try {
+        const { addRewardCoin } = await import('../../../services/rewardService');
+        await addRewardCoin(order.customer.toString());
+    } catch (coinErr) {
+        console.error('Error adding reward coin:', coinErr);
+    }
+
+    // Emit socket events for real-time status update
+    try {
+        const io = (req.app as any).get("io");
+        if (io) {
+            io.to(`order-${id}`).emit('order-delivered', {
+                orderId: id,
+                orderNumber: order.orderNumber,
+                message: 'Order has been delivered successfully',
+            });
+
+            io.to(`delivery-${deliveryId}`).emit('order-delivered', {
+                orderId: id,
+                orderNumber: order.orderNumber,
+                message: 'Order delivered successfully',
+            });
+
+            notifySellersOfOrderUpdate(io, order, 'STATUS_UPDATE');
+        }
+    } catch (sockErr) {
+        console.error('Error emitting delivery socket events:', sockErr);
+    }
+
+    // Push notification to customer
+    try {
+        const { sendOrderStatusNotification } = await import("../../../services/notificationService");
+        await sendOrderStatusNotification(
+            order.orderNumber,
+            order._id.toString(),
+            order.customer.toString(),
+            'Delivered',
+            order.total
+        );
+    } catch (pushErr) {
+        console.error('Error sending delivery push notification:', pushErr);
+    }
+
+    // Push notification to sellers that order is delivered
+    try {
+        const { sendNotification } = await import("../../../services/notificationService");
+        const OrderItem = (await import("../../../models/OrderItem")).default;
+        const orderItems = await OrderItem.find({ order: order._id });
+        const sellerIds = [...new Set(orderItems.map((i: any) => i.seller?.toString()).filter(Boolean))];
+        for (const sellerId of sellerIds) {
+            await sendNotification(
+                "Seller",
+                sellerId as string,
+                "Order Delivered ✅",
+                `Order #${order.orderNumber} has been delivered successfully.`,
+                {
+                    type: "Order",
+                    link: `/seller/orders/${order._id}`,
+                    priority: "Medium",
+                    idempotencyKey: `otp_delivered_seller_${order._id}_${sellerId}`
+                }
+            );
+        }
+    } catch (sellerPushErr) {
+        console.error("Error sending delivered push notification to seller:", sellerPushErr);
+    }
+
+    return res.status(200).json({
+        success: true,
+        message: "Order marked as delivered successfully.",
+        data: {
+            orderId: order._id,
+            status: 'Delivered',
+            deliveredAt: order.deliveredAt
+        }
+    });
 });
 
 /**
