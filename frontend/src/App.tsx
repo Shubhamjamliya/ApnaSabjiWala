@@ -157,7 +157,9 @@ const AdminBillingSettings = lazy(() => import("./modules/admin/pages/AdminBilli
 const AdminRewards = lazy(() => import("./modules/admin/pages/AdminRewards"));
 const AdminRewardRules = lazy(() => import("./modules/admin/pages/AdminRewardRules"));
 const AdminRewardOrders = lazy(() => import("./modules/admin/pages/AdminRewardOrders"));
+const AdminReferralSettings = lazy(() => import("./modules/admin/pages/AdminReferralSettings"));
 const UserRewards = lazy(() => import("./modules/user/Rewards"));
+const ReferAndEarn = lazy(() => import("./modules/user/ReferAndEarn"));
 
 function App() {
   // Initialize push notifications on app load
@@ -399,6 +401,7 @@ function App() {
                                         <Route path="rewards" element={<AdminRewards />} />
                                         <Route path="reward-rules" element={<AdminRewardRules />} />
                                         <Route path="reward-orders" element={<AdminRewardOrders />} />
+                                        <Route path="referrals" element={<AdminReferralSettings />} />
                                       </Routes>
                                     </Suspense>
                                   </AdminLayout>
@@ -445,6 +448,7 @@ function App() {
                                     <Route path="/tomorrow-veg-booking" element={<TomorrowVegBooking />} />
                                     <Route path="/notifications" element={<Notifications />} />
                                     <Route path="/rewards" element={<UserRewards />} />
+                                    <Route path="/refer-earn" element={<ReferAndEarn />} />
                                   </Routes>
                                 </Suspense>
                               </AppLayout>

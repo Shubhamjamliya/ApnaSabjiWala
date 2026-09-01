@@ -151,6 +151,15 @@ export interface IAppSettings extends Document {
   // Withdrawal Settings
   minimumWithdrawalAmount?: number;
 
+  // Referral Settings
+  referralSettings?: {
+    enabled: boolean;
+    referrerCoins: number;
+    refereeCoins: number;
+    rewardTrigger: "signup" | "first_order_delivered";
+    minOrderAmount?: number;
+  };
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -162,7 +171,18 @@ interface IAppSettingsModel extends mongoose.Model<IAppSettings> {
 
 const AppSettingsSchema = new Schema<IAppSettings>(
   {
-    // ... (rest of schema is fine, just adding new field)
+    // Referral Settings
+    referralSettings: {
+      enabled: { type: Boolean, default: true },
+      referrerCoins: { type: Number, default: 10, min: 0 },
+      refereeCoins: { type: Number, default: 5, min: 0 },
+      rewardTrigger: {
+        type: String,
+        enum: ["signup", "first_order_delivered"],
+        default: "signup",
+      },
+      minOrderAmount: { type: Number, default: 0 },
+    },
 
     // Withdrawal Settings
     minimumWithdrawalAmount: {

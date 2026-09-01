@@ -37,8 +37,10 @@ import adminWithdrawalRoutes from "./adminWithdrawalRoutes";
 import nextDayRoutes from "./nextDay.routes";
 import adminRewardRoutes from "./adminRewardRoutes";
 import customerRewardRoutes from "./customerRewardRoutes";
+import customerReferralRoutes from "./customerReferralRoutes";
 import customerNotificationRoutes from "../modules/customer/routes/notificationRoutes";
 import adminPaymentRoutes from "./adminPaymentRoutes";
+import adminReferralRoutes from "./adminReferralRoutes";
 import AppSettings from "../models/AppSettings";
 
 import {
@@ -137,6 +139,7 @@ router.use("/customer/cart", customerCartRoutes);
 router.use("/customer/wishlist", wishlistRoutes);
 router.use("/customer/reviews", productReviewRoutes);
 router.use("/customer/rewards", customerRewardRoutes);
+router.use("/customer/referral", customerReferralRoutes);
 router.use("/customer/notifications", customerNotificationRoutes);
 
 // General customer route
@@ -151,6 +154,7 @@ router.use("/sellers", sellerRoutes);
 // Admin routes (protected, admin only)
 router.use("/admin/payments", authenticate, requireUserType("Admin"), adminPaymentRoutes);
 router.use("/admin/rewards", authenticate, requireUserType("Admin"), adminRewardRoutes);
+router.use("/admin/referral", authenticate, requireUserType("Admin"), adminReferralRoutes);
 router.use("/admin", adminRoutes);
 
 // Upload routes (protected)

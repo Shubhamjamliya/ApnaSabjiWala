@@ -699,12 +699,13 @@ export const completeDeliveryOrder = asyncHandler(async (req: Request, res: Resp
         console.error('Error distributing commissions:', commError);
     }
 
-    // Award customer reward coin
+    // Award customer reward coin and fulfill pending referral if any
     try {
-        const { addRewardCoin } = await import('../../../services/rewardService');
+        const { addRewardCoin, fulfillPendingReferral } = await import('../../../services/rewardService');
         await addRewardCoin(order.customer.toString());
+        await fulfillPendingReferral(order.customer.toString());
     } catch (coinErr) {
-        console.error('Error adding reward coin:', coinErr);
+        console.error('Error adding reward coin or fulfilling referral:', coinErr);
     }
 
     // Emit socket events for real-time status update

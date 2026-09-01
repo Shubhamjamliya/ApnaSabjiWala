@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { sendOTP, verifyOTP } from '../../services/api/auth/customerAuthService';
+import api from '../../services/api/config';
 import { useAuth } from '../../context/AuthContext';
 import OTPInput from '../../components/OTPInput';
 import { useAppSettings } from '../../context/AppSettingsContext';
+import { useToast } from '../../context/ToastContext';
 
 export default function Login() {
   const RESEND_OTP_COOLDOWN = 30;
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { showToast } = useToast();
   const { userLogo } = useAppSettings();
   const redirectPath = new URLSearchParams(window.location.search).get('redirect') || '/';
   const [mobileNumber, setMobileNumber] = useState('');
@@ -17,6 +20,12 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
+
+  // New User Welcome & Referral Modal State
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [referralCodeInput, setReferralCodeInput] = useState('');
+  const [referralApplying, setReferralApplying] = useState(false);
+  const [referralError, setReferralError] = useState('');
 
   useEffect(() => {
     if (resendTimer <= 0) return;
@@ -71,14 +80,51 @@ export default function Login() {
           refCode: response.data.user.refCode,
           status: response.data.user.status,
         });
-        const safeRedirect = redirectPath.startsWith('/') ? redirectPath : '/';
-        navigate(safeRedirect);
+
+        if (response.data.isNewUser) {
+          // Open referral popup for first-time login
+          setShowWelcomeModal(true);
+        } else {
+          const safeRedirect = redirectPath.startsWith('/') ? redirectPath : '/';
+          navigate(safeRedirect);
+        }
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid OTP. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleApplyReferral = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!referralCodeInput.trim()) return;
+
+    setReferralApplying(true);
+    setReferralError('');
+
+    try {
+      const res = await api.post('/customer/referral/apply', {
+        referralCode: referralCodeInput.trim().toUpperCase(),
+      });
+
+      if (res.data.success) {
+        showToast(res.data.message || 'Referral bonus claimed!', 'success');
+        setShowWelcomeModal(false);
+        const safeRedirect = redirectPath.startsWith('/') ? redirectPath : '/';
+        navigate(safeRedirect);
+      }
+    } catch (err: any) {
+      setReferralError(err.response?.data?.message || 'Invalid referral code');
+    } finally {
+      setReferralApplying(false);
+    }
+  };
+
+  const handleSkipReferral = () => {
+    setShowWelcomeModal(false);
+    const safeRedirect = redirectPath.startsWith('/') ? redirectPath : '/';
+    navigate(safeRedirect);
   };
 
   return (
@@ -223,6 +269,68 @@ export default function Login() {
           </div>
         </div>
       </div>
+
+      {/* New User Welcome & Referral Code Modal */}
+      {showWelcomeModal && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center transform transition-all animate-in fade-in zoom-in-95">
+            <div className="w-16 h-16 bg-gradient-to-tr from-amber-400 to-yellow-300 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-lg shadow-yellow-500/20 mb-4 animate-bounce">
+              🎁
+            </div>
+
+            <h2 className="text-xl font-black text-neutral-900 mb-1">
+              Welcome to ApnaSabjiWala! 🎉
+            </h2>
+            <p className="text-xs text-neutral-500 mb-5 leading-relaxed">
+              Did a friend invite you? Enter their <span className="font-semibold text-teal-700">Referral Code</span> to unlock bonus welcome reward coins!
+            </p>
+
+            <form onSubmit={handleApplyReferral} className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  placeholder="e.g. AMIT4821"
+                  value={referralCodeInput}
+                  onChange={(e) => {
+                    setReferralCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''));
+                    setReferralError('');
+                  }}
+                  className="w-full text-center tracking-widest uppercase font-mono font-bold text-lg px-4 py-3 bg-neutral-50 border-2 border-dashed border-teal-500/50 rounded-xl focus:border-teal-600 focus:bg-white outline-none transition-all placeholder:text-neutral-300"
+                  maxLength={10}
+                />
+                {referralError && (
+                  <p className="text-xs text-red-500 mt-1.5 font-medium">{referralError}</p>
+                )}
+              </div>
+
+              <div className="space-y-2 pt-1">
+                <button
+                  type="submit"
+                  disabled={!referralCodeInput.trim() || referralApplying}
+                  className="w-full py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-teal-600 to-green-600 hover:from-teal-700 hover:to-green-700 text-white shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {referralApplying ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Claiming Reward...</span>
+                    </>
+                  ) : (
+                    <span>Apply Code & Claim Coins 🪙</span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSkipReferral}
+                  className="w-full py-2.5 rounded-xl font-semibold text-xs text-neutral-500 hover:text-neutral-800 hover:bg-neutral-50 transition-colors"
+                >
+                  I don't have a code, Skip
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

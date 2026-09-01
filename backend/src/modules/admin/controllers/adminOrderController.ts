@@ -234,11 +234,12 @@ export const updateOrderStatus = asyncHandler(
         console.error("Error distributing commissions:", error);
       }
 
-      const { addRewardCoin } = await import("../../../services/rewardService");
+      const { addRewardCoin, fulfillPendingReferral } = await import("../../../services/rewardService");
       try {
         await addRewardCoin(order.customer._id.toString());
+        await fulfillPendingReferral(order.customer._id.toString());
       } catch (error) {
-        console.error("Error adding reward coin:", error);
+        console.error("Error adding reward coin or fulfilling referral:", error);
       }
     }
 
