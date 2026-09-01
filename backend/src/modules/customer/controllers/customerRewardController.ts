@@ -38,6 +38,7 @@ export const getRewards = asyncHandler(async (req: Request, res: Response) => {
  */
 export const redeemReward = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params; // RewardItem ID
+  const { deliveryAddress } = req.body;
   const customerId = req.user?.userId;
 
   const customer = await Customer.findById(customerId);
@@ -85,6 +86,7 @@ export const redeemReward = asyncHandler(async (req: Request, res: Response) => 
     customer: customerId,
     rewardItem: rewardItem._id,
     coinsSpent: rewardItem.coinsRequired,
+    deliveryAddress: deliveryAddress || undefined,
     status: 'Pending',
   });
 

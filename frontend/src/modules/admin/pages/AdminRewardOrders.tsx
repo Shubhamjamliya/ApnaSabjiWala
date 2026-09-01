@@ -52,24 +52,65 @@ export default function AdminRewardOrders() {
               <table className="min-w-full divide-y divide-gray-300">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">Item Name</th>
+                    <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">Item</th>
                     <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Customer</th>
-                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Coins Spent</th>
+                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Delivery Address</th>
+                    <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Coins</th>
                     <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date</th>
                     <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {orders.map((order) => (
-                    <tr key={order._id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
-                        {order.rewardItem?.name || "Deleted Item"}
+                    <tr key={order._id} className="hover:bg-gray-50/60 transition-colors">
+                      <td className="py-4 pl-4 pr-3 text-sm">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={order.rewardItem?.imageUrl || "https://placehold.co/50x50?text=Gift"}
+                            alt=""
+                            className="w-10 h-10 object-contain rounded-lg bg-gray-50 border border-gray-100 flex-shrink-0"
+                          />
+                          <span className="font-semibold text-gray-900">
+                            {order.rewardItem?.name || "Deleted Item"}
+                          </span>
+                        </div>
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <div className="font-semibold text-gray-800">{order.customer?.name}</div>
+                        <div className="font-semibold text-gray-800">{order.customer?.name || "Customer"}</div>
                         <div className="text-xs text-gray-500">{order.customer?.phone}</div>
+                        {order.customer?.email && (
+                          <div className="text-[11px] text-gray-400">{order.customer?.email}</div>
+                        )}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 font-bold">{order.coinsSpent}</td>
+                      <td className="px-3 py-4 text-sm text-gray-600 min-w-[220px] max-w-[320px]">
+                        {order.deliveryAddress ? (
+                          <div className="bg-gray-50/80 p-2.5 rounded-lg border border-gray-100 text-xs space-y-0.5">
+                            <div className="font-semibold text-gray-900 flex items-center gap-1.5">
+                              <span>📍</span>
+                              <span>{order.deliveryAddress.fullName || order.customer?.name}</span>
+                              {order.deliveryAddress.phone && (
+                                <span className="text-gray-500 text-[11px]">({order.deliveryAddress.phone})</span>
+                              )}
+                            </div>
+                            <div className="text-gray-700 leading-snug">{order.deliveryAddress.address}</div>
+                            <div className="text-gray-500 text-[11px]">
+                              {order.deliveryAddress.city}
+                              {order.deliveryAddress.state ? `, ${order.deliveryAddress.state}` : ""}
+                              {order.deliveryAddress.pincode ? ` - ${order.deliveryAddress.pincode}` : ""}
+                            </div>
+                            {order.deliveryAddress.landmark && (
+                              <div className="text-teal-700 text-[11px] font-medium">
+                                Landmark: {order.deliveryAddress.landmark}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs italic text-gray-400">No address provided</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-teal-700 font-bold">
+                        🪙 {order.coinsSpent}
+                      </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                         {new Date(order.orderDate).toLocaleDateString()}
                       </td>
@@ -77,7 +118,7 @@ export default function AdminRewardOrders() {
                         <select
                           value={order.status}
                           onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                          className={`rounded-full px-3 py-1 text-xs font-bold focus:ring-teal-500 focus:border-teal-500 outline-none border transition-colors ${order.status === 'Pending' ? 'text-yellow-700 bg-yellow-50 border-yellow-200' :
+                          className={`rounded-full px-3 py-1.5 text-xs font-bold focus:ring-teal-500 focus:border-teal-500 outline-none border transition-colors shadow-sm ${order.status === 'Pending' ? 'text-yellow-700 bg-yellow-50 border-yellow-200' :
                             order.status === 'Approved' ? 'text-blue-700 bg-blue-50 border-blue-200' :
                               order.status === 'Delivered' ? 'text-green-700 bg-green-50 border-green-200' : 'text-red-700 bg-red-50 border-red-200'
                             }`}

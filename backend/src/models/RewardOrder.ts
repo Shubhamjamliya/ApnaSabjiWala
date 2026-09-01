@@ -4,6 +4,15 @@ export interface IRewardOrder extends Document {
   customer: mongoose.Types.ObjectId;
   rewardItem: mongoose.Types.ObjectId;
   coinsSpent: number;
+  deliveryAddress?: {
+    fullName?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+    landmark?: string;
+  };
   status: 'Pending' | 'Approved' | 'Delivered' | 'Cancelled';
   orderDate: Date;
   createdAt: Date;
@@ -25,6 +34,15 @@ const RewardOrderSchema = new Schema<IRewardOrder>(
     coinsSpent: {
       type: Number,
       required: [true, 'Coins spent is required'],
+    },
+    deliveryAddress: {
+      fullName: { type: String, trim: true },
+      phone: { type: String, trim: true },
+      address: { type: String, trim: true },
+      city: { type: String, trim: true },
+      state: { type: String, trim: true },
+      pincode: { type: String, trim: true },
+      landmark: { type: String, trim: true },
     },
     status: {
       type: String,
