@@ -443,11 +443,11 @@ export default function OrderDetail() {
 
   const customerLatFromCoords = toNumberOrZero(
     order?.deliveryAddress?.location?.coordinates?.[1] ??
-      order?.address?.location?.coordinates?.[1]
+    order?.address?.location?.coordinates?.[1]
   );
   const customerLngFromCoords = toNumberOrZero(
     order?.deliveryAddress?.location?.coordinates?.[0] ??
-      order?.address?.location?.coordinates?.[0]
+    order?.address?.location?.coordinates?.[0]
   );
   const customerLatDirect = toNumberOrZero(
     order?.deliveryAddress?.latitude ?? order?.address?.latitude
@@ -476,65 +476,44 @@ export default function OrderDetail() {
       />
 
       {/* Map Section */}
-      {!showConfirmation &&
-        !["Delivered", "Cancelled", "Returned"].includes(order?.status) && (
-          <GoogleMapsTracking
-            sellerLocations={sellerLocations.map((s) => ({
-              lat: Number(s.latitude),
-              lng: Number(s.longitude),
-              name: s.storeName,
-            }))}
-            customerLocation={customerLocation}
-            deliveryLocation={deliveryLocation || undefined}
-            isTracking={isConnected && !!deliveryLocation}
-            showRoute={
-              hasValidCustomerLocation &&
-              (!!deliveryLocation || sellerLocations.length > 0) &&
-              !["Delivered", "Cancelled", "Returned"].includes(order?.status)
-            }
-            routeOrigin={
-              deliveryLocation
-                ? deliveryLocation
-                : sellerLocations.length > 0
-                ? {
-                    lat: Number(sellerLocations[0].latitude),
-                    lng: Number(sellerLocations[0].longitude),
-                  }
-                : undefined
-            }
-            routeDestination={
-              hasValidCustomerLocation ? customerLocation : undefined
-            }
-            routeWaypoints={
-              order?.status === "Picked up" ||
-              order?.status === "Out for Delivery"
-                ? []
-                : deliveryLocation && sellerLocations.length > 0
-                ? sellerLocations.map((s) => ({
-                    lat: Number(s.latitude),
-                    lng: Number(s.longitude),
-                  }))
-                : sellerLocations.length > 1
-                ? sellerLocations.slice(1).map((s) => ({
-                    lat: Number(s.latitude),
-                    lng: Number(s.longitude),
-                  }))
-                : []
-            }
-            destinationName={
-              order?.status === "Picked up" ||
-              order?.status === "Out for Delivery"
-                ? order?.deliveryAddress?.address?.split(",")[0] ||
-                  order?.address?.split(",")[0] ||
-                  "Delivery Address"
-                : sellerLocations.length > 0
+      {!showConfirmation && !['Delivered', 'Cancelled', 'Returned'].includes(order?.status) && (
+        <GoogleMapsTracking
+          sellerLocations={sellerLocations.map(s => ({
+            lat: s.latitude,
+            lng: s.longitude,
+            name: s.storeName
+          }))}
+          customerLocation={customerLocation}
+          deliveryLocation={deliveryLocation || undefined}
+          isTracking={isConnected && !!deliveryLocation}
+          showRoute={
+            !!deliveryLocation &&
+            hasValidCustomerLocation &&
+            order?.status !== 'Delivered' &&
+            order?.status !== 'Cancelled' &&
+            order?.status !== 'Returned'
+          }
+          routeOrigin={deliveryLocation || undefined}
+          routeDestination={hasValidCustomerLocation ? customerLocation : undefined}
+          routeWaypoints={
+            order?.status === 'Picked up' || order?.status === 'Out for Delivery'
+              ? []
+              : sellerLocations.map(s => ({
+                lat: s.latitude,
+                lng: s.longitude,
+              }))
+          }
+          destinationName={
+            order?.status === 'Picked up' || order?.status === 'Out for Delivery'
+              ? order?.deliveryAddress?.address?.split(',')[0] || order?.address?.split(',')[0] || "Delivery Address"
+              : sellerLocations.length > 0
                 ? "Sellers & Delivery Address"
                 : "Delivery Address"
-            }
-            onRouteInfoUpdate={setRouteInfo}
-            lastUpdate={lastUpdate}
-          />
-        )}
+          }
+          onRouteInfoUpdate={setRouteInfo}
+          lastUpdate={lastUpdate}
+        />
+      )}
 
       {/* Tracking Error Display */}
       {trackingError && (
@@ -549,86 +528,86 @@ export default function OrderDetail() {
         order?.deliveryBoy ||
         order?.deliveryBoyName ||
         order?.deliveryOtp) && (
-        <DeliveryPartnerCard
-          partner={{
-            name:
-              order?.deliveryPartner?.name ||
-              order?.deliveryBoy?.name ||
-              order?.deliveryBoyName ||
-              "Delivery Partner",
-            phone:
-              order?.deliveryPartner?.phone ||
-              order?.deliveryPartner?.mobile ||
-              order?.deliveryPartner?.phoneNumber ||
-              order?.deliveryPartner?.mobileNumber ||
-              order?.deliveryPartner?.mobile_no ||
-              order?.deliveryPartner?.phone_no ||
-              order?.deliveryPartner?.contact_no ||
-              order?.deliveryBoy?.phone ||
-              order?.deliveryBoy?.mobile ||
-              order?.deliveryBoy?.phoneNumber ||
-              order?.deliveryBoy?.mobileNumber ||
-              order?.deliveryBoy?.mobile_no ||
-              order?.deliveryBoy?.phone_no ||
-              order?.deliveryBoy?.contact_no ||
-              order?.deliveryBoyPhone ||
-              order?.deliveryPartnerPhone ||
-              order?.deliveryPartner?.user?.phone ||
-              order?.deliveryBoy?.user?.phone ||
-              order?.deliveryPartner?.user?.mobile ||
-              order?.deliveryBoy?.user?.mobile ||
-              order?.deliveryPartner?.user?.phoneNumber ||
-              order?.deliveryBoy?.user?.phoneNumber ||
-              order?.deliveryPartner?.user?.mobile_no ||
-              order?.deliveryBoy?.user?.mobile_no,
-            profileImage:
-              order?.deliveryPartner?.profileImage ||
-              order?.deliveryBoy?.profileImage ||
-              order?.deliveryBoyProfileImage,
-            vehicleNumber:
-              order?.deliveryPartner?.vehicleNumber ||
-              order?.deliveryBoy?.vehicleNumber ||
-              order?.deliveryBoyVehicleNumber ||
-              order?.deliveryPartnerVehicleNumber ||
-              order?.deliveryBoy?.vehicleNo ||
-              order?.deliveryPartner?.vehicleNo ||
-              order?.deliveryBoy?.vehicleNumberPlate ||
-              order?.deliveryPartner?.vehicleNumberPlate,
-          }}
-          eta={routeInfo ? Math.ceil(routeInfo.durationValue / 60) : eta}
-          distance={routeInfo ? routeInfo.distanceValue : distance}
-          isTracking={isConnected && !!deliveryLocation}
-          deliveryOtp={order?.deliveryOtp}
-          onCall={() => {
-            const phone =
-              order?.deliveryPartner?.phone ||
-              order?.deliveryPartner?.mobile ||
-              order?.deliveryPartner?.phoneNumber ||
-              order?.deliveryPartner?.mobileNumber ||
-              order?.deliveryPartner?.mobile_no ||
-              order?.deliveryPartner?.phone_no ||
-              order?.deliveryPartner?.contact_no ||
-              order?.deliveryBoy?.phone ||
-              order?.deliveryBoy?.mobile ||
-              order?.deliveryBoy?.phoneNumber ||
-              order?.deliveryBoy?.mobileNumber ||
-              order?.deliveryBoy?.mobile_no ||
-              order?.deliveryBoy?.phone_no ||
-              order?.deliveryBoy?.contact_no ||
-              order?.deliveryBoyPhone ||
-              order?.deliveryPartnerPhone ||
-              order?.deliveryPartner?.user?.phone ||
-              order?.deliveryBoy?.user?.phone ||
-              order?.deliveryPartner?.user?.mobile ||
-              order?.deliveryBoy?.user?.mobile ||
-              order?.deliveryPartner?.user?.phoneNumber ||
-              order?.deliveryBoy?.user?.phoneNumber ||
-              order?.deliveryPartner?.user?.mobile_no ||
-              order?.deliveryBoy?.user?.mobile_no;
-            if (phone) window.location.href = `tel:${phone}`;
-          }}
-        />
-      )}
+          <DeliveryPartnerCard
+            partner={{
+              name:
+                order?.deliveryPartner?.name ||
+                order?.deliveryBoy?.name ||
+                order?.deliveryBoyName ||
+                "Delivery Partner",
+              phone:
+                order?.deliveryPartner?.phone ||
+                order?.deliveryPartner?.mobile ||
+                order?.deliveryPartner?.phoneNumber ||
+                order?.deliveryPartner?.mobileNumber ||
+                order?.deliveryPartner?.mobile_no ||
+                order?.deliveryPartner?.phone_no ||
+                order?.deliveryPartner?.contact_no ||
+                order?.deliveryBoy?.phone ||
+                order?.deliveryBoy?.mobile ||
+                order?.deliveryBoy?.phoneNumber ||
+                order?.deliveryBoy?.mobileNumber ||
+                order?.deliveryBoy?.mobile_no ||
+                order?.deliveryBoy?.phone_no ||
+                order?.deliveryBoy?.contact_no ||
+                order?.deliveryBoyPhone ||
+                order?.deliveryPartnerPhone ||
+                order?.deliveryPartner?.user?.phone ||
+                order?.deliveryBoy?.user?.phone ||
+                order?.deliveryPartner?.user?.mobile ||
+                order?.deliveryBoy?.user?.mobile ||
+                order?.deliveryPartner?.user?.phoneNumber ||
+                order?.deliveryBoy?.user?.phoneNumber ||
+                order?.deliveryPartner?.user?.mobile_no ||
+                order?.deliveryBoy?.user?.mobile_no,
+              profileImage:
+                order?.deliveryPartner?.profileImage ||
+                order?.deliveryBoy?.profileImage ||
+                order?.deliveryBoyProfileImage,
+              vehicleNumber:
+                order?.deliveryPartner?.vehicleNumber ||
+                order?.deliveryBoy?.vehicleNumber ||
+                order?.deliveryBoyVehicleNumber ||
+                order?.deliveryPartnerVehicleNumber ||
+                order?.deliveryBoy?.vehicleNo ||
+                order?.deliveryPartner?.vehicleNo ||
+                order?.deliveryBoy?.vehicleNumberPlate ||
+                order?.deliveryPartner?.vehicleNumberPlate,
+            }}
+            eta={routeInfo ? Math.ceil(routeInfo.durationValue / 60) : eta}
+            distance={routeInfo ? routeInfo.distanceValue : distance}
+            isTracking={isConnected && !!deliveryLocation}
+            deliveryOtp={order?.deliveryOtp}
+            onCall={() => {
+              const phone =
+                order?.deliveryPartner?.phone ||
+                order?.deliveryPartner?.mobile ||
+                order?.deliveryPartner?.phoneNumber ||
+                order?.deliveryPartner?.mobileNumber ||
+                order?.deliveryPartner?.mobile_no ||
+                order?.deliveryPartner?.phone_no ||
+                order?.deliveryPartner?.contact_no ||
+                order?.deliveryBoy?.phone ||
+                order?.deliveryBoy?.mobile ||
+                order?.deliveryBoy?.phoneNumber ||
+                order?.deliveryBoy?.mobileNumber ||
+                order?.deliveryBoy?.mobile_no ||
+                order?.deliveryBoy?.phone_no ||
+                order?.deliveryBoy?.contact_no ||
+                order?.deliveryBoyPhone ||
+                order?.deliveryPartnerPhone ||
+                order?.deliveryPartner?.user?.phone ||
+                order?.deliveryBoy?.user?.phone ||
+                order?.deliveryPartner?.user?.mobile ||
+                order?.deliveryBoy?.user?.mobile ||
+                order?.deliveryPartner?.user?.phoneNumber ||
+                order?.deliveryBoy?.user?.phoneNumber ||
+                order?.deliveryPartner?.user?.mobile_no ||
+                order?.deliveryBoy?.user?.mobile_no;
+              if (phone) window.location.href = `tel:${phone}`;
+            }}
+          />
+        )}
 
       {/* Scrollable Content Body */}
       <div className="px-4 py-4 space-y-4 pb-24">
